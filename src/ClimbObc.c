@@ -49,3 +49,7 @@ int main(void) {
     }
     return 0 ;
 }
+
+void Chip_SystemInit(void) {
+	int i = 55;
+}
