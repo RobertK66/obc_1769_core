@@ -9,6 +9,8 @@
 
 #include <chip.h>
 
+#include "mod/hw_check.h"
+
 //#include <stdio.h>
 // To Use printf you have to:
 //    - link against Redlib "nohost-nf" Librrary  (min: without hosting and no files)
@@ -34,14 +36,17 @@ int main(void) {
 	// (Here in main() this sets the global available SystemCoreClock variable for the first time after all SystemInits finished)
     SystemCoreClockUpdate();
 
+
+    hwcInitData.gpios = gpioinit;
+    hwcInitData.entryCount = sizeof(gpioinit)/sizeof(GPIO_INIT_T);
+    hwcModuleDesc.init(&hwcInitData);
+
     // Force the counter to be placed into memory
     volatile static int i = 0 ;
     // Enter an infinite loop, just incrementing a counter
     while(1) {
         i++ ;
-        // "Dummy" NOP to allow source level single
-        // stepping of tight while() loop
-        __asm volatile ("nop");
+        hwcModuleDesc.main();
     }
     return 0 ;
 }

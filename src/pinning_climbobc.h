@@ -86,18 +86,6 @@
 #define P4_PIN_SD_VCC_EN			28
 #define P4_PIN_EXT_WDT_TRIGGERED	29
 
-/// .....
-#define GPIO_DIR_OUTPUT true
-#define GPIO_DIR_INPUT  false
-#define GPIO_VAL_HIGH   true
-#define GPIO_VAL_LOW    false
-
-typedef struct {
-	uint8_t port:3;
-	uint8_t pinNr:5;
-	bool 	output;
-	bool    initVal;
-} GPIO_INIT_T;
 
 static const PINMUX_GRP_T pinmuxing[] = {
 	// 4x UARTS

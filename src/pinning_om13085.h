@@ -88,20 +88,6 @@
 #define P4_PIN_NC26					28
 #define P4_PIN_NC27					29
 
-/// .....TODO: move somewhere for general use .....
-typedef struct {
-	uint8_t  port:3;
-	uint8_t  pinNr:5;
-	bool 	 output;
-	bool	 initVal;
-} GPIO_INIT_T;
-
-#define GPIO_DIR_OUTPUT true
-#define GPIO_DIR_INPUT  false
-
-#define GPIO_VAL_HIGH   true
-#define GPIO_VAL_LOW    false
-
 static const PINMUX_GRP_T pinmuxing[] = {
 		// Configure all 4 UARTS to be used
 		{ 0, P0_PIN_UART0_TX, IOCON_MODE_INACT | IOCON_FUNC1 }, 	/* LPC_UART0 "Uart D" */		// J2-21
