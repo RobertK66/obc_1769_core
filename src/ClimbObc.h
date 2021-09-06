@@ -10,13 +10,18 @@
 #define CLIMBOBC_H_
 
 // Available board abstractions
-#define BA_OM13085	1
-#define BA_CLIMBOBC	2
+#define BA_OM13085		1
+#define BA_OM13085_EM2T	2
+#define BA_CLIMBOBC		3
 
-#define BA_BOARD	BA_CLIMBOBC	// BA_CLIMBOBC //BA_OM13085
+// Switch the board Config here.
+#define BA_BOARD	BA_CLIMBOBC					// BA_CLIMBOBC //BA_OM13085 // BA_OM13085_EM2T
 
 #if BA_BOARD == BA_OM13085
 	#define BA_BOARD_REL	"revD1"
+	#include "pinning_om13085.h"
+#elif BA_BOARD == BA_OM13085_EM2T
+	#define BA_BOARD_REL	"revD1+A_V1.0"
 	#include "pinning_om13085.h"
 #elif BA_BOARD == BA_CLIMBOBC
 	#define BA_BOARD_REL	"EM2"
