@@ -36,19 +36,13 @@ int main(void) {
 	// (Here in main() this sets the global available SystemCoreClock variable for the first time after all SystemInits finished)
     SystemCoreClockUpdate();
 
+    HwcInitModule(gpioinit);
 
-    hwcInitData.gpios = gpioinit;
-    hwcInitData.entryCount = sizeof(gpioinit)/sizeof(GPIO_INIT_T);
-    hwcModuleDesc.init(&hwcInitData);
-
-    // Force the counter to be placed into memory
-    volatile static int i = 0 ;
-    // Enter an infinite loop, just incrementing a counter
+    // Enter an infinite loop.
     while(1) {
-        i++ ;
-        hwcModuleDesc.main();
+        HwcMain();
     }
-    return 0 ;
+    return 0;
 }
 
 // This Init gets called after Reset - memory clear - copy of memory sections (constants or static initialized stuff) and all

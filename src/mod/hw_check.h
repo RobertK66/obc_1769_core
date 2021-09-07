@@ -26,5 +26,14 @@ static const MODULE_DEF_T hwcModuleDesc = {
 		hwc_main
 };
 
+#define HwcInitModule(gpiodef) {								 	\
+	hwcInitData.gpios = gpiodef; 									\
+	hwcInitData.entryCount = sizeof(gpiodef)/sizeof(GPIO_INIT_T);	\
+	hwcModuleDesc.init(&hwcInitData); 								\
+}
+
+#define HwcMain() { 		\
+	hwcModuleDesc.main(); 	\
+}
 
 #endif /* MOD_HW_CHECK_H_ */
