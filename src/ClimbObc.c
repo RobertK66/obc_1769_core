@@ -10,22 +10,8 @@
 #include <chip.h>
 
 #include "mod/hw_check.h"
-
-//#include <stdio.h>
-// To Use printf you have to:
-//    - link against Redlib "nohost-nf" Librrary  (min: without hosting and no files)
-//    - provide your implementation of __sys_write[, __sys_readc] functions
-//
-// When using CLI module of ADO lib, this comes with its own __sys_write, __sys_readc in order to redirect to the CLI target (UART or SWO-Trace)
-//
-//int __sys_write(int iFileHandle, char *pcBuffer, int iLength)
-//{
-//	unsigned int i;
-//	for (i = 0; i < iLength; i++) {
-//
-//	}
-//	return iLength;
-//}
+#include "mod/l2_debug_com.h"
+#include "mod/l7_climb_app.h"
 
 // local prototypes
 void BA_GpioInit(const GPIO_INIT_T* pinArray, uint32_t arrayLength);
@@ -34,13 +20,17 @@ void BA_GpioInit(const GPIO_INIT_T* pinArray, uint32_t arrayLength);
 int main(void) {
     // Read clock settings and update SystemCoreClock variable.
 	// (Here in main() this sets the global available SystemCoreClock variable for the first time after all SystemInits finished)
-    SystemCoreClockUpdate();
+	SystemCoreClockUpdate();
 
     HwcInitModule(gpioinit);
+    DebInitModule(LPC_UART2);
+    AppInitModule();
 
     // Enter an infinite loop.
     while(1) {
         HwcMain();
+        DebMain();
+        AppMain();
     }
     return 0;
 }
