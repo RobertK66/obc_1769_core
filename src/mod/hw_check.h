@@ -21,7 +21,7 @@ void hwc_main (void);
 
 extern hwc_initdata_t hwcInitData;
 static const MODULE_DEF_T hwcModuleDesc = {
-		&hwcInitData,
+		//&hwcInitData,
 		(void*)hwc_init,
 		hwc_main
 };

@@ -28,7 +28,7 @@ typedef struct {
 
 // common defines/structures used for module composition
 typedef struct {
-	void  *initData;
+	//void  *initData;
 	void  (*init)(void* initData);
 	void  (*main)(void);
 } MODULE_DEF_T;

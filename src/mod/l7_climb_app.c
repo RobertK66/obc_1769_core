@@ -30,8 +30,8 @@ void app_main (void) {
 
 void app_processCmd(int argc, char *argv[]) {
 	// Dummy processing. Send pars in reverse order to L2 Debug (one frame per par)
-	for (int i = argc; i>=0; i--) {
-		if (!deb_sendFrame((uint8_t *)&argv[i], strlen(argv[i]))) {
+	for (int i = argc - 1; i>=0; i--) {
+		if (!deb_sendFrame((uint8_t *)argv[i], strlen(argv[i]))) {
 			// Error !? buffer full or something else
 			// Signal event here !? Or rely on event from lower layer itself !?
 			break;

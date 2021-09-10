@@ -16,7 +16,7 @@ void app_main (void);
 
 // no init data needed for this module
 static const MODULE_DEF_T appModuleDesc = {
-		0,
+		//0,
 		app_init,
 		app_main
 };

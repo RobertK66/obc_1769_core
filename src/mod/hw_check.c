@@ -34,7 +34,7 @@ void hwc_init (hwc_initdata_t *initData) {
 
 void hwc_main (void ) {
 	loopCounter++;
-	if (loopCounter >= 100000) {
+	if (loopCounter >= 50000) {
 		loopCounter = 0;
 		GPIO_INIT_T pin = hwcInitData.gpios[pinIdx];
 		Chip_GPIO_SetPinOutHigh(LPC_GPIO, pin.port, pin.pinNr);

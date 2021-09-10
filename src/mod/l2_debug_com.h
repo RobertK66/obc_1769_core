@@ -30,7 +30,7 @@ void deb_init (LPC_USART_T *pUart);
 void deb_main (void);
 
 static const MODULE_DEF_T debModuleDesc = {
-		0,
+		//0,
 		(void*)deb_init,
 		deb_main
 };
