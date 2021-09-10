@@ -30,21 +30,14 @@ The escaped data is Xored by 0x20.
 #define DEB_EOL_CHAR				0x0d
 
 typedef struct {
-	uint8_t txData[DEB_L2_TX_BUFFER_SIZE];
-	uint16_t frameBaseIdx[DEB_L2_MAX_TXFRAMES];
-	uint8_t frameLen[DEB_L2_MAX_TXFRAMES];
-	uint8_t currentFrameIdx;
-	uint16_t currentByteIdx;
-	uint8_t pendingFrames;
-	uint8_t pendingBytes;
+	uint8_t  txData[DEB_L2_TX_BUFFER_SIZE];
+	uint16_t currentTxByteIdx;
+	uint16_t headTxByteIdx;
+
 } DEB_L2_TXFRAME_QUEUE_T ;
 
 typedef enum  {
 	DEB_IDLE,
-	DEB_STARTFRAME,
-	DEB_ENDFRAME,
-	DEB_ESCAPE_STST,
-	DEB_ESCAPE_ESC,
 	DEB_TX
 } DEB_TX_STATE_T ;
 
@@ -56,8 +49,9 @@ char	 		deb_CommandLine[DEB_L2_MAX_CHARPERLINE] = "";
 uint8_t			deb_RxIdx = 0;
 bool			deb_CommandAvailable = false;
 
-DEB_L2_TXFRAME_QUEUE_T	deb_txFrames;
+
 DEB_TX_STATE_T	 		deb_txState = DEB_IDLE;
+DEB_L2_TXFRAME_QUEUE_T  deb_txFrames;
 
 // Prototypes
 void deb_uartIRQ(LPC_USART_T *pUAR);
@@ -66,10 +60,9 @@ void deb_processLine(void);
 void deb_init (LPC_USART_T *pUart) {
 	InitUart(pUart, 9600, deb_uartIRQ);
 	deb_Uart = pUart;
-	deb_txFrames.pendingFrames = 0;
-	deb_txFrames.currentFrameIdx = 0;
-	deb_txFrames.pendingBytes = 0;
-	deb_txFrames.currentByteIdx = 0;
+
+	deb_txFrames.currentTxByteIdx = 0;
+	deb_txFrames.headTxByteIdx = 0;
 }
 
 void deb_main (void) {
@@ -134,54 +127,60 @@ bool deb_getCommandIfAvailable(DEB_L2_CMD_T *pRetVal){
 	return cmdAvailable;
 }
 
+bool IncDataIdx(uint16_t *idx) {
+	(*idx)++;
+	if (*idx >= DEB_L2_TX_BUFFER_SIZE) {
+		*idx=0;
+	}
+
+	return (*idx != deb_txFrames.currentTxByteIdx);
+}
+
 bool deb_sendFrame(uint8_t *data, uint8_t len) {
 	bool ok = true;
-	uint8_t newByteBaseIdx = 0;
-	uint8_t frameIdx = 0;
 
-	// TODO: stop IRQ here !!???
+	// block irq while handling buffers
 	Chip_UART_IntDisable(deb_Uart, UART_IER_THREINT);
 
-	// Check for available Frame Entry
-	if (deb_txFrames.pendingFrames >= DEB_L2_MAX_TXFRAMES) {
-		//Buffer full -> error signal and/or return value false
-		ok = false;
-	} else {
-		// Framepointer left, check for Bytes available
-		frameIdx = deb_txFrames.currentFrameIdx + deb_txFrames.pendingFrames;
-		if (frameIdx >= DEB_L2_MAX_TXFRAMES) {
-			frameIdx = frameIdx - DEB_L2_MAX_TXFRAMES;
-		}
-		newByteBaseIdx = deb_txFrames.frameBaseIdx[frameIdx] + deb_txFrames.frameLen[frameIdx];
-		frameIdx++;
-		if (frameIdx >= DEB_L2_MAX_TXFRAMES) {
-			frameIdx = 0;
-		}
-		if (newByteBaseIdx + len >= DEB_L2_TX_BUFFER_SIZE) {
-			// Byte Wrap around. For now just Skip this left over memory....
-			newByteBaseIdx = 0;
-			// Check for available Bytes up to current frame
-			if (len > deb_txFrames.frameBaseIdx[deb_txFrames.currentFrameIdx]) {
-				//Buffer full -> error signal and/or return value false
-				ok = false;
+	uint16_t oldHead = deb_txFrames.headTxByteIdx;
+
+	// Copy the next frame on end of TXBuffer.
+	deb_txFrames.txData[deb_txFrames.headTxByteIdx] = DEB_L2_TX_FRAMESTARTSTOP;
+	ok = IncDataIdx(&deb_txFrames.headTxByteIdx);
+
+	int i = 0;
+	while (ok) {
+		if (    (data[i] == DEB_L2_TX_FRAMESTARTSTOP)
+		     || (data[i] == DEB_L2_TX_FRAMEESCAPE)    )	{
+			deb_txFrames.txData[deb_txFrames.headTxByteIdx] = DEB_L2_TX_FRAMEESCAPE;
+			ok = IncDataIdx(&deb_txFrames.headTxByteIdx);
+			if (ok) {
+				deb_txFrames.txData[deb_txFrames.headTxByteIdx] = data[i] ^ 0x20;
+			} else {
+				break;
 			}
+		} else {
+			deb_txFrames.txData[deb_txFrames.headTxByteIdx] = data[i];
 		}
+		ok = IncDataIdx(&deb_txFrames.headTxByteIdx);
+		i++;
+		if (i>=len) {
+			break;
+		}
+	}
+	if (ok) {
+		deb_txFrames.txData[deb_txFrames.headTxByteIdx] = DEB_L2_TX_FRAMESTARTSTOP;
+		ok = IncDataIdx(&deb_txFrames.headTxByteIdx);
 	}
 
 	if (ok) {
-		deb_txFrames.frameBaseIdx[frameIdx] = newByteBaseIdx;
-		deb_txFrames.frameLen[frameIdx] = len;
-		deb_txFrames.pendingFrames++;
-		memcpy(&deb_txFrames.txData[newByteBaseIdx], data , len);
-		if (deb_txFrames.pendingFrames == 1) {
+		if (deb_txState == DEB_IDLE) {
 			// Start TX and let IRQ do the rest
-			deb_txFrames.currentFrameIdx = frameIdx;
-			deb_txFrames.currentByteIdx = newByteBaseIdx;
-			deb_txState = DEB_STARTFRAME;
-//			Chip_UART_IntEnable(deb_Uart, UART_IER_THREINT);
-			Chip_UART_SendByte(deb_Uart, DEB_L2_TX_FRAMESTARTSTOP);
-//			Chip_UART_IntEnable(deb_Uart, UART_IER_THREINT);
+			deb_txState = DEB_TX;
+			Chip_UART_SendByte(deb_Uart, deb_txFrames.txData[deb_txFrames.currentTxByteIdx]);
 		}
+	} else {
+		deb_txFrames.headTxByteIdx = oldHead;
 	}
 
 	if (deb_txState != DEB_IDLE) {
@@ -190,68 +189,22 @@ bool deb_sendFrame(uint8_t *data, uint8_t len) {
 	return ok;
 }
 
-
-int deb_getNextByteToSend(void) {
-	int retVal = -1;
-//	// Byte buffer Wraparound not implemented yet
-//	if (deb_txFrames.currentByteIdx > DEB_L2_TX_BUFFER_SIZE) {
-//		deb_txFrames.currentByteIdx = 0;
-//	}
-	if (deb_txFrames.currentByteIdx < (deb_txFrames.frameBaseIdx[deb_txFrames.currentFrameIdx] + deb_txFrames.frameLen[deb_txFrames.currentFrameIdx])) {
-		retVal = deb_txFrames.txData[deb_txFrames.currentByteIdx];
-		deb_txFrames.currentByteIdx++;
-	}
-
-	return retVal;
-}
-
-bool deb_switchNextFrame() {
-	bool retVal = false;
-	uint8_t idx;
-
-    deb_txFrames.pendingFrames--;
-    if (deb_txFrames.pendingFrames > 0) {
-    	retVal = true;
-    	idx = deb_txFrames.currentFrameIdx;
-    	idx++;
-    	if (idx > DEB_L2_MAX_TXFRAMES) {
-    		idx = 0;
-    	}
-    	deb_txFrames.currentFrameIdx = idx;
-    	deb_txFrames.currentByteIdx = deb_txFrames.frameBaseIdx[idx];
-    }
-
-    return retVal;
-}
-
 void deb_uartIRQ(LPC_USART_T *pUART) {
 	if (pUART->IER & UART_IER_THREINT) {
 		int nextChar;
 		switch (deb_txState) {
-			case DEB_STARTFRAME:
 			case DEB_TX:
 				// Send next Byte
-				nextChar = deb_getNextByteToSend();
-				if (nextChar == DEB_L2_TX_FRAMESTARTSTOP) {
-					nextChar = DEB_L2_TX_FRAMEESCAPE;
-					deb_txState = DEB_ESCAPE_STST;
-				} else if (nextChar == DEB_L2_TX_FRAMEESCAPE) {
-					nextChar = DEB_L2_TX_FRAMEESCAPE;
-					deb_txState = DEB_ESCAPE_ESC;
-				} else if (nextChar < 0) { // Frame ended
-					nextChar = DEB_L2_TX_FRAMESTARTSTOP;
-					deb_txState = DEB_ENDFRAME;
+				deb_txFrames.currentTxByteIdx++;
+				if (deb_txFrames.currentTxByteIdx >= DEB_L2_TX_BUFFER_SIZE) {
+					deb_txFrames.currentTxByteIdx = 0;
 				}
-				Chip_UART_SendByte(pUART, nextChar);
-				break;
-
-			case DEB_ENDFRAME:
-				if (deb_switchNextFrame()) {
-					deb_txState = DEB_TX;
-					Chip_UART_SendByte(deb_Uart, DEB_L2_TX_FRAMESTARTSTOP);
-				} else {
+				if (deb_txFrames.currentTxByteIdx == deb_txFrames.headTxByteIdx) {
 					deb_txState = DEB_IDLE;
 					Chip_UART_IntDisable(deb_Uart, UART_IER_THREINT);
+				} else {
+					nextChar = deb_txFrames.txData[deb_txFrames.currentTxByteIdx];
+					Chip_UART_SendByte(pUART, nextChar);
 				}
 				break;
 
@@ -259,18 +212,6 @@ void deb_uartIRQ(LPC_USART_T *pUART) {
 				deb_txState = DEB_IDLE;
 				Chip_UART_IntDisable(deb_Uart, UART_IER_THREINT);
 				break;
-
-			case DEB_ESCAPE_ESC:
-				deb_txState = DEB_TX;
-				Chip_UART_SendByte(deb_Uart, DEB_L2_TX_FRAMEESCAPE ^ 0x20);
-				break;
-
-			case DEB_ESCAPE_STST:
-				deb_txState = DEB_TX;
-				Chip_UART_SendByte(deb_Uart, DEB_L2_TX_FRAMESTARTSTOP ^ 0x20);
-				break;
-
-
 		}
 	}
 }
