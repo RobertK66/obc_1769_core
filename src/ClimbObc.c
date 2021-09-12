@@ -9,27 +9,84 @@
 
 #include <chip.h>
 
+#include <ado_sspdma.h>
+#include <ado_spi.h>
+
+#include "mod/tim/obc_time.h"
 #include "mod/hw_check.h"
 #include "mod/l2_debug_com.h"
+#include "mod/mem/ado_sdcard.h"
+#include "mod/mem/ado_mram.h"
+
 #include "mod/l7_climb_app.h"
 
 // local prototypes
 void BA_GpioInit(const GPIO_INIT_T* pinArray, uint32_t arrayLength);
 
+
+// Chipselects TODO:check pin abstraction pin abstraction ... PORT!!!!
+void CsMram01(bool select) {
+    Chip_GPIO_SetPinState(LPC_GPIO, 0, P0_PIN_SSP0_MRAM_CS1, !select);
+}
+void CsMram02(bool select) {
+    Chip_GPIO_SetPinState(LPC_GPIO, 2, P2_PIN_SSP0_MRAM_CS2, !select);
+}
+void CsMram03(bool select) {
+    Chip_GPIO_SetPinState(LPC_GPIO, 2, P2_PIN_SSP0_MRAM_CS3, !select);
+}
+void CsMram11(bool select) {
+    Chip_GPIO_SetPinState(LPC_GPIO, 2, P2_PIN_SSP1_MRAM_CS1, !select);
+}
+void CsMram12(bool select) {
+    Chip_GPIO_SetPinState(LPC_GPIO, 0, P0_PIN_SSP1_MRAM_CS2, !select);
+}
+void CsMram13(bool select) {
+    Chip_GPIO_SetPinState(LPC_GPIO, 1 , P1_PIN_SSP1_MRAM_CS3, !select);
+}
+
+void CsSdCard(bool select) {
+    Chip_GPIO_SetPinState(LPC_GPIO, 0, P0_PIN_SPI_CS_SD, !select);
+}
+
+
+
 // Main loop
 int main(void) {
     // Read clock settings and update SystemCoreClock variable.
 	// (Here in main() this sets the global available SystemCoreClock variable for the first time after all SystemInits finished)
+
 	SystemCoreClockUpdate();
 
+	DebInitModule(LPC_UART2);
+
+	TimInitModule();
     HwcInitModule(gpioinit);
-    DebInitModule(LPC_UART2);
+
+    // using 24000000 gives some init errors here.....
+    ADO_SSP_Init(ADO_SSP0, 12000000, SSP_CLOCK_MODE3);
+    ADO_SSP_Init(ADO_SSP1, 12000000, SSP_CLOCK_MODE3);
+    ADO_SPI_Init(0x08, SPI_CLOCK_MODE3);                                   // Clock Divider 0x08 -> fastest, must be even: can be up to 0xFE for slower SPI Clocking
+
+    void *sdCard;
+    sdCard = SdcInitSPI(CsSdCard);
+    //AdoSdcardCliInit(1, sdCard);
+
+    MramInit(0, ADO_SSP0, CsMram01);
+    MramInit(1, ADO_SSP0, CsMram02);
+    MramInit(2, ADO_SSP0, CsMram03);
+    MramInit(3, ADO_SSP1, CsMram11);
+    MramInit(4, ADO_SSP1, CsMram12);
+    MramInit(5, ADO_SSP1, CsMram13);
+
     AppInitModule();
 
     // Enter an infinite loop.
     while(1) {
+    	TimMain();
         HwcMain();
         DebMain();
+        MramMain();
+        SdcMain(sdCard);
         AppMain();
     }
     return 0;
@@ -71,3 +128,6 @@ void BA_GpioInit(const GPIO_INIT_T* pinArray, uint32_t arrayLength) {
 		}
 	}
 }
+
+
+

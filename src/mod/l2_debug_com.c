@@ -24,8 +24,7 @@ The escaped data is Xored by 0x20.
 
 #define DEB_L2_TX_FRAMESTARTSTOP	0x7E
 #define DEB_L2_TX_FRAMEESCAPE		0x7D
-#define DEB_L2_TX_BUFFER_SIZE		 500
-#define DEB_L2_MAX_TXFRAMES		      10
+#define DEB_L2_TX_BUFFER_SIZE		 300
 
 #define DEB_EOL_CHAR				0x0d
 
@@ -33,7 +32,6 @@ typedef struct {
 	uint8_t  txData[DEB_L2_TX_BUFFER_SIZE];
 	uint16_t currentTxByteIdx;
 	uint16_t headTxByteIdx;
-
 } DEB_L2_TXFRAME_QUEUE_T ;
 
 typedef enum  {
@@ -41,14 +39,12 @@ typedef enum  {
 	DEB_TX
 } DEB_TX_STATE_T ;
 
-
 // Module Variables
 LPC_USART_T *	deb_Uart;
 char	 		deb_InputLine[DEB_L2_MAX_CHARPERLINE] 	= "";
 char	 		deb_CommandLine[DEB_L2_MAX_CHARPERLINE] = "";
 uint8_t			deb_RxIdx = 0;
 bool			deb_CommandAvailable = false;
-
 
 DEB_TX_STATE_T	 		deb_txState = DEB_IDLE;
 DEB_L2_TXFRAME_QUEUE_T  deb_txFrames;
@@ -127,17 +123,21 @@ bool deb_getCommandIfAvailable(DEB_L2_CMD_T *pRetVal){
 	return cmdAvailable;
 }
 
-bool IncDataIdx(uint16_t *idx) {
-	(*idx)++;
-	if (*idx >= DEB_L2_TX_BUFFER_SIZE) {
-		*idx=0;
-	}
+#define IncHeadTxIdx() { \
+	deb_txFrames.headTxByteIdx++; \
+	if (deb_txFrames.headTxByteIdx >= DEB_L2_TX_BUFFER_SIZE) { \
+		deb_txFrames.headTxByteIdx = 0; \
+	} }
 
-	return (*idx != deb_txFrames.currentTxByteIdx);
-}
+#define IncCurrentTxIdx() { \
+	deb_txFrames.currentTxByteIdx++; \
+	if (deb_txFrames.currentTxByteIdx >= DEB_L2_TX_BUFFER_SIZE) { \
+		deb_txFrames.currentTxByteIdx = 0; \
+	} }
+
 
 bool deb_sendFrame(uint8_t *data, uint8_t len) {
-	bool ok = true;
+	bool ok;
 
 	// block irq while handling buffers
 	Chip_UART_IntDisable(deb_Uart, UART_IER_THREINT);
@@ -146,31 +146,37 @@ bool deb_sendFrame(uint8_t *data, uint8_t len) {
 
 	// Copy the next frame on end of TXBuffer.
 	deb_txFrames.txData[deb_txFrames.headTxByteIdx] = DEB_L2_TX_FRAMESTARTSTOP;
-	ok = IncDataIdx(&deb_txFrames.headTxByteIdx);
+	IncHeadTxIdx();
 
+	//ok = IncDataIdx(&deb_txFrames.headTxByteIdx);
 	int i = 0;
-	while (ok) {
-		if (    (data[i] == DEB_L2_TX_FRAMESTARTSTOP)
-		     || (data[i] == DEB_L2_TX_FRAMEESCAPE)    )	{
-			deb_txFrames.txData[deb_txFrames.headTxByteIdx] = DEB_L2_TX_FRAMEESCAPE;
-			ok = IncDataIdx(&deb_txFrames.headTxByteIdx);
-			if (ok) {
-				deb_txFrames.txData[deb_txFrames.headTxByteIdx] = data[i] ^ 0x20;
+	bool inEscape = false;
+	while (deb_txFrames.headTxByteIdx != deb_txFrames.currentTxByteIdx) {
+		if (! inEscape) {
+			if (    (data[i] == DEB_L2_TX_FRAMESTARTSTOP)
+				 || (data[i] == DEB_L2_TX_FRAMEESCAPE) )	{
+				inEscape = true;
+				deb_txFrames.txData[deb_txFrames.headTxByteIdx] = DEB_L2_TX_FRAMEESCAPE;
 			} else {
-				break;
+				deb_txFrames.txData[deb_txFrames.headTxByteIdx] = data[i];
+				i++;
 			}
 		} else {
-			deb_txFrames.txData[deb_txFrames.headTxByteIdx] = data[i];
+			inEscape = false;
+			deb_txFrames.txData[deb_txFrames.headTxByteIdx] = data[i] ^ 0x20;
+			i++;
 		}
-		ok = IncDataIdx(&deb_txFrames.headTxByteIdx);
-		i++;
+		IncHeadTxIdx();
 		if (i>=len) {
 			break;
 		}
 	}
+
+	// Check if end Token fits into buffer
+	ok = (deb_txFrames.headTxByteIdx != deb_txFrames.currentTxByteIdx);
 	if (ok) {
 		deb_txFrames.txData[deb_txFrames.headTxByteIdx] = DEB_L2_TX_FRAMESTARTSTOP;
-		ok = IncDataIdx(&deb_txFrames.headTxByteIdx);
+		IncHeadTxIdx();		// Could be filled up now. But if so thats ok here!
 	}
 
 	if (ok) {
@@ -180,14 +186,20 @@ bool deb_sendFrame(uint8_t *data, uint8_t len) {
 			Chip_UART_SendByte(deb_Uart, deb_txFrames.txData[deb_txFrames.currentTxByteIdx]);
 		}
 	} else {
+		// Reset buffer to previous state - frame discarded!
 		deb_txFrames.headTxByteIdx = oldHead;
+		// TODO: Signal frame buffer error
 	}
 
+	// (Re-)Enable IRQ if needed
 	if (deb_txState != DEB_IDLE) {
 		Chip_UART_IntEnable(deb_Uart, UART_IER_THREINT);
 	}
 	return ok;
 }
+
+
+
 
 void deb_uartIRQ(LPC_USART_T *pUART) {
 	if (pUART->IER & UART_IER_THREINT) {
@@ -195,11 +207,10 @@ void deb_uartIRQ(LPC_USART_T *pUART) {
 		switch (deb_txState) {
 			case DEB_TX:
 				// Send next Byte
-				deb_txFrames.currentTxByteIdx++;
-				if (deb_txFrames.currentTxByteIdx >= DEB_L2_TX_BUFFER_SIZE) {
-					deb_txFrames.currentTxByteIdx = 0;
-				}
+				IncCurrentTxIdx();
+				// Last one reached ?
 				if (deb_txFrames.currentTxByteIdx == deb_txFrames.headTxByteIdx) {
+					// Yes buffer empty: stop TX IRQ
 					deb_txState = DEB_IDLE;
 					Chip_UART_IntDisable(deb_Uart, UART_IER_THREINT);
 				} else {
@@ -209,7 +220,7 @@ void deb_uartIRQ(LPC_USART_T *pUART) {
 				break;
 
 			case DEB_IDLE:
-				deb_txState = DEB_IDLE;
+				// If not already done disable IRQs here.
 				Chip_UART_IntDisable(deb_Uart, UART_IER_THREINT);
 				break;
 		}
