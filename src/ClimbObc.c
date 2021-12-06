@@ -70,7 +70,7 @@ void CsSdCard(bool select) {
 
 
 
-// Main loop
+// Main loop   test
 int main(void) {
     // Read clock settings and update SystemCoreClock variable.
 	// (Here in main() this sets the global available SystemCoreClock variable for the first time after all SystemInits finished)
