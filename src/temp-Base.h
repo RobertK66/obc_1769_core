@@ -14,20 +14,6 @@
 #include <stdarg.h>
 #include <ado_time.h>
 
-// common defines/structures used by board abstraction
-#define GPIO_DIR_OUTPUT true
-#define GPIO_DIR_INPUT  false
-#define GPIO_VAL_HIGH   true
-#define GPIO_VAL_LOW    false
-
-typedef struct {
-	uint8_t port:3;
-	uint8_t pinNr:5;
-	bool 	output;
-	bool    initVal;
-} GPIO_INIT_T;
-
-
 // common defines/structures used for module composition
 typedef struct {
 	//void  *initData;

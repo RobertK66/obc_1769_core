@@ -21,31 +21,51 @@
 #include "mod/l7_climb_app.h"
 
 // local prototypes
-void BA_GpioInit(const GPIO_INIT_T* pinArray, uint32_t arrayLength);
+//void BA_GpioInit(const GPIO_INIT_T* pinArray, uint32_t arrayLength);
 
 
-// Chipselects TODO:check pin abstraction pin abstraction ... PORT!!!!
+// Chipselects TODO:check pin abstraction ... PORT!!!!
 void CsMram01(bool select) {
     Chip_GPIO_SetPinState(LPC_GPIO, 0, P0_PIN_SSP0_MRAM_CS1, !select);
 }
 void CsMram02(bool select) {
+#ifdef P2_PIN_SSP0_MRAM_CS2
     Chip_GPIO_SetPinState(LPC_GPIO, 2, P2_PIN_SSP0_MRAM_CS2, !select);
+#else
+    Chip_GPIO_SetPinState(LPC_GPIO, 1, P1_PIN_SSP0_MRAM_CS2, !select);
+#endif
 }
 void CsMram03(bool select) {
+#ifdef P2_PIN_SSP0_MRAM_CS3
     Chip_GPIO_SetPinState(LPC_GPIO, 2, P2_PIN_SSP0_MRAM_CS3, !select);
+#else
+    Chip_GPIO_SetPinState(LPC_GPIO, 1, P1_PIN_SSP0_MRAM_CS3, !select);
+#endif
 }
 void CsMram11(bool select) {
+#ifdef  P2_PIN_SSP1_MRAM_CS1
     Chip_GPIO_SetPinState(LPC_GPIO, 2, P2_PIN_SSP1_MRAM_CS1, !select);
+#else
+    Chip_GPIO_SetPinState(LPC_GPIO, 0, P0_PIN_SSP1_MRAM_CS1, !select);
+#endif
 }
 void CsMram12(bool select) {
     Chip_GPIO_SetPinState(LPC_GPIO, 0, P0_PIN_SSP1_MRAM_CS2, !select);
 }
 void CsMram13(bool select) {
+#ifdef 	P1_PIN_SSP1_MRAM_CS3
     Chip_GPIO_SetPinState(LPC_GPIO, 1 , P1_PIN_SSP1_MRAM_CS3, !select);
+#else
+    Chip_GPIO_SetPinState(LPC_GPIO, 0 , P0_PIN_SSP1_MRAM_CS3, !select);
+#endif
 }
 
 void CsSdCard(bool select) {
+#ifdef 	P0_PIN_SPI_CS_SD
     Chip_GPIO_SetPinState(LPC_GPIO, 0, P0_PIN_SPI_CS_SD, !select);
+#else
+    // TODO: ?? We have 2 SD Cards on OEM... Board with expansion....
+#endif
 }
 
 
@@ -54,13 +74,12 @@ void CsSdCard(bool select) {
 int main(void) {
     // Read clock settings and update SystemCoreClock variable.
 	// (Here in main() this sets the global available SystemCoreClock variable for the first time after all SystemInits finished)
-
 	SystemCoreClockUpdate();
 
 	DebInitModule(LPC_UART2);
 
 	TimInitModule();
-    HwcInitModule(gpioinit);
+    HwcInitModule(pinmuxing2);
 
     // using 24000000 gives some init errors here.....
     ADO_SSP_Init(ADO_SSP0, 12000000, SSP_CLOCK_MODE3);
@@ -103,9 +122,9 @@ void Chip_SystemInit(void) {
 	// To get things up and running we always start with internal IRC Clocking.
 	Chip_SetupIrcClocking();
 	// Next is to get the IOs connected to the right functions
-	Chip_IOCON_SetPinMuxing(LPC_IOCON, pinmuxing, sizeof(pinmuxing) / sizeof(PINMUX_GRP_T));
+	Chip_IOCON_SetPinMuxing2(LPC_IOCON, pinmuxing2, sizeof(pinmuxing2) / sizeof(PINMUX_GRP_T2));
 	// For the GPIO - Func0 Pins now we set all direction and initial values for all outputs
-	BA_GpioInit(gpioinit, sizeof(gpioinit)/sizeof(GPIO_INIT_T));
+	//BA_GpioInit(gpioinit_old, sizeof(gpioinit_old)/sizeof(GPIO_INIT_T));
 
 
 	// Now we can switch to XTAL and wait until everything is stable. TODO: -> move this into its own mainloop module "System" !??
@@ -114,20 +133,20 @@ void Chip_SystemInit(void) {
 	Chip_SYSCTL_SetFLASHAccess(FLASHTIM_100MHZ_CPU);
 }
 
-// Set all GPIO direction bits, and initial values.
-void BA_GpioInit(const GPIO_INIT_T* pinArray, uint32_t arrayLength) {
-	/* Initializes GPIO */
-	Chip_GPIO_Init(LPC_GPIO);
-
-	/* Initialize IO Dirs and set default values for all outputs */
-	uint32_t ix;
-	for (ix = 0; ix < arrayLength; ix++ ) {
-		Chip_GPIO_WriteDirBit(LPC_GPIO, pinArray[ix].port, pinArray[ix].pinNr, pinArray[ix].output );
-		if ( pinArray[ix].output ) {
-			Chip_GPIO_SetPinState(LPC_GPIO,pinArray[ix].port, pinArray[ix].pinNr, pinArray[ix].initVal);
-		}
-	}
-}
-
+//// Set all GPIO direction bits, and initial values.
+//void BA_GpioInit(const GPIO_INIT_T* pinArray, uint32_t arrayLength) {
+//	/* Initializes GPIO */
+//	Chip_GPIO_Init(LPC_GPIO);
+//
+//	/* Initialize IO Dirs and set default values for all outputs */
+//	uint32_t ix;
+//	for (ix = 0; ix < arrayLength; ix++ ) {
+//		Chip_GPIO_WriteDirBit(LPC_GPIO, pinArray[ix].port, pinArray[ix].pinNr, pinArray[ix].output );
+//		if ( pinArray[ix].output ) {
+//			Chip_GPIO_SetPinState(LPC_GPIO,pinArray[ix].port, pinArray[ix].pinNr, pinArray[ix].initVal);
+//		}
+//	}
+//}
+//
 
 

@@ -10,6 +10,7 @@
 #define MOD_L2_DEBUG_COM_H_
 
 #include <chip.h>
+#include <string.h>
 #include "../temp-Base.h"
 
 // RX definitions
@@ -48,5 +49,7 @@ static const MODULE_DEF_T debModuleDesc = {
 bool	deb_getCommandIfAvailable(DEB_L2_CMD_T *pCmd);
 bool    deb_sendFrame(uint8_t *data, uint8_t len);
 
+// API defines
+#define deb_sendString(s) {deb_sendFrame((uint8_t*)(s), strlen(s));}
 
 #endif /* MOD_L2_DEBUG_COM_H_ */
