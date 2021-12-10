@@ -14,6 +14,16 @@
 
 #define MRAM_CHIP_CNT       6
 
+typedef struct {
+	ado_sspid_t		 busnr;
+	void(*csHandler)(bool select);
+} mram_chipinit_t;
+
+typedef struct {
+	uint8_t		 entryCount;
+	const mram_chipinit_t* chipinits;
+} mram_chipinit_array_t;
+
 
 typedef enum mram_res_e
 {
@@ -26,7 +36,9 @@ typedef enum mram_res_e
 	MRAM_RES_INVALID_CHIPIDX
 } mram_res_t;
 
+
 void MramInit(uint8_t chipIdx, ado_sspid_t busNr, void(*csHandler)(bool select));	  // Module Init called once for each connected chip prior mainloop
+void MramInitAll(mram_chipinit_array_t *chips);	  							  // Module Init called once for each connected chip prior mainloop
 void MramInitSPI(uint8_t chipIdx, void(*csHandler)(bool select));                     // Module Init called once for each connected chip prior mainloop
 
 void MramMain();							// Module routine participating each mainloop.

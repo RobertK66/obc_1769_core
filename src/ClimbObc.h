@@ -30,6 +30,16 @@
 	#include "pinning_climbobc.h"
 #endif
 
+typedef struct {
+	uint8_t		 entryCount;
+	const PINMUX_GRP_T2* pinmux;
+} pinmux_array_t;
+
+
+static const pinmux_array_t ObcPins = {
+	(sizeof(pinmuxing2)/sizeof(PINMUX_GRP_T2)), pinmuxing2
+};
+
 
 // Assign MRAM CS Port and Pinnumbers for different Boards used
 #if BA_BOARD == BA_OM13085_EM2T

@@ -6,14 +6,11 @@
 
 #include "ado_mram.h"
 
-//#include <stdio.h>
-//#include <stdlib.h>
 #include <chip.h>
 #include <string.h>
 
 #include "ado_sspdma.h"
 #include "ado_spi.h"
-//#include <mod/cli.h>
 
 typedef enum mram_status_e {
 	MRAM_STAT_NOT_INITIALIZED,
@@ -103,6 +100,17 @@ void MramInit(uint8_t chipIdx, ado_sspid_t busNr, void(*csHandler)(bool select))
         ADO_SSP_AddJob((uint32_t)mramPtr, mramPtr->busNr, mramPtr->tx, mramPtr->rx, 1, 1, MramJobFinished , MramActivate);
     }
 }
+
+void MramInitAll(mram_chipinit_array_t *chips) {
+	if (chips->entryCount > MRAM_CHIP_CNT) {
+		chips->entryCount = MRAM_CHIP_CNT;
+	}
+	for (int i = 0; i < chips->entryCount; i++ ){
+		MramInit(i, chips->chipinits[i].busnr, chips->chipinits[i].csHandler);
+	}
+}
+
+
 
 void MramInitSPI(uint8_t chipIdx, void(*csHandler)(bool select)) {
     if (chipIdx < MRAM_CHIP_CNT) {

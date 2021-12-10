@@ -9,14 +9,15 @@
 
 #include "l2_debug_com.h"
 
-hwc_gpioinit_t hwcInitData;
+pinmux_array_t *hwcInitData;
 
 const PINMUX_GRP_T2* signalPin = 0;
 const PINMUX_GRP_T2* monitorPin = 0;
 uint32_t loopCounter = 0;
 uint32_t toggleTimer = 1000000;
 
-void hwc_init (hwc_gpioinit_t *initData) {
+void hwc_init (pinmux_array_t *initData) {
+	hwcInitData = initData;
 }
 
 void hwc_main (void ) {
@@ -38,10 +39,10 @@ void hwc_main (void ) {
 }
 
 void HwcSetOutput(uint8_t idx, hwc_OutStatus stat) {
-	if (idx > hwcInitData.entryCount) {
-		idx = hwcInitData.entryCount;
+	if (idx > hwcInitData->entryCount) {
+		idx = hwcInitData->entryCount;
 	}
-	const PINMUX_GRP_T2 *pin = &hwcInitData.pinmux[idx];
+	const PINMUX_GRP_T2 *pin = &hwcInitData->pinmux[idx];
 	if (IOCON_ISGPIO(pin) && pin->output) {
 		signalPin = 0;
 		switch (stat) {
@@ -68,10 +69,10 @@ void HwcSetOutput(uint8_t idx, hwc_OutStatus stat) {
 }
 
 void HwcMirrorInput(uint8_t idxIn, uint8_t idxOut) {
-	if ((idxIn <= hwcInitData.entryCount) && (idxOut <= hwcInitData.entryCount)){
-		const PINMUX_GRP_T2 *pinIn = &hwcInitData.pinmux[idxIn];
+	if ((idxIn <= hwcInitData->entryCount) && (idxOut <= hwcInitData->entryCount)){
+		const PINMUX_GRP_T2 *pinIn = &hwcInitData->pinmux[idxIn];
 		if (IOCON_ISGPIO(pinIn) && !pinIn->output) {
-			const PINMUX_GRP_T2 *pinOut = &hwcInitData.pinmux[idxOut];
+			const PINMUX_GRP_T2 *pinOut = &hwcInitData->pinmux[idxOut];
 			if (IOCON_ISGPIO(pinOut) && pinOut->output) {
 				toggleTimer = 50;
 				signalPin = pinOut;

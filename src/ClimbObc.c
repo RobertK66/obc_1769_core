@@ -49,39 +49,64 @@ void CsSdCard(bool select) {
 #endif
 }
 
+// give App access to sdCard. TODO: ....
+void *sdCard;
+
+static const mram_chipinit_t Mrams[] = {
+		{ADO_SSP0, CsMram01},
+		{ADO_SSP0, CsMram02},
+		{ADO_SSP0, CsMram03},
+		{ADO_SSP1, CsMram11},
+		{ADO_SSP1, CsMram12},
+		{ADO_SSP1, CsMram13}
+};
+
+static const mram_chipinit_array_t Chips = {
+	(sizeof(Mrams)/sizeof(mram_chipinit_t)), Mrams
+};
+
+
+#define MOD_INIT( init, main, initdata ) { ((void(*)(void*))init), main, (void*)initdata }
+
+static const MODULE_DEF_T Modules[] = {
+		MOD_INIT( deb_init, deb_main, LPC_UART2),
+		MOD_INIT( tim_init, tim_main, NULL ),
+		MOD_INIT( hwc_init, hwc_main, &ObcPins ),
+		MOD_INIT( MramInitAll, MramMain, &Chips)
+};
+#define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
 
 int main(void) {
     // Read clock settings and update SystemCoreClock variable.
 	// (Here in main() this sets the global available SystemCoreClock variable for the first time after all SystemInits finished)
 	SystemCoreClockUpdate();
 
-	DebInitModule(LPC_UART2);
-
-	TimInitModule();
-    HwcInitModule(pinmuxing2);
-
-    // using 24000000 gives some init errors here.....
-    ADO_SSP_Init(ADO_SSP0, 12000000, SSP_CLOCK_MODE3);
-    ADO_SSP_Init(ADO_SSP1, 12000000, SSP_CLOCK_MODE3);
+    // Layer 1 - Bus Inits
+    ADO_SSP_Init(ADO_SSP0, 24000000, SSP_CLOCK_MODE3);
+    ADO_SSP_Init(ADO_SSP1, 24000000, SSP_CLOCK_MODE3);
     ADO_SPI_Init(0x08, SPI_CLOCK_MODE3);                                   // Clock Divider 0x08 -> fastest, must be even: can be up to 0xFE for slower SPI Clocking
 
-    void *sdCard;
+	Modules[0].init(Modules[0].initdata);
+	Modules[1].init(NULL);
+	Modules[2].init(Modules[2].initdata);
+
+    // Layer 2 - Chip Inits
     sdCard = SdcInitSPI(CsSdCard);
-    //AdoSdcardCliInit(1, sdCard);
+//    MramInit(0, ADO_SSP0, CsMram01);
+//    MramInit(1, ADO_SSP0, CsMram02);
+//    MramInit(2, ADO_SSP0, CsMram03);
+//    MramInit(3, ADO_SSP1, CsMram11);
+//    MramInit(4, ADO_SSP1, CsMram12);
+//    MramInit(5, ADO_SSP1, CsMram13);
+    Modules[3].init(Modules[3].initdata);
 
-    MramInit(0, ADO_SSP0, CsMram01);
-    MramInit(1, ADO_SSP0, CsMram02);
-    MramInit(2, ADO_SSP0, CsMram03);
-    MramInit(3, ADO_SSP1, CsMram11);
-    MramInit(4, ADO_SSP1, CsMram12);
-    MramInit(5, ADO_SSP1, CsMram13);
-
+    // Application module inits
     AppInitModule();
 
     // Enter an infinite loop.
     while(1) {
     	TimMain();
-        HwcMain();
+    	Modules[2].main();
         DebMain();
         MramMain();
         SdcMain(sdCard);

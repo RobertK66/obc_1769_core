@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include "l2_debug_com.h"
 #include "mem/ado_mram.h"
+#include "mem/ado_sdcard.h"
 
 #include "hw_check.h"
 
@@ -26,30 +27,27 @@ void ReadMramCmd(int argc, char *argv[]);
 void ReadMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
 void WriteMramCmd(int argc, char *argv[]);
 void WriteMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
+void ReadSdcardCmd(int argc, char *argv[]);
+void ReadSdcardFinished (sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_t len);
+void WriteSdcardCmd(int argc, char *argv[]);
+//void WriteSdcardFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
 void HwcSetOutputCmd(int argc, char *argv[]);
 void HwcMirrorInputCmd(int argc, char *argv[]);
 
-
-//#define APP_CMD_CNT				2
-//#define APP_CMD_HWC_SETOUTPUT	'h'
-//#define APP_CMD_HWC_MIRRINPUT	'm'
-//#define APP_CMD_HWC_READMRAM	'r'
-//#define APP_CMD_HWC_WRITEMRAM	'w'
-
+extern void *sdCard;
 
 static const app_command_t Commands[] = {
 		{ 'h' , HwcSetOutputCmd },
 		{ 'm' , HwcMirrorInputCmd },
 		{ 'r' , ReadMramCmd },
 		{ 'w' , WriteMramCmd },
+		{ 'R' , ReadSdcardCmd },
+		{ 'W' , WriteSdcardCmd },
 };
-
 #define APP_CMD_CNT	(sizeof(Commands)/sizeof(app_command_t))
 
-//app_command_t Commands[APP_CMD_CNT] ;
-
 void app_init (void *dummy) {
-
+	SdcCardinitialize(sdCard);
 }
 
 void app_main (void) {
@@ -77,9 +75,35 @@ void app_processCmd(int argc, char *argv[]) {
 
 }
 
+uint8_t tempBlockData[2000];
+
+
+void ReadSdcardCmd(int argc, char *argv[]) {
+	if (argc != 2) {
+		deb_sendString("uasge: R <blockNr>");
+	} else {
+		// CLI params to binary params
+		uint8_t  block = atoi(argv[1]);
+		SdcReadBlockAsync(sdCard, block, tempBlockData, ReadSdcardFinished);
+	 }
+}
+
+void ReadSdcardFinished (sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_t len) {
+    if (result == SDC_RES_SUCCESS) {
+    	deb_sendFrame((uint8_t*)data, len);
+    } else {
+    	deb_sendString("ERROR  !!!");
+    }
+}
+
+void WriteSdcardCmd(int argc, char *argv[]) {
+
+}
+
+
 void ReadMramCmd(int argc, char *argv[]) {
 	if (argc != 4) {
-		deb_sendString("uasge: 1 <chipIdx> <adr> <len>");
+		deb_sendString("uasge: r <chipIdx> <adr> <len>");
 	} else {
 		// CLI params to binary params
 		uint8_t  idx = atoi(argv[1]);
@@ -105,7 +129,7 @@ void ReadMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t 
 
 void WriteMramCmd(int argc, char *argv[]) {
 	if (argc != 5) {
-		deb_sendString("uasge: 2 <chipidx> <adr> <databyte> <len>");
+		deb_sendString("uasge: w <chipidx> <adr> <databyte> <len>");
 	} else {
 		// CLI params to binary params
 		uint8_t  idx = atoi(argv[1]);

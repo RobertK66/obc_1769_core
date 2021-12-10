@@ -95,20 +95,20 @@ typedef struct ado_sdcars_s {
 
 
 
-// module events
-typedef struct ado_sdcardevent_initialized_s {
-    ado_event_t        baseEvent;
-    ado_sspid_t        sspBus;
-    ado_sdc_cardtype_t cardType;
-} ado_sdcardevent_initialized_t;
-
-void CreateSdCardEventInitialized(ado_event_t *event, va_list* args) {
-    event->eventDataSize = sizeof(ado_sdcardevent_initialized_t) - sizeof(ado_event_t);
-    ado_sdcardevent_initialized_t *e = (ado_sdcardevent_initialized_t *)event;
-    e->sspBus = va_arg(*args, int);
-    e->cardType = va_arg(*args, int);
-}
-
+//// module events
+//typedef struct ado_sdcardevent_initialized_s {
+//    ado_event_t        baseEvent;
+//    ado_sspid_t        sspBus;
+//    ado_sdc_cardtype_t cardType;
+//} ado_sdcardevent_initialized_t;
+//
+//void CreateSdCardEventInitialized(ado_event_t *event, va_list* args) {
+//    event->eventDataSize = sizeof(ado_sdcardevent_initialized_t) - sizeof(ado_event_t);
+//    ado_sdcardevent_initialized_t *e = (ado_sdcardevent_initialized_t *)event;
+//    e->sspBus = va_arg(*args, int);
+//    e->cardType = va_arg(*args, int);
+//}
+//
 
 
 // prototypes

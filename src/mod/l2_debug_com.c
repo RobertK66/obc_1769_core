@@ -24,7 +24,7 @@ The escaped data is Xored by 0x20.
 
 #define DEB_L2_TX_FRAMESTARTSTOP	0x7E
 #define DEB_L2_TX_FRAMEESCAPE		0x7D
-#define DEB_L2_TX_BUFFER_SIZE		 300
+#define DEB_L2_TX_BUFFER_SIZE		 600
 
 #define DEB_EOL_CHAR				0x0d
 
@@ -136,7 +136,7 @@ bool deb_getCommandIfAvailable(DEB_L2_CMD_T *pRetVal){
 	} }
 
 
-bool deb_sendFrame(uint8_t *data, uint8_t len) {
+bool deb_sendFrame(uint8_t *data, uint16_t len) {
 	bool ok;
 
 	// block irq while handling buffers
