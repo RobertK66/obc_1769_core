@@ -22,21 +22,34 @@ typedef struct {
 
 // Prototypes
 void app_processCmd(int argc, char *argv[]);
+void ReadMramCmd(int argc, char *argv[]);
 void ReadMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
+void WriteMramCmd(int argc, char *argv[]);
 void WriteMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
 void HwcSetOutputCmd(int argc, char *argv[]);
+void HwcMirrorInputCmd(int argc, char *argv[]);
 
 
+//#define APP_CMD_CNT				2
+//#define APP_CMD_HWC_SETOUTPUT	'h'
+//#define APP_CMD_HWC_MIRRINPUT	'm'
+//#define APP_CMD_HWC_READMRAM	'r'
+//#define APP_CMD_HWC_WRITEMRAM	'w'
 
-#define APP_CMD_CNT				1
-#define APP_CMD_HWC_SETOUTPUT	'h'
 
+static const app_command_t Commands[] = {
+		{ 'h' , HwcSetOutputCmd },
+		{ 'm' , HwcMirrorInputCmd },
+		{ 'r' , ReadMramCmd },
+		{ 'w' , WriteMramCmd },
+};
 
-app_command_t Commands[APP_CMD_CNT];
+#define APP_CMD_CNT	(sizeof(Commands)/sizeof(app_command_t))
+
+//app_command_t Commands[APP_CMD_CNT] ;
 
 void app_init (void *dummy) {
-	Commands[0].cmdId = APP_CMD_HWC_SETOUTPUT;
-	Commands[0].command_function = HwcSetOutputCmd;
+
 }
 
 void app_main (void) {
@@ -61,51 +74,25 @@ void app_processCmd(int argc, char *argv[]) {
 		}
 	}
 
-//	case '1':
-//		// Read MRAM
-//		if (argc != 4) {
-//			deb_sendString("uasge: 1 <chipIdx> <adr> <len>");
-//		} else {
-//			// CLI params to binary params
-//			uint8_t  idx = atoi(argv[1]);
-//		    uint32_t adr = atoi(argv[2]);
-//		    uint32_t len = atoi(argv[3]);
-//		    if (len > MRAM_MAX_READ_SIZE) {
-//		        len = MRAM_MAX_READ_SIZE;
-//		    }
-//		    if (idx >= MRAM_CHIP_CNT) {
-//		       idx = 0;
-//		    }
-//		    ReadMramAsync(idx, adr, tempData, len, ReadMramFinished);
-//		 }
-//		break;
-//	case '2':
-//		// Write MRAM
-//		if (argc != 5) {
-//			deb_sendString("uasge: 2 <chipidx> <adr> <databyte> <len>");
-//		} else {
-//			// CLI params to binary params
-//			uint8_t  idx = atoi(argv[1]);
-//			uint32_t adr = atoi(argv[2]);
-//			uint8_t byte = atoi(argv[3]);
-//			uint32_t len = atoi(argv[4]);
-//			if (len > MRAM_MAX_WRITE_SIZE) {
-//				len = MRAM_MAX_WRITE_SIZE;
-//			}
-//			if (idx > MRAM_CHIP_CNT) {
-//				idx = 0;
-//			}
-//
-//			for (int i=0;i<len;i++){
-//				tempData[i] = byte;
-//			}
-//
-//		    // Binary Command
-//		    WriteMramAsync(idx, adr, tempData, len,  WriteMramFinished);
-//		}
-//		break;
-//
-//	}
+
+}
+
+void ReadMramCmd(int argc, char *argv[]) {
+	if (argc != 4) {
+		deb_sendString("uasge: 1 <chipIdx> <adr> <len>");
+	} else {
+		// CLI params to binary params
+		uint8_t  idx = atoi(argv[1]);
+		uint32_t adr = atoi(argv[2]);
+		uint32_t len = atoi(argv[3]);
+		if (len > MRAM_MAX_READ_SIZE) {
+			len = MRAM_MAX_READ_SIZE;
+		}
+		if (idx >= MRAM_CHIP_CNT) {
+		   idx = 0;
+		}
+		ReadMramAsync(idx, adr, tempData, len, ReadMramFinished);
+	 }
 }
 
 void ReadMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
@@ -115,6 +102,32 @@ void ReadMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t 
     	deb_sendString("ERROR  !!!");
     }
 }
+
+void WriteMramCmd(int argc, char *argv[]) {
+	if (argc != 5) {
+		deb_sendString("uasge: 2 <chipidx> <adr> <databyte> <len>");
+	} else {
+		// CLI params to binary params
+		uint8_t  idx = atoi(argv[1]);
+		uint32_t adr = atoi(argv[2]);
+		uint8_t byte = atoi(argv[3]);
+		uint32_t len = atoi(argv[4]);
+		if (len > MRAM_MAX_WRITE_SIZE) {
+			len = MRAM_MAX_WRITE_SIZE;
+		}
+		if (idx > MRAM_CHIP_CNT) {
+			idx = 0;
+		}
+
+		for (int i=0;i<len;i++){
+			tempData[i] = byte;
+		}
+
+		// Binary Command
+		WriteMramAsync(idx, adr, tempData, len,  WriteMramFinished);
+	}
+}
+
 
 void WriteMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
 	if (result == MRAM_RES_SUCCESS) {
@@ -140,4 +153,18 @@ void HwcSetOutputCmd(int argc, char *argv[]) {
 
 	HwcSetOutput(idx, stat);
 }
+
+void HwcMirrorInputCmd(int argc, char *argv[]) {
+	uint8_t idxIn  = 50;	//RBF
+	uint8_t idxOut = 44;	//LED
+	if (argc > 1) {
+		idxIn = atoi(argv[1]);
+	}
+	if (argc > 2) {
+		idxOut = atoi(argv[2]);
+	}
+
+	HwcMirrorInput(idxIn, idxOut);
+}
+
 

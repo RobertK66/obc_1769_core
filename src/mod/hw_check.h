@@ -14,7 +14,7 @@
 
 typedef struct {
 	uint8_t		 entryCount;
-	const PINMUX_GRP_T2* gpios;
+	const PINMUX_GRP_T2* pinmux;
 } hwc_gpioinit_t;
 
 void hwc_init (hwc_gpioinit_t *initData);
@@ -26,9 +26,9 @@ static const MODULE_DEF_T hwcModuleDesc = {
 		hwc_main
 };
 
-#define HwcInitModule(gpiodef) {								 	\
-	hwcInitData.gpios = gpiodef; 									\
-	hwcInitData.entryCount = sizeof(gpiodef)/sizeof(PINMUX_GRP_T2);	\
+#define HwcInitModule(pinmux2) {								 	\
+	hwcInitData.pinmux = pinmux2; 									\
+	hwcInitData.entryCount = sizeof(pinmux2)/sizeof(PINMUX_GRP_T2);	\
 	hwcModuleDesc.init(&hwcInitData); 								\
 }
 
@@ -45,7 +45,7 @@ typedef enum {
 } hwc_OutStatus;
 
 // Module API
-
 void HwcSetOutput(uint8_t outIdxm, hwc_OutStatus stat);
+void HwcMirrorInput(uint8_t idxIn, uint8_t idxOut);
 
 #endif /* MOD_HW_CHECK_H_ */

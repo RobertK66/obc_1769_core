@@ -20,44 +20,23 @@
 
 #include "mod/l7_climb_app.h"
 
-// local prototypes
-//void BA_GpioInit(const GPIO_INIT_T* pinArray, uint32_t arrayLength);
-
-
-// Chipselects TODO:check pin abstraction ... PORT!!!!
 void CsMram01(bool select) {
-    Chip_GPIO_SetPinState(LPC_GPIO, 0, P0_PIN_SSP0_MRAM_CS1, !select);
+    Chip_GPIO_SetPinState(LPC_GPIO, MRAM_CS01_PORT, MRAM_CS01_PIN, !select);
 }
 void CsMram02(bool select) {
-#ifdef P2_PIN_SSP0_MRAM_CS2
-    Chip_GPIO_SetPinState(LPC_GPIO, 2, P2_PIN_SSP0_MRAM_CS2, !select);
-#else
-    Chip_GPIO_SetPinState(LPC_GPIO, 1, P1_PIN_SSP0_MRAM_CS2, !select);
-#endif
+	Chip_GPIO_SetPinState(LPC_GPIO, MRAM_CS02_PORT, MRAM_CS02_PIN, !select);
 }
 void CsMram03(bool select) {
-#ifdef P2_PIN_SSP0_MRAM_CS3
-    Chip_GPIO_SetPinState(LPC_GPIO, 2, P2_PIN_SSP0_MRAM_CS3, !select);
-#else
-    Chip_GPIO_SetPinState(LPC_GPIO, 1, P1_PIN_SSP0_MRAM_CS3, !select);
-#endif
+	Chip_GPIO_SetPinState(LPC_GPIO, MRAM_CS03_PORT, MRAM_CS03_PIN, !select);
 }
 void CsMram11(bool select) {
-#ifdef  P2_PIN_SSP1_MRAM_CS1
-    Chip_GPIO_SetPinState(LPC_GPIO, 2, P2_PIN_SSP1_MRAM_CS1, !select);
-#else
-    Chip_GPIO_SetPinState(LPC_GPIO, 0, P0_PIN_SSP1_MRAM_CS1, !select);
-#endif
+	Chip_GPIO_SetPinState(LPC_GPIO, MRAM_CS11_PORT, MRAM_CS11_PIN, !select);
 }
 void CsMram12(bool select) {
-    Chip_GPIO_SetPinState(LPC_GPIO, 0, P0_PIN_SSP1_MRAM_CS2, !select);
+	Chip_GPIO_SetPinState(LPC_GPIO, MRAM_CS12_PORT, MRAM_CS12_PIN, !select);
 }
 void CsMram13(bool select) {
-#ifdef 	P1_PIN_SSP1_MRAM_CS3
-    Chip_GPIO_SetPinState(LPC_GPIO, 1 , P1_PIN_SSP1_MRAM_CS3, !select);
-#else
-    Chip_GPIO_SetPinState(LPC_GPIO, 0 , P0_PIN_SSP1_MRAM_CS3, !select);
-#endif
+	Chip_GPIO_SetPinState(LPC_GPIO, MRAM_CS13_PORT, MRAM_CS13_PIN, !select);
 }
 
 void CsSdCard(bool select) {
@@ -65,12 +44,12 @@ void CsSdCard(bool select) {
     Chip_GPIO_SetPinState(LPC_GPIO, 0, P0_PIN_SPI_CS_SD, !select);
 #else
     // TODO: ?? We have 2 SD Cards on OEM... Board with expansion....
+    // and there they are wired to SSP0 /SSP1
+    // climb obc core code not tested (yet) with old hardware ....
 #endif
 }
 
 
-
-// Main loop   test
 int main(void) {
     // Read clock settings and update SystemCoreClock variable.
 	// (Here in main() this sets the global available SystemCoreClock variable for the first time after all SystemInits finished)
@@ -111,7 +90,7 @@ int main(void) {
     return 0;
 }
 
-// This Init gets called after Reset - memory clear - copy of memory sections (constants or static initialized stuff) and all
+// This init gets called after reset - memory clear - copy of memory sections (constants or static initialized stuff) and all
 // vector tables are set up for the used Chip.
 // We (mis)use it here to make our own "Board Abstraction" and Hardware initialization.
 void Chip_SystemInit(void) {
@@ -121,32 +100,12 @@ void Chip_SystemInit(void) {
 
 	// To get things up and running we always start with internal IRC Clocking.
 	Chip_SetupIrcClocking();
-	// Next is to get the IOs connected to the right functions
+	// Next is to get the IOs connected to the right functions and initialise the GPIO with its dir and initval
 	Chip_IOCON_SetPinMuxing2(LPC_IOCON, pinmuxing2, sizeof(pinmuxing2) / sizeof(PINMUX_GRP_T2));
-	// For the GPIO - Func0 Pins now we set all direction and initial values for all outputs
-	//BA_GpioInit(gpioinit_old, sizeof(gpioinit_old)/sizeof(GPIO_INIT_T));
-
 
 	// Now we can switch to XTAL and wait until everything is stable. TODO: -> move this into its own mainloop module "System" !??
 	Chip_SetupXtalClocking();		// Asumes 12Mhz Quarz -> PLL0 frq=384Mhz -> CPU frq=96MHz
 	/* Setup FLASH access to 4 clocks (100MHz clock) */
 	Chip_SYSCTL_SetFLASHAccess(FLASHTIM_100MHZ_CPU);
 }
-
-//// Set all GPIO direction bits, and initial values.
-//void BA_GpioInit(const GPIO_INIT_T* pinArray, uint32_t arrayLength) {
-//	/* Initializes GPIO */
-//	Chip_GPIO_Init(LPC_GPIO);
-//
-//	/* Initialize IO Dirs and set default values for all outputs */
-//	uint32_t ix;
-//	for (ix = 0; ix < arrayLength; ix++ ) {
-//		Chip_GPIO_WriteDirBit(LPC_GPIO, pinArray[ix].port, pinArray[ix].pinNr, pinArray[ix].output );
-//		if ( pinArray[ix].output ) {
-//			Chip_GPIO_SetPinState(LPC_GPIO,pinArray[ix].port, pinArray[ix].pinNr, pinArray[ix].initVal);
-//		}
-//	}
-//}
-//
-
 
