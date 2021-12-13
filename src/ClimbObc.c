@@ -49,9 +49,6 @@ void CsSdCard(bool select) {
 #endif
 }
 
-// give App access to sdCard. TODO: ....
-void *sdCard;
-
 static const mram_chipinit_t Mrams[] = {
 		{ADO_SSP0, CsMram01},
 		{ADO_SSP0, CsMram02},
@@ -60,11 +57,18 @@ static const mram_chipinit_t Mrams[] = {
 		{ADO_SSP1, CsMram12},
 		{ADO_SSP1, CsMram13}
 };
-
 static const mram_chipinit_array_t Chips = {
 	(sizeof(Mrams)/sizeof(mram_chipinit_t)), Mrams
 };
 
+static const sdcard_init_t SdCards[] = {
+		{ADO_SBUS_SPI, CsSdCard},
+//		{ADO_SBUS_SSP0, CsSdCard0},
+//		{ADO_SBUS_SSP1, CsSdCard1}
+};
+static const sdcard_init_array_t Cards = {
+	(sizeof(SdCards)/sizeof(sdcard_init_t)), SdCards
+};
 
 #define MOD_INIT( init, main, initdata ) { ((void(*)(void*))init), main, (void*)initdata }
 
@@ -72,7 +76,9 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( deb_init, deb_main, LPC_UART2),
 		MOD_INIT( tim_init, tim_main, NULL ),
 		MOD_INIT( hwc_init, hwc_main, &ObcPins ),
-		MOD_INIT( MramInitAll, MramMain, &Chips)
+		MOD_INIT( MramInitAll, MramMain, &Chips),
+		MOD_INIT( SdcInitAll, SdcMain, &Cards),
+		MOD_INIT( app_init, app_main, NULL)
 };
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
 
@@ -86,31 +92,16 @@ int main(void) {
     ADO_SSP_Init(ADO_SSP1, 24000000, SSP_CLOCK_MODE3);
     ADO_SPI_Init(0x08, SPI_CLOCK_MODE3);                                   // Clock Divider 0x08 -> fastest, must be even: can be up to 0xFE for slower SPI Clocking
 
-	Modules[0].init(Modules[0].initdata);
-	Modules[1].init(NULL);
-	Modules[2].init(Modules[2].initdata);
+    // Init all other modules
+    for (int i=0; i < MODULE_CNT; i++) {
+    	Modules[i].init(Modules[i].initdata);
+    }
 
-    // Layer 2 - Chip Inits
-    sdCard = SdcInitSPI(CsSdCard);
-//    MramInit(0, ADO_SSP0, CsMram01);
-//    MramInit(1, ADO_SSP0, CsMram02);
-//    MramInit(2, ADO_SSP0, CsMram03);
-//    MramInit(3, ADO_SSP1, CsMram11);
-//    MramInit(4, ADO_SSP1, CsMram12);
-//    MramInit(5, ADO_SSP1, CsMram13);
-    Modules[3].init(Modules[3].initdata);
-
-    // Application module inits
-    AppInitModule();
-
-    // Enter an infinite loop.
+    // Enter an infinite loop calling all registered modules main function.
     while(1) {
-    	TimMain();
-    	Modules[2].main();
-        DebMain();
-        MramMain();
-        SdcMain(sdCard);
-        AppMain();
+    	for (int i=0; i < MODULE_CNT; i++) {
+    		Modules[i].main();
+    	}
     }
     return 0;
 }

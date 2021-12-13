@@ -11,8 +11,8 @@
 #define TEMP_BASE_H_
 
 #include <chip.h>
-#include <stdarg.h>
-#include <ado_time.h>
+//#include <stdarg.h>
+//#include <ado_time.h>
 
 // common defines/structures used for module composition
 typedef struct {
@@ -28,11 +28,6 @@ __attribute__ ((weak)) void _SysEvent(uint8_t *data, uint16_t byteCnt);
 #define SysEvent(ptr, len) { \
 	_SysEvent((uint8_t*)ptr, len); \
 }
-
-//typedef struct {
-//	uint8_t		 entryCount;
-//	const PINMUX_GRP_T2* pinmux;
-//} hwc_gpioinit_t;
 
 
 //// Event numbers are 16 bit

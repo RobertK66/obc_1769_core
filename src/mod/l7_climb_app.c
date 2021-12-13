@@ -47,7 +47,7 @@ static const app_command_t Commands[] = {
 #define APP_CMD_CNT	(sizeof(Commands)/sizeof(app_command_t))
 
 void app_init (void *dummy) {
-	SdcCardinitialize(sdCard);
+	SdcCardinitialize(0);
 }
 
 void app_main (void) {
@@ -84,7 +84,7 @@ void ReadSdcardCmd(int argc, char *argv[]) {
 	} else {
 		// CLI params to binary params
 		uint8_t  block = atoi(argv[1]);
-		SdcReadBlockAsync(sdCard, block, tempBlockData, ReadSdcardFinished);
+		SdcReadBlockAsync(0, block, tempBlockData, ReadSdcardFinished);
 	 }
 }
 
