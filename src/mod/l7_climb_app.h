@@ -12,21 +12,4 @@
 void app_init (void *dummy);
 void app_main (void);
 
-#include "../temp-Base.h"
-
-// no init data needed for this module
-static const MODULE_DEF_T appModuleDesc = {
-		//0,
-		app_init,
-		app_main
-};
-
-#define AppInitModule() {	\
-	appModuleDesc.init((void*)0); 	\
-}
-
-#define AppMain() { 		\
-	appModuleDesc.main(); 	\
-}
-
 #endif /* MOD_L7_CLIMB_APP_H_ */

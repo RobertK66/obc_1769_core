@@ -12,7 +12,7 @@ The RTC IRQ is used to count/check the RTC Seconds.
 ===============================================================================
 */
 #include "obc_time.h"
-
+#include "../ado_modules.h"
 #include "../../ado/obc_checksums.h"
 
 typedef enum {
@@ -130,8 +130,9 @@ void tim_init (void *dummy) {
 	//NVIC_SetPriority(RTC_IRQn, RTC_INTERRUPT_PRIORITY);
 	NVIC_EnableIRQ(RTC_IRQn); /* Enable interrupt */
 
+	event_id_t e;
 	initEvent.rtcDateTime =  rtc_get_datetime();
-	SysEvent(&initEvent, sizeof(rtc_event_init_t));
+	SysEvent(e, &initEvent, sizeof(rtc_event_init_t));
 
 }
 

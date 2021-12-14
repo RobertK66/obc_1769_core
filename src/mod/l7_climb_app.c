@@ -13,6 +13,7 @@
 #include "mem/ado_mram.h"
 #include "mem/ado_sdcard.h"
 
+#include "l3_sensors.h"
 #include "hw_check.h"
 
 typedef struct {
@@ -33,6 +34,7 @@ void WriteSdcardCmd(int argc, char *argv[]);
 //void WriteSdcardFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
 void HwcSetOutputCmd(int argc, char *argv[]);
 void HwcMirrorInputCmd(int argc, char *argv[]);
+void ReadAllSensorsCmd(int argc, char *argv[]);
 
 extern void *sdCard;
 
@@ -43,6 +45,7 @@ static const app_command_t Commands[] = {
 		{ 'w' , WriteMramCmd },
 		{ 'R' , ReadSdcardCmd },
 		{ 'W' , WriteSdcardCmd },
+		{ 's' , ReadAllSensorsCmd },
 };
 #define APP_CMD_CNT	(sizeof(Commands)/sizeof(app_command_t))
 
@@ -75,9 +78,15 @@ void app_processCmd(int argc, char *argv[]) {
 
 }
 
+
+void ReadAllSensorsCmd(int argc, char *argv[]) {
+	sensor_values_t values = SenReadAllValues();
+	deb_sendFrame((uint8_t*)&values, sizeof(sensor_values_t));
+}
+
+
+
 uint8_t tempBlockData[2000];
-
-
 void ReadSdcardCmd(int argc, char *argv[]) {
 	if (argc != 2) {
 		deb_sendString("uasge: R <blockNr>");
@@ -161,7 +170,7 @@ void WriteMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t
 	}
 }
 
-void _SysEvent(uint8_t *data, uint16_t byteCnt) {
+void _SysEvent(event_id_t evId, uint8_t *data, uint16_t byteCnt) {
 	deb_sendFrame(data, byteCnt);
 }
 

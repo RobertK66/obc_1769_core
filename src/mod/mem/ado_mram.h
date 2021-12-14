@@ -38,8 +38,8 @@ typedef enum mram_res_e
 
 
 void MramInit(uint8_t chipIdx, ado_sspid_t busNr, void(*csHandler)(bool select));	  // Module Init called once for each connected chip prior mainloop
-void MramInitAll(mram_chipinit_array_t *chips);	  							  // Module Init called once for each connected chip prior mainloop
-void MramInitSPI(uint8_t chipIdx, void(*csHandler)(bool select));                     // Module Init called once for each connected chip prior mainloop
+void MramInitAll(mram_chipinit_array_t *chips);	  							  // Module Init
+void MramInitSPI(uint8_t chipIdx, void(*csHandler)(bool select));             // Module Init called once for each connected chip prior mainloop
 
 void MramMain();							// Module routine participating each mainloop.
 

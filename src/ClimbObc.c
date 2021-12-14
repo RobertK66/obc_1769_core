@@ -12,13 +12,19 @@
 #include <ado_sspdma.h>
 #include <ado_spi.h>
 
+#include "mod/ado_modules.h"
+
 #include "mod/tim/obc_time.h"
 #include "mod/hw_check.h"
 #include "mod/l2_debug_com.h"
 #include "mod/mem/ado_sdcard.h"
 #include "mod/mem/ado_mram.h"
 
+#include "mod/l3_sensors.h"
+
+
 #include "mod/l7_climb_app.h"
+
 
 void CsMram01(bool select) {
     Chip_GPIO_SetPinState(LPC_GPIO, MRAM_CS01_PORT, MRAM_CS01_PIN, !select);
@@ -70,6 +76,10 @@ static const sdcard_init_array_t Cards = {
 	(sizeof(SdCards)/sizeof(sdcard_init_t)), SdCards
 };
 
+
+
+
+
 #define MOD_INIT( init, main, initdata ) { ((void(*)(void*))init), main, (void*)initdata }
 
 static const MODULE_DEF_T Modules[] = {
@@ -78,7 +88,9 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( hwc_init, hwc_main, &ObcPins ),
 		MOD_INIT( MramInitAll, MramMain, &Chips),
 		MOD_INIT( SdcInitAll, SdcMain, &Cards),
+		MOD_INIT( sen_init, sen_main, NULL),
 		MOD_INIT( app_init, app_main, NULL)
+
 };
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
 
