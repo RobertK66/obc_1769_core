@@ -9,8 +9,9 @@
 #include <chip.h>
 #include <string.h>
 
-#include "ado_sspdma.h"
-#include "ado_spi.h"
+#include "..\ado_modules.h"
+#include <ado_sspdma.h>
+#include <ado_spi.h>
 
 typedef enum mram_status_e {
 	MRAM_STAT_NOT_INITIALIZED,
@@ -38,6 +39,15 @@ typedef struct mram_chip_s {
     uint8_t         tx[4];              // Command buffer
     uint8_t         rx[1];              // Rx (Status byte) buffer
 } mram_chip_t;
+
+
+// Event Data structs
+typedef struct {
+	ado_sspstatus_t jobStatus;
+	mram_status_t   statusPrev;
+} mram_event_joberror_t;
+
+
 
 static mram_chip_t MramChipStates[MRAM_CHIP_CNT];
 
@@ -70,8 +80,13 @@ void MramJobFinished(uint32_t context, ado_sspstatus_t jobStatus, uint8_t *rxDat
             mramPtr->status = MRAM_STAT_INITIALIZED;
         }
     } else {
+    	mram_event_joberror_t evtdata;
+    	evtdata.jobStatus = jobStatus;
+    	evtdata.statusPrev = mramPtr->status;
+
+    	// Set Status to error and trigger SysEvent
         mramPtr->status = MRAM_STAT_ERROR;
-        // TODO: log error cause from job_status ..... Callback in main loop with error translation !!???!!!
+        SysEvent(MODULE_ID_MRAM, EVENT_ERROR, EID_MRAM_JOBERROR, &evtdata, sizeof(mram_event_joberror_t) );
     }
 }
 
@@ -101,7 +116,10 @@ void MramInit(uint8_t chipIdx, ado_sspid_t busNr, void(*csHandler)(bool select))
     }
 }
 
-void MramInitAll(mram_chipinit_array_t *chips) {
+inline void MramInitAll(void *chips) {
+	_MramInitAll((mram_chipinit_array_t *)chips);
+}
+void _MramInitAll(mram_chipinit_array_t *chips) {
 	if (chips->entryCount > MRAM_CHIP_CNT) {
 		chips->entryCount = MRAM_CHIP_CNT;
 	}

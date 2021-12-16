@@ -14,6 +14,10 @@
 
 #define MRAM_CHIP_CNT       6
 
+#define MODULE_ID_MRAM		0x80
+#define EID_MRAM_JOBERROR	1
+
+
 typedef struct {
 	ado_sspid_t		 busnr;
 	void(*csHandler)(bool select);
@@ -23,7 +27,6 @@ typedef struct {
 	uint8_t		 entryCount;
 	const mram_chipinit_t* chipinits;
 } mram_chipinit_array_t;
-
 
 typedef enum mram_res_e
 {
@@ -37,14 +40,18 @@ typedef enum mram_res_e
 } mram_res_t;
 
 
-void MramInit(uint8_t chipIdx, ado_sspid_t busNr, void(*csHandler)(bool select));	  // Module Init called once for each connected chip prior mainloop
-void MramInitAll(mram_chipinit_array_t *chips);	  							  // Module Init
-void MramInitSPI(uint8_t chipIdx, void(*csHandler)(bool select));             // Module Init called once for each connected chip prior mainloop
-
-void MramMain();							// Module routine participating each mainloop.
+// Module API
+void _MramInitAll(mram_chipinit_array_t *chips);
+void MramInitAll(void *chips);
+void MramMain();
 
 void ReadMramAsync(uint8_t chipIdx, uint32_t adr,  uint8_t *rx_data,  uint32_t len, void (*finishedHandler)(mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len));
 void WriteMramAsync(uint8_t chipIdx, uint32_t adr, uint8_t *data, uint32_t len,  void (*finishedHandler)(mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len));
+
+// Depricated
+void MramInit(uint8_t chipIdx, ado_sspid_t busNr, void(*csHandler)(bool select));	  // Module Init called once for each connected chip prior mainloop
+void MramInitSPI(uint8_t chipIdx, void(*csHandler)(bool select));             // Module Init called once for each connected chip prior mainloop
+
 
 
 #endif /* MOD_MEM_MRAM_H_ */

@@ -26,7 +26,6 @@ typedef enum {
 // Usage of 19 bytes General Purpose Register
 typedef enum {
 	RTC_GPRIDX_STATUS = 0,
-
 	RTC_GPRIDX_CRC8 = 19
 } rtc_gpridx_t;
 
@@ -36,7 +35,6 @@ typedef struct {
 	rtc_status_t newStatus;
 	uint64_t	 rtcDateTime;
 } rtc_event_init_t;
-
 
 // Prototypes
 void RtcInitializeGpr();
@@ -53,7 +51,6 @@ LPC_TIMER_T *timMsTimer = NULL;
 uint32_t rtc_epoch_time;
 
 void tim_init (void *dummy) {
-
 	// We use timer0 fixed here for now TODO: make general timer irq register loike for UART in ado .....
 	timMsTimer = LPC_TIMER0;
 	uint32_t prescaler;
@@ -130,9 +127,8 @@ void tim_init (void *dummy) {
 	//NVIC_SetPriority(RTC_IRQn, RTC_INTERRUPT_PRIORITY);
 	NVIC_EnableIRQ(RTC_IRQn); /* Enable interrupt */
 
-	event_id_t e;
 	initEvent.rtcDateTime =  rtc_get_datetime();
-	SysEvent(e, &initEvent, sizeof(rtc_event_init_t));
+	SysEvent(MODULE_ID_TIME, EVENT_INFO, EVENT_TIM_INITIALIZED, &initEvent, sizeof(rtc_event_init_t));
 
 }
 

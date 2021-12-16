@@ -20,17 +20,36 @@ typedef struct {
 } MODULE_DEF_T;
 
 typedef struct {
-	uint16_t 	modId:		6;	// Module Number
+	uint16_t 	moduleId:	8;	//
+	uint16_t 	eventId:	6;	//
 	uint16_t 	severity:	2;	//
-	uint16_t 	eventId:	8;	/* Pin number */
 } event_id_t;
 
+typedef struct {
+	event_id_t	id;
+	uint8_t 	*data;
+	uint16_t	byteCnt;
+} event_t;
+
+typedef enum {
+	EVENT_INFO = 0,
+	EVENT_WARNING = 1,
+	EVENT_ERROR = 2,
+	EVENT_FATAL = 3
+} event_severity_t;
 
 // Event Handling
-__attribute__ ((weak)) void _SysEvent(event_id_t eventId, uint8_t *data, uint16_t byteCnt);
-#define SysEvent(evnt, ptr, len) { \
-	_SysEvent(evnt, (uint8_t*)ptr, len); \
+__attribute__ ((weak)) void _SysEvent(event_t event);
+
+#define SysEvent(modNr, sev, evId, d, bCnt) { \
+	event_t event;						\
+	event.id.severity = (sev & 0x03); \
+	event.id.moduleId = (modNr & 0xFF);	\
+	event.id.eventId = (evId & 0x3F);	\
+	event.data = (uint8_t*)d;		\
+	event.byteCnt = (uint16_t)bCnt;	\
+	_SysEvent(event); \
 }
 
-
+#define MOD_INIT( init, main, initdata ) { init, main, (void*)initdata }
 #endif /* MOD_ADO_MODULES_H_ */

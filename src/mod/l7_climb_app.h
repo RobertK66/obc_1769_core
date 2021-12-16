@@ -9,7 +9,12 @@
 #ifndef MOD_L7_CLIMB_APP_H_
 #define MOD_L7_CLIMB_APP_H_
 
+#include <Chip.h>
+
 void app_init (void *dummy);
 void app_main (void);
+
+#define MODULE_ID_CLIMBAPP		0x00
+#define EID_APP_SENSORVALUES	1
 
 #endif /* MOD_L7_CLIMB_APP_H_ */

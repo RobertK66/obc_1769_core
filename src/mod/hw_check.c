@@ -16,7 +16,11 @@ const PINMUX_GRP_T2* monitorPin = 0;
 uint32_t loopCounter = 0;
 uint32_t toggleTimer = 1000000;
 
-void hwc_init (pinmux_array_t *initData) {
+inline void hwc_init (void *initData) {
+	_hwc_init((pinmux_array_t *)initData);
+}
+
+void _hwc_init (pinmux_array_t *initData) {
 	hwcInitData = initData;
 }
 

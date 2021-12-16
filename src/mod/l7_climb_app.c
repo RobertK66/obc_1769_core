@@ -63,6 +63,14 @@ void app_main (void) {
 
 }
 
+
+void _SysEvent(event_t event) {
+	//deb_sendFrame(event.data, event.byteCnt);
+	deb_sendEventFrame(event.id, event.data, event.byteCnt);
+}
+
+
+
 uint8_t  tempData[MRAM_MAX_WRITE_SIZE];
 
 void app_processCmd(int argc, char *argv[]) {
@@ -81,10 +89,9 @@ void app_processCmd(int argc, char *argv[]) {
 
 void ReadAllSensorsCmd(int argc, char *argv[]) {
 	sensor_values_t values = SenReadAllValues();
-	deb_sendFrame((uint8_t*)&values, sizeof(sensor_values_t));
+	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_SENSORVALUES, &values, sizeof(sensor_values_t));
+	//deb_sendFrame((uint8_t*)&values, sizeof(sensor_values_t));
 }
-
-
 
 uint8_t tempBlockData[2000];
 void ReadSdcardCmd(int argc, char *argv[]) {
@@ -170,9 +177,6 @@ void WriteMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t
 	}
 }
 
-void _SysEvent(event_id_t evId, uint8_t *data, uint16_t byteCnt) {
-	deb_sendFrame(data, byteCnt);
-}
 
 void HwcSetOutputCmd(int argc, char *argv[]) {
 	hwc_OutStatus stat = HWC_Signal_Slow;

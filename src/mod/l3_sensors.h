@@ -9,6 +9,8 @@
 #ifndef MOD_L3_SENSORS_H_
 #define MOD_L3_SENSORS_H_
 
+#include <Chip.h>
+
 // Module base
 void sen_init(void *);
 void sen_main();

@@ -13,7 +13,8 @@
 #include "../ClimbObc.h"	// We need the Pin structure from here
 #include <chip.h>
 
-void hwc_init (pinmux_array_t *initData);
+void hwc_init (void *initData);
+void _hwc_init (pinmux_array_t *initData);
 void hwc_main (void);
 
 typedef enum {

@@ -38,7 +38,8 @@ typedef struct {
 // ADO Mudule API
 void *SdcInit(ado_sspid_t sspId, void(*csHandler)(bool select));
 void *SdcInitSPI(void(*csHandler)(bool select));
-void SdcInitAll(sdcard_init_array_t* cards);
+void SdcInitAll(void* cards);
+void _SdcInitAll(sdcard_init_array_t* cards);
 
 void SdcMain();
 

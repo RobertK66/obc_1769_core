@@ -131,8 +131,9 @@ void ActivateCS(uint32_t context) {
     }
 }
 
+inline void SdcInitAll(void* cards) { _SdcInitAll((sdcard_init_array_t*)cards); }
 
-void SdcInitAll(sdcard_init_array_t* cards) {
+void _SdcInitAll(sdcard_init_array_t* cards) {
 	for (int i = 0; i < cards->entryCount; i++ ){
 		if (cards->chipinits[i].busnr == ADO_SBUS_SPI) {
 			SdcInitSPI(cards->chipinits[i].csHandler);

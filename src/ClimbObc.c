@@ -77,11 +77,6 @@ static const sdcard_init_array_t Cards = {
 };
 
 
-
-
-
-#define MOD_INIT( init, main, initdata ) { ((void(*)(void*))init), main, (void*)initdata }
-
 static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( deb_init, deb_main, LPC_UART2),
 		MOD_INIT( tim_init, tim_main, NULL ),
