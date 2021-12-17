@@ -93,25 +93,23 @@ void app_processCmd(int argc, char *argv[]) {
 			break;
 		}
 	}
-
-
 }
 
 static bool spOn[4]={false,false,false,false};
 void SpPowerSwitch(char sp) {
-	uint8_t pinIdx = 36;
+	uint8_t pinIdx = PINIDX_SP3_VCC_EN;
 	bool *flag;
 	if ((sp=='a')||(sp=='A')) {
-		pinIdx = 40;
+		pinIdx = PINIDX_SP1_VCC_EN;
 		flag = &spOn[0];
 	} else if ((sp=='b')||(sp=='B')) {
-		pinIdx = 45;
+		pinIdx = PINIDX_SP2_VCC_EN;
 		flag = &spOn[1];
 	} else if ((sp=='c')||(sp=='C')) {
-		pinIdx = 36;
+		pinIdx = PINIDX_SP3_VCC_EN;
 		flag = &spOn[2];
 	} else if ((sp=='d')||(sp=='D')) {
-		pinIdx = 39;
+		pinIdx = PINIDX_SP4_VCC_EN;
 		flag = &spOn[3];
 	}
 	hwc_OutStatus pinStat = HWC_Low;
@@ -122,10 +120,10 @@ void SpPowerSwitch(char sp) {
 	}
 	HwcSetOutput(pinIdx, pinStat);
 	if (spOn[0]||spOn[1]||spOn[2]||spOn[3]) {
-		HwcMirrorInput(52, 44);		// this uses idx in pinmuxing2 s5tructure. Mirror VPP_FAULT (55) -> LED (44)
+		HwcMirrorInput(PINIDX_SP_VCC_FAULT, PINIDX_LED);		// this uses idx in pinmuxing2 s5tructure. Mirror VPP_FAULT (55) -> LED (44)
 	} else {
 		HwcMirrorInput(200, 200);	// Mirror off
-		HwcSetOutput(44, HWC_Low);	// Led Off
+		HwcSetOutput(PINIDX_LED, HWC_Low);	// Led Off
 	}
 }
 
@@ -145,12 +143,12 @@ void SpPowerCmd(int argc, char *argv[]) {
 }
 
 void CardPowerOnCmd(int argc, char *argv[]) {
-	HwcSetOutput(49, HWC_Low);	// Sd Card Power On
+	HwcSetOutput(PINIDX_SD_VCC_EN, HWC_Low);	// Sd Card Power On
 	SdcCardinitialize(0);		// initialize Card[0]
 }
 
 void CardPowerOffCmd(int argc, char *argv[]) {
-	HwcSetOutput(49, HWC_High);	// Sd Card Power Off
+	HwcSetOutput(PINIDX_SD_VCC_EN, HWC_High);
 }
 
 
@@ -262,8 +260,8 @@ void HwcSetOutputCmd(int argc, char *argv[]) {
 }
 
 void HwcMirrorInputCmd(int argc, char *argv[]) {
-	uint8_t idxIn  = 50;	//RBF
-	uint8_t idxOut = 44;	//LED
+	uint8_t idxIn  = PINIDX_RBF;
+	uint8_t idxOut = PINIDX_LED;	//LED
 	if (argc > 1) {
 		idxIn = atoi(argv[1]);
 	}
