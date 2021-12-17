@@ -35,8 +35,12 @@ void WriteSdcardCmd(int argc, char *argv[]);
 void HwcSetOutputCmd(int argc, char *argv[]);
 void HwcMirrorInputCmd(int argc, char *argv[]);
 void ReadAllSensorsCmd(int argc, char *argv[]);
+void SpPowerCmd(int argc, char *argv[]);
+void CardPowerOnCmd(int argc, char *argv[]);
+void CardPowerOffCmd(int argc, char *argv[]);
 
-extern void *sdCard;
+
+//extern void *sdCard;
 
 static const app_command_t Commands[] = {
 		{ 'h' , HwcSetOutputCmd },
@@ -44,10 +48,17 @@ static const app_command_t Commands[] = {
 		{ 'r' , ReadMramCmd },
 		{ 'w' , WriteMramCmd },
 		{ 'R' , ReadSdcardCmd },
-		{ 'W' , WriteSdcardCmd },
+		{ 'C' , CardPowerOnCmd },
+		{ 'c' , CardPowerOffCmd },
+		//{ 'W' , WriteSdcardCmd },
 		{ 's' , ReadAllSensorsCmd },
+		{ 'p' , SpPowerCmd },
 };
 #define APP_CMD_CNT	(sizeof(Commands)/sizeof(app_command_t))
+
+#define SysEventString(str) { \
+		SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, str, strlen(str)); \
+}
 
 void app_init (void *dummy) {
 	SdcCardinitialize(0);
@@ -86,17 +97,72 @@ void app_processCmd(int argc, char *argv[]) {
 
 }
 
+static bool spOn[4]={false,false,false,false};
+void SpPowerSwitch(char sp) {
+	uint8_t pinIdx = 36;
+	bool *flag;
+	if ((sp=='a')||(sp=='A')) {
+		pinIdx = 40;
+		flag = &spOn[0];
+	} else if ((sp=='b')||(sp=='B')) {
+		pinIdx = 45;
+		flag = &spOn[1];
+	} else if ((sp=='c')||(sp=='C')) {
+		pinIdx = 36;
+		flag = &spOn[2];
+	} else if ((sp=='d')||(sp=='D')) {
+		pinIdx = 39;
+		flag = &spOn[3];
+	}
+	hwc_OutStatus pinStat = HWC_Low;
+	*flag = true;
+	if ((sp=='a')||(sp=='b')||(sp=='c')||(sp=='d')) {
+		pinStat = HWC_High;
+		*flag = false;
+	}
+	HwcSetOutput(pinIdx, pinStat);
+	if (spOn[0]||spOn[1]||spOn[2]||spOn[3]) {
+		HwcMirrorInput(52, 44);		// this uses idx in pinmuxing2 s5tructure. Mirror VPP_FAULT (55) -> LED (44)
+	} else {
+		HwcMirrorInput(200, 200);	// Mirror off
+		HwcSetOutput(44, HWC_Low);	// Led Off
+	}
+}
+
+void SpPowerCmd(int argc, char *argv[]) {
+	if (argc != 2) {
+		SysEventString("uasge: p <a|A/b|B/c|C/d|D>");
+	} else {
+		int i = strlen(argv[1]);
+		if (i > 4) {
+			i = 4;
+		}
+		for (int x= 0; x<i;x++) {
+			char sp = argv[1][x];
+			SpPowerSwitch(sp);
+		}
+	}
+}
+
+void CardPowerOnCmd(int argc, char *argv[]) {
+	HwcSetOutput(49, HWC_Low);	// Sd Card Power On
+	SdcCardinitialize(0);		// initialize Card[0]
+}
+
+void CardPowerOffCmd(int argc, char *argv[]) {
+	HwcSetOutput(49, HWC_High);	// Sd Card Power Off
+}
+
 
 void ReadAllSensorsCmd(int argc, char *argv[]) {
 	sensor_values_t values = SenReadAllValues();
 	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_SENSORVALUES, &values, sizeof(sensor_values_t));
-	//deb_sendFrame((uint8_t*)&values, sizeof(sensor_values_t));
 }
 
 uint8_t tempBlockData[2000];
 void ReadSdcardCmd(int argc, char *argv[]) {
 	if (argc != 2) {
-		deb_sendString("uasge: R <blockNr>");
+		SysEventString("uasge: R <blockNr>")
 	} else {
 		// CLI params to binary params
 		uint8_t  block = atoi(argv[1]);
@@ -106,9 +172,10 @@ void ReadSdcardCmd(int argc, char *argv[]) {
 
 void ReadSdcardFinished (sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_t len) {
     if (result == SDC_RES_SUCCESS) {
-    	deb_sendFrame((uint8_t*)data, len);
+    	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_RAWDATA, data, len);
+    	//deb_sendFrame((uint8_t*)data, len);
     } else {
-    	deb_sendString("ERROR  !!!");
+    	SysEventString("ERROR  !!!");
     }
 }
 
@@ -119,7 +186,7 @@ void WriteSdcardCmd(int argc, char *argv[]) {
 
 void ReadMramCmd(int argc, char *argv[]) {
 	if (argc != 4) {
-		deb_sendString("uasge: r <chipIdx> <adr> <len>");
+		SysEventString("uasge: r <chipIdx> <adr> <len>");
 	} else {
 		// CLI params to binary params
 		uint8_t  idx = atoi(argv[1]);
@@ -137,15 +204,18 @@ void ReadMramCmd(int argc, char *argv[]) {
 
 void ReadMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
     if (result == MRAM_RES_SUCCESS) {
-    	deb_sendFrame((uint8_t*)data, len);
+    	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_RAWDATA, data, len);
+    	//deb_sendFrame((uint8_t*)data, len);
     } else {
-    	deb_sendString("ERROR  !!!");
+    	char *str="ERROR  !!!";
+    	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, str,strlen(str));
     }
 }
 
 void WriteMramCmd(int argc, char *argv[]) {
 	if (argc != 5) {
-		deb_sendString("uasge: w <chipidx> <adr> <databyte> <len>");
+		char *str="uasge: w <chipidx> <adr> <databyte> <len>";
+		SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, str,strlen(str));
 	} else {
 		// CLI params to binary params
 		uint8_t  idx = atoi(argv[1]);
@@ -171,9 +241,9 @@ void WriteMramCmd(int argc, char *argv[]) {
 
 void WriteMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
 	if (result == MRAM_RES_SUCCESS) {
-		deb_sendFrame((uint8_t*)"SUCCESS", 10);
+		SysEventString("SUCCESS");
 	} else {
-    	deb_sendString("Write ERROR!!!");
+		SysEventString("Write ERROR!!!");
 	}
 }
 

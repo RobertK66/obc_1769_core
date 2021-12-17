@@ -10,6 +10,11 @@
 
 #include <ado_sspdma.h>
 
+#define MODULE_ID_SDCARD				0x81
+#define EID_SDCARD_STATUS				1
+#define EID_SDCARD_UNIMPLEMENTED_TYPE 	2
+
+
 typedef enum sdc_res_e
 {
     SDC_RES_SUCCESS = 0,
@@ -34,19 +39,20 @@ typedef struct {
 } sdcard_init_array_t;
 
 
-
 // ADO Mudule API
-void *SdcInit(ado_sspid_t sspId, void(*csHandler)(bool select));
-void *SdcInitSPI(void(*csHandler)(bool select));
 void SdcInitAll(void* cards);
 void _SdcInitAll(sdcard_init_array_t* cards);
-
 void SdcMain();
 
 // SDC-Client API
 void SdcCardinitialize(uint8_t cardIdx);
 void SdcReadBlockAsync(uint8_t cardIdx, uint32_t blockNr, uint8_t *data, void (*finishedHandler)(sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_t len));
 void SdcWriteBlockAsync(uint8_t cardIdx, uint32_t blockNr, uint8_t *data, void (*finishedHandler)(sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_t len));
+
+
+// obsolete
+void *SdcInit(ado_sspid_t sspId, void(*csHandler)(bool select));
+void *SdcInitSPI(void(*csHandler)(bool select));
 
 
 #endif /* MOD_ADO_SDCARD_H_ */

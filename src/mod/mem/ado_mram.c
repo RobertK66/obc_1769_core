@@ -9,7 +9,7 @@
 #include <chip.h>
 #include <string.h>
 
-#include "..\ado_modules.h"
+#include "../ado_modules.h"
 #include <ado_sspdma.h>
 #include <ado_spi.h>
 
@@ -21,7 +21,7 @@ typedef enum mram_status_e {
 	MRAM_STAT_WREN_SET,
 	MRAM_STAT_TX_INPROGRESS,
 	MRAM_STAT_WREN_CLR,
-	MRAM_STAT_ERROR							// TODO: what specific errors are there and what too do now ???? -> reinit SSP ???
+	MRAM_STAT_ERROR							// TODO: what specific errors are there and what to do now ???? -> reinit SSP ???
 } mram_status_t;
 
 typedef struct mram_chip_s {

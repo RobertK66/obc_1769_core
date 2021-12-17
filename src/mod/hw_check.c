@@ -12,7 +12,8 @@
 pinmux_array_t *hwcInitData;
 
 const PINMUX_GRP_T2* signalPin = 0;
-const PINMUX_GRP_T2* monitorPin = 0;
+const PINMUX_GRP_T2* monitorPinIn = 0;
+const PINMUX_GRP_T2* monitorPinOut = 0;
 uint32_t loopCounter = 0;
 uint32_t toggleTimer = 1000000;
 
@@ -29,14 +30,13 @@ void hwc_main (void ) {
 	if (loopCounter >= toggleTimer) {
 		loopCounter = 0;
 		if (signalPin != 0) {
-			if (monitorPin != 0) {
-				// mirror the monitored pin to output (signalPin)
-				bool val = Chip_GPIO_GetPinState(LPC_GPIO, monitorPin->pingrp, monitorPin->pinnum);
-				Chip_GPIO_SetPinState(LPC_GPIO, signalPin->pingrp, signalPin->pinnum, val);
-			} else {
-				// toggle signal pin
-				Chip_GPIO_SetPinToggle(LPC_GPIO, signalPin->pingrp, signalPin->pinnum);
-			}
+			// toggle signal pin
+			Chip_GPIO_SetPinToggle(LPC_GPIO, signalPin->pingrp, signalPin->pinnum);
+		}
+		if (monitorPinIn != 0) {
+			// mirror the monitored pin to output (signalPin)
+			bool val = Chip_GPIO_GetPinState(LPC_GPIO, monitorPinIn->pingrp, monitorPinIn->pinnum);
+			Chip_GPIO_SetPinState(LPC_GPIO, monitorPinOut->pingrp, monitorPinOut->pinnum, val);
 		}
 	}
 
@@ -73,20 +73,25 @@ void HwcSetOutput(uint8_t idx, hwc_OutStatus stat) {
 }
 
 void HwcMirrorInput(uint8_t idxIn, uint8_t idxOut) {
+	toggleTimer = 0;
+	const PINMUX_GRP_T2 *pinOut = 0;
+	const PINMUX_GRP_T2 *pinIn = 0;
 	if ((idxIn <= hwcInitData->entryCount) && (idxOut <= hwcInitData->entryCount)){
-		const PINMUX_GRP_T2 *pinIn = &hwcInitData->pinmux[idxIn];
+		pinIn = &hwcInitData->pinmux[idxIn];
 		if (IOCON_ISGPIO(pinIn) && !pinIn->output) {
-			const PINMUX_GRP_T2 *pinOut = &hwcInitData->pinmux[idxOut];
+			pinOut = &hwcInitData->pinmux[idxOut];
 			if (IOCON_ISGPIO(pinOut) && pinOut->output) {
 				toggleTimer = 50;
-				signalPin = pinOut;
-				monitorPin = pinIn;
+				monitorPinOut = pinOut;
+				monitorPinIn = pinIn;
 			}
 		}
-	} else {
+	}
+	if (toggleTimer == 0) {
+		// Something went wrong with init (out/in idx not fitting -> swith off Mirror feature
 		toggleTimer = 50000;
-		signalPin = 0;
-		monitorPin = 0;
+		monitorPinOut = pinOut;
+		monitorPinIn = pinIn;
 	}
 
 }

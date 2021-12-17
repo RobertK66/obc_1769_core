@@ -13,8 +13,9 @@
 #include "ado_sspdma.h"
 #include "ado_spi.h"
 
-#include "../../temp-Base.h"
+#include "../ado_modules.h"
 
+#define ADO_SDC_MAX_CARDS	3
 
 #define ADO_SXX_AddJob(card, busNr, txData, rxData, txLen, rxLen, finished, activate) { \
     if (busNr == 99) { \
@@ -23,7 +24,6 @@
         ADO_SSP_AddJob(card, busNr, txData, rxData, txLen , rxLen, finished, activate); \
     } \
 }
-
 
 //SD commands, many of these are not used here
 typedef enum ado_sdc_cmd_e
@@ -67,7 +67,7 @@ typedef enum ado_sdc_status_e
 	ADO_SDC_CARDSTATUS_WRITE_SBDATA,
 	ADO_SDC_CARDSTATUS_WRITE_BUSYWAIT,
 	ADO_SDC_CARDSTATUS_WRITE_CHECKSTATUS,
-	ADO_SDC_CARDSTATUS_ERROR = 9999
+	ADO_SDC_CARDSTATUS_ERROR = 99
 } ado_sdc_status_t;
 
 typedef enum ado_sdc_cardtype_e
@@ -97,11 +97,12 @@ typedef struct ado_sdcars_s {
 
 
 //// module events
-//typedef struct ado_sdcardevent_initialized_s {
-//    ado_event_t        baseEvent;
-//    ado_sspid_t        sspBus;
-//    ado_sdc_cardtype_t cardType;
-//} ado_sdcardevent_initialized_t;
+typedef struct {
+	uint16_t			cardIdx:4;
+	uint16_t			cardType:4;
+	uint16_t			status:8;
+	//uint16_t				status;				// in case of error this is prev status, else the current state is signaled.
+} ado_sdcard_event_t;
 //
 //void CreateSdCardEventInitialized(ado_event_t *event, va_list* args) {
 //    event->eventDataSize = sizeof(ado_sdcardevent_initialized_t) - sizeof(ado_event_t);
@@ -121,7 +122,7 @@ void SdcSendCommand(ado_sdcard_t *sdCard, ado_sdc_cmd_t cmd, uint32_t nextState,
 // Currently we support one sdcard per SSP bus. but this could be expanded if CS-Callbacks are used for different cards on same bus....
 //static ado_sdcard_t SdCard[3];
 static uint8_t	 	cardCnt = 0;
-static ado_sdcard_t *sdCards[] = {0,0,0};
+static ado_sdcard_t *sdCards[ADO_SDC_MAX_CARDS];
 
 
 void ActivateCS(uint32_t context) {
@@ -134,17 +135,20 @@ void ActivateCS(uint32_t context) {
 inline void SdcInitAll(void* cards) { _SdcInitAll((sdcard_init_array_t*)cards); }
 
 void _SdcInitAll(sdcard_init_array_t* cards) {
+	if (cards->entryCount > ADO_SDC_MAX_CARDS) {
+		cards->entryCount = ADO_SDC_MAX_CARDS;
+		// TODO -> trigger init Warning!?
+	}
 	for (int i = 0; i < cards->entryCount; i++ ){
 		if (cards->chipinits[i].busnr == ADO_SBUS_SPI) {
 			SdcInitSPI(cards->chipinits[i].csHandler);
 		} else {
-			// TODO
+			// TODO: make SSP0/1 work again....
 		}
 	}
 }
 
-// Currently we support one sdcard per SSP bus. but this could be expanded if CS-Callbacks are used for different cards on same bus....
-// Last Call to init wins...
+// Old version with local card array -> if needed clone the SPI init to allocate memory for the card ....
 void *SdcInit(ado_sspid_t bus,  void(*csHandler)(bool select)) {
 	// TODO: rework for memaloc version in init
 //	SdCard[bus].sdcBusNr = bus;
@@ -173,12 +177,18 @@ void *SdcInitSPI(void(*csHandler)(bool select)) {
     return (void *)newCard;
 }
 
-//void SdcMain(void *pCard) {
 void SdcMain(void) {
-	for (int i = 0; i< cardCnt; i++) {
+	for (int i = 0; i<cardCnt; i++) {
 		ado_sdcard_t *sdCard = sdCards[i];
 
 		if (!sdCard->sdcCmdPending) {
+			// prepare an event - in case needed
+			// prefill with data used by all usages
+			ado_sdcard_event_t eventdata;
+			eventdata.cardIdx = i & 0x03;
+			eventdata.cardType = sdCard->sdcType;
+
+
 			// This is the sdc state engine reacting to a finished SPI job
 			switch (sdCard->sdcStatus) {
 			case ADO_SDC_CARDSTATUS_INIT_RESET:
@@ -197,9 +207,10 @@ void SdcMain(void) {
 						// Send CMD8
 						SdcSendCommand(sdCard, ADO_SDC_CMD8_SEND_IF_COND, ADO_SDC_CARDSTATUS_INIT_CMD8, 0x000001AA);
 					} else {
-						// TODO: replace with error event
-						//printf("CMD GO_IDLE error.\n");
+						// Set Status to Error and send SysEvent with prev Status.
+						eventdata.status = (uint8_t)sdCard->sdcStatus;
 						sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
+						SysEvent(MODULE_ID_SDCARD, EVENT_ERROR, EID_SDCARD_STATUS, &eventdata, sizeof(eventdata));
 					}
 					break;
 
@@ -210,11 +221,13 @@ void SdcMain(void) {
 					SdcSendCommand(sdCard, ADO_SDC_CMD55_APP_CMD, ADO_SDC_CARDSTATUS_INIT_ACMD41_1, 0);
 				} else {
 					sdCard->sdcType = ADO_SDC_CARD_1XSD;
-					// TODO: init not ready here state engine missing....
-
-					// TODO: replace with error event
-					//printf("Sd Card version not implemented yet.\n");
+					// Set Status to Error and send SysEvent with previous stat.
+					eventdata.cardType = sdCard->sdcType;
+					eventdata.status = (uint8_t)sdCard->sdcStatus;
 					sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
+					SysEvent(MODULE_ID_SDCARD, EVENT_ERROR, EID_SDCARD_UNIMPLEMENTED_TYPE, &eventdata, sizeof(eventdata));
+					//printf("Sd Card version not implemented yet.\n");
+					//sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
 				}
 				break;
 
@@ -227,9 +240,10 @@ void SdcMain(void) {
 						SdcSendCommand(sdCard, ADO_SDC_CMD41_SD_SEND_OP_COND, ADO_SDC_CARDSTATUS_INIT_ACMD41_2, 0x40000000);
 					}
 				} else {
-					// TODO: replace with error event
-					//printf("CMD55 rejected\n");
+					// Set Status to Error and send SysEvent
+					eventdata.status = (uint8_t)sdCard->sdcStatus;
 					sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
+					SysEvent(MODULE_ID_SDCARD, EVENT_ERROR, EID_SDCARD_STATUS, &eventdata, sizeof(eventdata));
 				}
 				break;
 
@@ -245,9 +259,10 @@ void SdcMain(void) {
 					// Send CMD58 to get R3 - OCR Response
 					SdcSendCommand(sdCard, ADO_SDC_CMD58_READ_OCR, ADO_SDC_CARDSTATUS_INIT_READ_OCR, 0);
 				} else {
-					// TODO: replace with error event.
-					//printf("Errors %02X to ACMD41\n", sdCard->sdcCmdResponse[1]);
+					// Set Status to Error and send SysEvent with previous state
+					eventdata.status = (uint8_t)sdCard->sdcStatus;
 					sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
+					SysEvent(MODULE_ID_SDCARD, EVENT_ERROR, EID_SDCARD_STATUS, &eventdata, sizeof(eventdata));
 				}
 				break;
 
@@ -268,16 +283,23 @@ void SdcMain(void) {
 						((sdCard->sdcCmdResponse[2] & 0x40) != 0)) {
 						sdCard->sdcType = ADO_SDC_CARD_20HCXC;
 					}
+					// Signal successful initialized status as event
 					sdCard->sdcStatus = ADO_SDC_CARDSTATUS_INITIALIZED;
+					eventdata.status = (uint8_t)sdCard->sdcStatus;
+					SysEvent(MODULE_ID_SDCARD, EVENT_INFO, EID_SDCARD_STATUS, &eventdata, sizeof(eventdata));
 					//printf("Card (type %d) initialized.\n", sdCard->sdcType);  // Debug indicator only!? or success event !? and/or Callback for Init!?
 
 					// Signal our custom event to event logger
 					// DefinedLogEvent(ado_sdcardevent_initialized_t, CreateSdCardEventInitialized, sdCard->sdcBusNr, sdCard->sdcType);
 
 				} else {
+					// Set and Signal Error
+					eventdata.status = (uint8_t)sdCard->sdcStatus;
+					sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
+					SysEvent(MODULE_ID_SDCARD, EVENT_ERROR, EID_SDCARD_STATUS, &eventdata, sizeof(eventdata));
 					// TODO: replace by error event
 					//printf("Errors %02X reading OCR.\n", sdCard->sdcCmdResponse[1]);
-					sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
+					//sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
 				}
 				break;
 
@@ -288,12 +310,14 @@ void SdcMain(void) {
 					// Lets wait for the start data token.
 					sdCard->sdcCmdPending = true;
 					sdCard->nextStatus = ADO_SDC_CARDSTATUS_READ_SBWAITDATA;
-					//ADO_SSP_AddJob((uint32_t)(sdCard), sdCard->sdcBusNr, sdCard->sdcCmdData, sdCard->sdcCmdResponse, 0 , 1, DMAFinishedIRQ, ActivateCS);
 					ADO_SXX_AddJob((uint32_t)(sdCard), sdCard->sdcBusNr, sdCard->sdcCmdData, sdCard->sdcCmdResponse, 0 , 1, DMAFinishedIRQ, ActivateCS);
 				} else {
+					eventdata.status = (uint8_t)sdCard->sdcStatus;
+					sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
+					SysEvent(MODULE_ID_SDCARD, EVENT_ERROR, EID_SDCARD_STATUS, &eventdata, sizeof(eventdata));
 					// TODO: Signal Error event
 					//printf("Error %02X %02X with read block command\n",sdCard->sdcCmdResponse[1], sdCard->sdcCmdResponse[2] );
-					sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
+					//sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
 				}
 				break;
 
@@ -302,7 +326,6 @@ void SdcMain(void) {
 					// Now we can read all data bytes including 2byte CRC + 1 byte over-read as always to get the shift register in the card emptied....
 					sdCard->sdcCmdPending = true;
 					sdCard->nextStatus = ADO_SDC_CARDSTATUS_READ_SBDATA;
-					//ADO_SSP_AddJob((uint32_t)(sdCard),  sdCard->sdcBusNr, sdCard->sdcCmdData,  sdCard->dataBuffer, 0 , 515, DMAFinishedIRQ, ActivateCS);
 					ADO_SXX_AddJob((uint32_t)(sdCard),  sdCard->sdcBusNr, sdCard->sdcCmdData,  sdCard->dataBuffer, 0 , 515, DMAFinishedIRQ, ActivateCS);
 				} else {
 					// Wait some mainloops before asking for data token again.
@@ -316,9 +339,9 @@ void SdcMain(void) {
 					sdCard->sdcWaitLoops--;
 					if (sdCard->sdcWaitLoops == 0) {
 						// Read 1 byte to check for data token
+						// TODO: this can loop for ever between this wait states here (e.g. if SD Card powerd off after init) -> check repeat count and goto error !!!
 						sdCard->sdcCmdPending = true;
 						sdCard->nextStatus = ADO_SDC_CARDSTATUS_READ_SBWAITDATA;
-						//ADO_SSP_AddJob((uint32_t)(sdCard), sdCard->sdcBusNr, sdCard->sdcCmdData, sdCard->sdcCmdResponse, 0 , 1,DMAFinishedIRQ,ActivateCS);
 						ADO_SXX_AddJob((uint32_t)(sdCard), sdCard->sdcBusNr, sdCard->sdcCmdData, sdCard->sdcCmdResponse, 0 , 1,DMAFinishedIRQ,ActivateCS);
 					}
 				}
@@ -331,7 +354,6 @@ void SdcMain(void) {
 				if (0 == crc) {
 					sdCard->blockFinishedHandler(SDC_RES_SUCCESS, sdCard->curBlockNr, sdCard->dataBuffer, 512);
 				} else {
-					//printf("ERROR\n");
 					sdCard->blockFinishedHandler(SDC_RES_CRCERROR, sdCard->curBlockNr, sdCard->dataBuffer, 512);
 				}
 				break;
@@ -347,9 +369,11 @@ void SdcMain(void) {
 					//ADO_SSP_AddJob((uint32_t)(sdCard),sdCard->sdcBusNr, sdCard->dataBuffer, sdCard->sdcCmdResponse, 515 , 3, DMAFinishedIRQ, ActivateCS);
 					ADO_SXX_AddJob((uint32_t)(sdCard),sdCard->sdcBusNr, sdCard->dataBuffer, sdCard->sdcCmdResponse, 515 , 3, DMAFinishedIRQ, ActivateCS);
 				} else {
+					eventdata.status = (uint8_t)sdCard->sdcStatus;
+					sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
+					SysEvent(MODULE_ID_SDCARD, EVENT_ERROR, EID_SDCARD_STATUS, &eventdata, sizeof(eventdata));
 					// TODO: signal error event
 					//printf("Error %02X %02X with read block command\n",sdCard->sdcCmdResponse[1],sdCard->sdcCmdResponse[2] );
-					sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
 				}
 				break;
 
@@ -359,13 +383,15 @@ void SdcMain(void) {
 					// Read 1 byte to check for busy token
 					sdCard->sdcCmdPending = true;
 					sdCard->nextStatus = ADO_SDC_CARDSTATUS_WRITE_BUSYWAIT;
-					//ADO_SSP_AddJob((uint32_t)(sdCard),  sdCard->sdcBusNr,  sdCard->sdcCmdData,  sdCard->sdcCmdResponse, 0 , 1, DMAFinishedIRQ, ActivateCS);
 					ADO_SXX_AddJob((uint32_t)(sdCard),  sdCard->sdcBusNr,  sdCard->sdcCmdData,  sdCard->sdcCmdResponse, 0 , 1, DMAFinishedIRQ, ActivateCS);
-					//printf("5");
 				} else {
+					eventdata.status = (uint8_t)sdCard->sdcStatus;
+					sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
+					SysEvent(MODULE_ID_SDCARD, EVENT_ERROR, EID_SDCARD_STATUS, &eventdata, sizeof(eventdata));
+
 					// TODO: signal error event
 					//printf("Error %02X %02X with write data block\n",  sdCard->sdcCmdResponse[0],  sdCard->sdcCmdResponse[1] );
-					sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
+					//sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
 				}
 				break;
 
@@ -376,8 +402,6 @@ void SdcMain(void) {
 					// TODO: some mainloop wait here ....
 					sdCard->sdcCmdPending = true;
 					sdCard->nextStatus = ADO_SDC_CARDSTATUS_WRITE_BUSYWAIT;
-					//printf("o");
-					//ADO_SSP_AddJob((uint32_t)(sdCard), sdCard->sdcBusNr, sdCard->sdcCmdData, sdCard->sdcCmdResponse, 0 , 1, DMAFinishedIRQ,ActivateCS);
 					ADO_SXX_AddJob((uint32_t)(sdCard), sdCard->sdcBusNr, sdCard->sdcCmdData, sdCard->sdcCmdResponse, 0 , 1, DMAFinishedIRQ,ActivateCS);
 				} else {
 					// busy is off now. Lets Check Status
@@ -392,17 +416,17 @@ void SdcMain(void) {
 					//printf("!\n");  // debug only output os signal success event
 					sdCard->blockFinishedHandler(SDC_RES_SUCCESS, sdCard->curBlockNr, sdCard->dataBuffer, 512);
 				} else {
+					eventdata.status = (uint8_t)sdCard->sdcStatus;
+					sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
+					SysEvent(MODULE_ID_SDCARD, EVENT_ERROR, EID_SDCARD_STATUS, &eventdata, sizeof(eventdata));
 					//TODO: signal error event
 					//printf("Error %02X %02X answer to CMD13\n", sdCard->sdcCmdResponse[1], sdCard->sdcCmdResponse[2] );
-					sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
+					//sdCard->sdcStatus = ADO_SDC_CARDSTATUS_ERROR;
 				}
 				break;
 
-			// Nothing needed here - only count down the main loop timer. Not needed any more since the dump CLI is moved to other module....
+			// Nothing needed here
 			case ADO_SDC_CARDSTATUS_INITIALIZED:
-	//			if (sdCard->sdcWaitLoops > 0) {
-	//			    sdCard->sdcWaitLoops--;
-	//			}
 				break;
 
 			default:
