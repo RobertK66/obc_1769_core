@@ -40,38 +40,7 @@ static const pinmux_array_t ObcPins = {
 	(sizeof(pinmuxing2)/sizeof(PINMUX_GRP_T2)), pinmuxing2
 };
 
-
-// Assign MRAM CS Port and Pinnumbers for different Boards used
-#if BA_BOARD == BA_OM13085_EM2T
-	#define MRAM_CS01_PORT	0
-	#define MRAM_CS01_PIN	P0_PIN_SSP0_MRAM_CS1
-	#define MRAM_CS02_PORT	1
-	#define MRAM_CS02_PIN	P1_PIN_SSP0_MRAM_CS2
-	#define MRAM_CS03_PORT	1
-	#define MRAM_CS03_PIN	P1_PIN_SSP0_MRAM_CS3
-	#define MRAM_CS11_PORT	0
-	#define MRAM_CS11_PIN	P0_PIN_SSP1_MRAM_CS1
-	#define MRAM_CS12_PORT	0
-	#define MRAM_CS12_PIN	P0_PIN_SSP1_MRAM_CS2
-	#define MRAM_CS13_PORT	0
-	#define MRAM_CS13_PIN	P0_PIN_SSP1_MRAM_CS3
-#elif BA_BOARD == BA_CLIMBOBC
-	#define MRAM_CS01_PORT	0
-	#define MRAM_CS01_PIN	P0_PIN_SSP0_MRAM_CS1
-	#define MRAM_CS02_PORT	2
-	#define MRAM_CS02_PIN	P2_PIN_SSP0_MRAM_CS2
-	#define MRAM_CS03_PORT	2
-	#define MRAM_CS03_PIN	P2_PIN_SSP0_MRAM_CS3
-	#define MRAM_CS11_PORT	2
-	#define MRAM_CS11_PIN	P2_PIN_SSP1_MRAM_CS1
-	#define MRAM_CS12_PORT	0
-	#define MRAM_CS12_PIN	P0_PIN_SSP1_MRAM_CS2
-	#define MRAM_CS13_PORT	1
-	#define MRAM_CS13_PIN	P1_PIN_SSP1_MRAM_CS3
-#endif
-
-
-
-
+#define PINNR_FROM_IDX(idx) (ObcPins.pinmux[idx].pinnum)
+#define PORT_FROM_IDX(idx) (ObcPins.pinmux[idx].pingrp)
 
 #endif /* CLIMBOBC_H_ */
