@@ -15,155 +15,80 @@ The RTC IRQ is used to count/check the RTC Seconds.
 #include "../ado_modules.h"
 #include "../../ado/obc_checksums.h"
 
+#define C_RESET_MS_OFFSET 22			// TODO: messure exact start offset
+
+static const int timeMonthOffsetDays[2][13] = {
+   {0,   0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334},  // non leap year
+   {0,   0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335}   // leap year
+};
+
+static inline juliandayfraction TimeMsToDayFractions(uint32_t ms) {
+    return (((double)ms)/86400000.0);
+}
+
+
+// valid status has 4 higer equal to 4 lower bits.
 typedef enum {
 	RTC_STAT_SYNCHRONIZED	= 0x11,
 	RTC_STAT_RUNNING		= 0x22,
 	RTC_STAT_RESETDEFAULT	= 0x33,
 	RTC_STAT_UNKNOWN		= 0xDD,
-	RTC_STAT_XTAL_ERROR		= 0xEE,
+	RTC_STAT_XTAL_ERROR		= 0xE0,
 } rtc_status_t;
 
 // Usage of 19 bytes General Purpose Register
 typedef enum {
 	RTC_GPRIDX_STATUS = 0,
+	RTC_GPRIDX_RESETCOUNTER32 = 4,		// must be on base of a uint32 register to be accessed with single read/write.
 	RTC_GPRIDX_CRC8 = 19
 } rtc_gpridx_t;
 
 typedef struct {
+	uint32_t	 resetCount;
+	uint32_t	 rtcDate;
+	uint32_t	 rtcTime;
 	bool		 crcError;
 	rtc_status_t oldStatus;
 	rtc_status_t newStatus;
-	uint64_t	 rtcDateTime;
+	uint8_t		 oscDelay;
 } rtc_event_init_t;
 
+typedef struct {
+	uint64_t	 rtcDateTime;
+} rtc_event_xtalstarted_t;
+
+
+
 // Prototypes
-void RtcInitializeGpr();
+void RtcClearGpr();
 uint8_t RtcReadGpr(rtc_gpridx_t idx);
 bool RtcIsGprChecksumOk(void);
 void RtcWriteGpr(rtc_gpridx_t idx, uint8_t byte);
 uint32_t rtc_get_time(void);
 uint32_t rtc_get_date(void);
 uint64_t rtc_get_datetime(void);
-void TimBlockMs(uint8_t ms);
+void TimBlockMs(uint16_t ms);
+uint32_t RtcReadGpr32(rtc_gpridx_t idx);
+void RtcWriteGpr32(rtc_gpridx_t idx, uint32_t value);
+void TimeSetUtc2(RTC_TIME_T *fullTime);
+void TimeSetUtc1(uint16_t year, uint8_t month, uint8_t dayOfMonth, uint8_t hour, uint8_t min, uint8_t sec);
 
-// Variables
-LPC_TIMER_T *timMsTimer = NULL;
-uint32_t rtc_epoch_time;
+// Module Variables
+static obc_tim_systemtime_t ObcSystemTime;
 
-void tim_init (void *dummy) {
-	// We use timer0 fixed here for now TODO: make general timer irq register loike for UART in ado .....
-	timMsTimer = LPC_TIMER0;
-	uint32_t prescaler;
-	prescaler = Chip_Clock_GetPeripheralClockRate(SYSCTL_PCLK_TIMER0) / 1000 - 1; 	/* 1 kHz timer frequency */
-
-	/* Enable this timer counting milliseconds */
-	Chip_TIMER_Init(timMsTimer);
-	Chip_TIMER_Reset(timMsTimer);
-	Chip_TIMER_MatchEnableInt(timMsTimer, 0);
-
-	Chip_TIMER_PrescaleSet(timMsTimer, prescaler),
-	Chip_TIMER_SetMatch(timMsTimer, 0, 999 );									// Count ms from 0 to 999
-	Chip_TIMER_ResetOnMatchEnable(timMsTimer, 0);
-	Chip_TIMER_Enable(timMsTimer);
-
-	/* Enable timer interrupt */
-	NVIC_ClearPendingIRQ(TIMER0_IRQn);
-	NVIC_EnableIRQ(TIMER0_IRQn);
-
-	// We use clockout but disable after reset.
-//	Chip_Clock_DisableCLKOUT();
-
-	// Initilaice thr RTC Clock module
-	RTC_TIME_T 	tim;
-	Chip_RTC_Init(LPC_RTC);
-
-	rtc_event_init_t initEvent;
-	initEvent.newStatus = RTC_STAT_UNKNOWN;
-	initEvent.oldStatus = RtcReadGpr(RTC_GPRIDX_STATUS);
-	initEvent.crcError  = !RtcIsGprChecksumOk();
-
-	/* If the Gpr have content with correct crc we initialize from there  */
-	if (initEvent.crcError || (initEvent.oldStatus == 0x61)) {
-		RtcInitializeGpr();
-
-		/* RTC module has been reset, time and data invalid */
-		/* Set to default values */
-		tim.time[RTC_TIMETYPE_SECOND] = 0;
-		tim.time[RTC_TIMETYPE_MINUTE] = 0;
-		tim.time[RTC_TIMETYPE_HOUR] = 0;
-		tim.time[RTC_TIMETYPE_DAYOFMONTH] = 1;
-		tim.time[RTC_TIMETYPE_DAYOFWEEK] = 1;
-		tim.time[RTC_TIMETYPE_DAYOFYEAR] = 1;
-		tim.time[RTC_TIMETYPE_MONTH] = 1;
-		tim.time[RTC_TIMETYPE_YEAR] = 1001;
-		Chip_RTC_SetFullTime(LPC_RTC, &tim);
-
-		initEvent.newStatus = RTC_STAT_RESETDEFAULT;
-		//rtc_backup_reg_reset(1);
-		//rtc_backup_reg_set(1, 0x00);	// RTC is definitely not in sync
-		//obc_status.rtc_synchronized = 0;
-	}
-
-	// Check if RTC XTAL is running.
-	Chip_RTC_Enable(LPC_RTC, ENABLE);		// We have to enable the RTC
-	TimBlockMs((uint8_t)400);				// This 400ms are needed to get a stable RTC OSC after Power on (tested with LPCX board).
-	LPC_RTC->RTC_AUX &= RTC_AUX_RTC_OSCF;	// Now clear the OSC Error bit (its set to 1 on each RTC power on)
-	TimBlockMs(5);							// and lets wait another short time.
-
-	// Now there shouldn't be a (new) error bit set here.
-	if (LPC_RTC->RTC_AUX & RTC_AUX_RTC_OSCF)
-	{
-		// If so (tested with defect OBC board!) we really have no RTC OSC running!
-		LPC_RTC->RTC_AUX &= RTC_AUX_RTC_OSCF;	// Clear the error  bit.
-		//printf("RTC: Oscillator error!\n");
-		initEvent.newStatus = RTC_STAT_XTAL_ERROR;
-	}
-
-	//rtc_calculate_epoch_time();
-	RtcWriteGpr(RTC_GPRIDX_STATUS, initEvent.newStatus);
-
-	Chip_RTC_CntIncrIntConfig(LPC_RTC, RTC_AMR_CIIR_IMSEC,  ENABLE);
-
-	//NVIC_SetPriority(RTC_IRQn, RTC_INTERRUPT_PRIORITY);
-	NVIC_EnableIRQ(RTC_IRQn); /* Enable interrupt */
-
-	initEvent.rtcDateTime =  rtc_get_datetime();
-	SysEvent(MODULE_ID_TIME, EVENT_INFO, EVENT_TIM_INITIALIZED, &initEvent, sizeof(rtc_event_init_t));
-
+// The RIT Timer IRQ counts the ms register
+void RIT_IRQHandler(void) {
+    LPC_RITIMER->CTRL |= 0x0001;                    // Clear the RITINT flag;
+    ObcSystemTime.msAfterStart++;
 }
 
-
-uint32_t ms = 0;
-uint32_t seconds = 0;
-
-void tim_main (void) {
-	if (ms > 0) {
-		ms = 0;
-	}
-}
-
-
-// This 'overwrites' the weak definition of this IRQ in cr_startup_lpc175x_6x.c
-void TIMER0_IRQHandler(void)
-{
-	if (Chip_TIMER_MatchPending(timMsTimer, 0)) {
-		Chip_TIMER_ClearMatch(timMsTimer, 0);
-		seconds++;
-	}
-}
-
-
+// The RTC Seconds Timer IRQ.
 void RTC_IRQHandler(void)
 {
-
-	ms = timMsTimer->TC;
-//	timMsTimer->TC = 0; // Synchronize ms-timer to RTC seconds TODO....
-	//ms = 0;
-
-
 	Chip_RTC_ClearIntPending(LPC_RTC, RTC_INT_COUNTER_INCREASE);
 	Chip_RTC_ClearIntPending(LPC_RTC, RTC_INT_ALARM);
-//
+
+	// TODO: here we can synchronize RTC with 'XTAL msAfterReset time (counted by  RIT IRQ )
 //	if (rtc_currentDayOfMonth == 0) {
 //		rtc_currentDayOfMonth = LPC_RTC->TIME[RTC_TIMETYPE_DAYOFMONTH];
 //	}
@@ -174,7 +99,6 @@ void RTC_IRQHandler(void)
 //		rtc_dayChanged = true;
 //	}
 
-	rtc_epoch_time++; /* increment QB50 s epoch variable and calculate UTC time */	// TODO ...
 
 	rtc_status_t status = RtcReadGpr(RTC_GPRIDX_STATUS);
 	if (status == RTC_STAT_XTAL_ERROR) {
@@ -184,22 +108,127 @@ void RTC_IRQHandler(void)
 		{
 			LPC_RTC->RTC_AUX &= RTC_AUX_RTC_OSCF;	// Clear the error by writing to this bit now.
 		}
-		// TODO: is this assumption here correct. We had an unknown time from init until now but it seems to run from here on.
+		// TODO: Is this assumption here correct? We had an unknown time from init until now but it seems to run from here on.
 		//       For sure it is not synchronized any more.....
 		RtcWriteGpr(RTC_GPRIDX_STATUS, RTC_STAT_UNKNOWN);
+
+		rtc_event_xtalstarted_t eventdata;
+		eventdata.rtcDateTime = rtc_get_datetime();
+		SysEvent(MODULE_ID_TIME, EVENT_ERROR, EVENT_TIM_XTALSTARTED, &eventdata, sizeof(rtc_event_xtalstarted_t));
 	}
-	/* Do powersave modes or other things here */
-	/*if (obc_status.obc_powersave)
-	{
-		// Reset watchdog regularly if OBC is in powersave
-		WDT_Feed();
-	}*/
 }
 
+void tim_init (void *dummy) {
+	// prepare the init sys event used later on.
+	rtc_event_init_t initEventArgs;
+	initEventArgs.newStatus = RTC_STAT_UNKNOWN;
+	initEventArgs.oldStatus = RtcReadGpr(RTC_GPRIDX_STATUS);
+	initEventArgs.crcError  = !RtcIsGprChecksumOk();
+	initEventArgs.resetCount = 0;
 
-void RtcInitializeGpr() {
-	for (int i=0;i<19;i++) {
-		RtcWriteGpr(i, 'a' + i);		// Some Recognizable pattern ;-).
+	// we use RIT IRQ to count ms after reset. It counts PCLK cycles
+	// This Repetive Interrupt Timer us activated by default with reset.
+	Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_RIT);
+	Chip_Clock_SetPCLKDiv(SYSCTL_PCLK_RIT, SYSCTL_CLKDIV_1);
+
+	ObcSystemTime.msAfterStart = C_RESET_MS_OFFSET;
+
+	LPC_RITIMER->COMPVAL = (SystemCoreClock/1000) - 1;   					// We want an IRQ every 0,001 Seconds.
+	LPC_RITIMER->COUNTER = 0;
+	LPC_RITIMER->CTRL = RIT_CTRL_ENCLR | RIT_CTRL_ENBR | RIT_CTRL_TEN;
+	NVIC_EnableIRQ(RITIMER_IRQn);
+
+	// Initialize thr RTC Clock module
+	// TODO: maybe we can avoid disable-enable by calling init here if we know it is already running !?
+	Chip_RTC_Init(LPC_RTC);
+	Chip_RTC_Enable(LPC_RTC, ENABLE);		// We have to enable the RTC
+
+	// Wait until XTAL is running. Check by Clearing the OSC Error bit and see if it comes on again
+	// We allow 400ms to stabilize. (On EM2 after deep power off it takes aprx. 300ms
+	uint32_t tryUntil = ObcSystemTime.msAfterStart + 400;
+	initEventArgs.oscDelay = 0;
+	while(tryUntil > ObcSystemTime.msAfterStart) {
+		if (!(LPC_RTC->RTC_AUX & RTC_AUX_RTC_OSCF)) {
+			// If there is no OSC error pending, we are ok to go
+			initEventArgs.oscDelay = ObcSystemTime.msAfterStart >> 1;
+			break;
+		}
+		LPC_RTC->RTC_AUX &= RTC_AUX_RTC_OSCF;	// Clear the OSC Error bit
+		TimBlockMs(5);							// and give it some time to re-appear....
+	}
+
+	// Now there shouldn't be a (new) error bit set here.
+	if (LPC_RTC->RTC_AUX & RTC_AUX_RTC_OSCF)
+	{
+		// If so (tested with defect OBC board!) we really have no RTC OSC running!
+		LPC_RTC->RTC_AUX &= RTC_AUX_RTC_OSCF;	// Clear the error  bit.
+		initEventArgs.newStatus = RTC_STAT_XTAL_ERROR;
+		RtcWriteGpr(RTC_GPRIDX_STATUS, initEventArgs.newStatus);
+		// No need to continue with RTC Init here.....
+		SysEvent(MODULE_ID_TIME, EVENT_FATAL, EVENT_TIM_INITIALIZED, &initEventArgs, sizeof(rtc_event_init_t));
+		return;
+	}
+
+	// A valid status always has 4 higher bits equal to low higer bits
+	// As Error uses 0xE0 this is not as valid state and we try to re-init everything.
+	bool validStatus = ((initEventArgs.oldStatus & 0x0F) == ((initEventArgs.oldStatus >> 4) & 0x0F));
+
+	// after deep power off (no bat left) we get random content in gpr
+	RTC_TIME_T 	time;
+	if (initEventArgs.crcError || !(validStatus)) {
+		// crc wrong or status invalid -> we can init from scratch
+		RtcClearGpr();
+		/* RTC module has been down, time and data invalid */
+		/* Set to default values */
+		time.time[RTC_TIMETYPE_SECOND] = 0;
+		time.time[RTC_TIMETYPE_MINUTE] = 0;
+		time.time[RTC_TIMETYPE_HOUR] = 0;
+		time.time[RTC_TIMETYPE_DAYOFMONTH] = 1;
+		time.time[RTC_TIMETYPE_DAYOFWEEK] = 1;
+		time.time[RTC_TIMETYPE_DAYOFYEAR] = 1;
+		time.time[RTC_TIMETYPE_MONTH] = 1;
+		time.time[RTC_TIMETYPE_YEAR] = 1001;
+		Chip_RTC_SetFullTime(LPC_RTC, &time);
+
+		initEventArgs.newStatus = RTC_STAT_RESETDEFAULT;
+		RtcWriteGpr(RTC_GPRIDX_STATUS, initEventArgs.newStatus);
+	} else {
+		// We can rely on GPR holding correct status and Reset Count
+		ObcSystemTime.epochNumber = RtcReadGpr32(RTC_GPRIDX_RESETCOUNTER32);
+		ObcSystemTime.epochNumber++;
+		RtcWriteGpr32(RTC_GPRIDX_RESETCOUNTER32, ObcSystemTime.epochNumber);
+		initEventArgs.resetCount = ObcSystemTime.epochNumber;
+		if (initEventArgs.oldStatus == RTC_STAT_SYNCHRONIZED) {
+			// RTC was synchronized before Reset so we can use it to synchronize again.
+			Chip_RTC_GetFullTime(LPC_RTC, &time);
+			TimeSetUtc2(&time);
+		} else if (initEventArgs.oldStatus == RTC_STAT_RESETDEFAULT) {
+			// Last epoch run with its defaults so from now on we only know that we 'continue' running.
+			initEventArgs.newStatus = RTC_STAT_RUNNING;
+			RtcWriteGpr(RTC_GPRIDX_STATUS, initEventArgs.newStatus);
+		} else {
+			initEventArgs.newStatus = initEventArgs.oldStatus;
+		}
+	}
+
+	// Enable the 1 Second IRQ
+	Chip_RTC_CntIncrIntConfig(LPC_RTC, RTC_AMR_CIIR_IMSEC,  ENABLE);
+	//NVIC_SetPriority(RTC_IRQn, RTC_INTERRUPT_PRIORITY);
+	NVIC_EnableIRQ(RTC_IRQn); /* Enable interrupt */
+
+	// Send the Timer Init SysEvent with current RTC-timestamp.
+	initEventArgs.rtcDate =  rtc_get_date();
+	initEventArgs.rtcTime =  rtc_get_time();
+	SysEvent(MODULE_ID_TIME, EVENT_INFO, EVENT_TIM_INITIALIZED, &initEventArgs, sizeof(rtc_event_init_t));
+}
+
+void tim_main (void) {
+	// Nothing to do here (yet) ....
+}
+
+void RtcClearGpr() {
+	for (int i=0;i<5;i++) {
+		LPC_RTC->GPREG[i]= 0x00000000;
 	}
 }
 
@@ -226,16 +255,26 @@ void RtcWriteGpr(rtc_gpridx_t idx, uint8_t byte) {
 	}
 }
 
+uint32_t RtcReadGpr32(rtc_gpridx_t idx) {
+	return LPC_RTC->GPREG[idx>>2];
+}
+
+void RtcWriteGpr32(rtc_gpridx_t idx, uint32_t value) {
+	uint32_t *gprbase = (uint32_t *)(&(LPC_RTC->GPREG));
+	uint32_t *ptr = gprbase;
+	uint8_t tmpBytes[4];
+
+	LPC_RTC->GPREG[idx>>2] = value;
+	// last byte of word 4 is checksum
+	ptr = gprbase + 4;
+	*((uint32_t *)tmpBytes) = *ptr;
+	tmpBytes[3] = CRC8((uint8_t*)&(LPC_RTC->GPREG), 19) + 1;
+	*ptr = *((uint32_t *)tmpBytes);
+}
+
 uint8_t RtcReadGpr(rtc_gpridx_t idx) {
 	// Other than writing, for reading a uint8 ptr is good enough to get all bytes separately.
 	uint8_t *gprbase = (uint8_t *)(&(LPC_RTC->GPREG));
-	if (idx>19) {
-		//TODO: log an 'out of range' event here !!!
-		idx = 19;
-	} else if (idx < 0) {
-		//TODO: log an 'out of range' event here !!!
-		idx = 0;
-	}
 	return gprbase[idx];
 }
 
@@ -251,19 +290,20 @@ bool RtcIsGprChecksumOk(void) {
 
 /* Returns the current RTC time according to UTC.
  * Parameters: 	none
- * Return value: date as uint32 with a decimal number formated as HHMMSS.
+ * Return value: time as uint32 with a decimal number formated as HHMMSS.
  */
 uint32_t rtc_get_time(void)
 {
 	RTC_TIME_T tim;
 	Chip_RTC_GetFullTime(LPC_RTC, &tim);
 
-	// TODO: tim0 is not used for ms counting yet.....
 	return (tim.time[RTC_TIMETYPE_SECOND] + tim.time[RTC_TIMETYPE_MINUTE] * 100 + tim.time[RTC_TIMETYPE_HOUR] * 10000);
-	//return (0 + tim.time[RTC_TIMETYPE_SECOND] * 1000 + tim.time[RTC_TIMETYPE_MINUTE] * 100000 + tim.time[RTC_TIMETYPE_HOUR] * 10000000);
-	//return ((LPC_TIM0->TC) + tim.SEC * 1000 + tim.MIN * 100000 + tim.HOUR * 10000000);
 }
 
+/* Returns the current RTC date
+ * Parameters: 	none
+ * Return value: date as uint32 with a decimal number formated as YYYYmmDD.
+ */
 uint32_t rtc_get_date(void)
 {
 	/* Returns the current RTC date according to UTC.
@@ -276,42 +316,89 @@ uint32_t rtc_get_date(void)
 	return (tim.time[RTC_TIMETYPE_DAYOFMONTH] + tim.time[RTC_TIMETYPE_MONTH] * 100 + (tim.time[RTC_TIMETYPE_YEAR]) * 10000);
 }
 
-/* Returns the current RTC date and time according to UTC.
+/* Returns the current RTC date and time.
  * Parameters: 	none
- * Return value: date as uint64 with a decimal number formated as YYYYmmddHHMMSS.
+ * Return value: date/tme as uint64 with a decimal number formated as YYYYmmDDHHMMSS.
  */
 uint64_t rtc_get_datetime(void) {
 	return ((uint64_t)rtc_get_date()) * 1000000 + (uint64_t)rtc_get_time();
 }
 
-void TimBlockMs(uint8_t ms) {
-	uint64_t loop = ms * 100000;
-	while (loop>0) {
-		loop--;
+void TimBlockMs(uint16_t ms) {
+	uint32_t waituntil = ObcSystemTime.msAfterStart + ms;
+	while (ObcSystemTime.msAfterStart<waituntil) {
 	}
-//	uint32_t cr = Chip_Clock_GetPeripheralClockRate(MAINLOOP_TIMER_PCLK);
-//	uint32_t cntToWait = ms * cr/1000 ;
-//
-//	LPC_TIMER_T *mlTimer = MAINLOOP_TIMER;
-//	uint32_t currTimerReg = mlTimer->TC;
-//
-//	uint32_t waitFor = currTimerReg + cntToWait;
-//	if (waitFor >= cr/1000 * TIM_MAIN_TICK_MS) {
-//		// This is higher than the max value which TC gets before the match for the interrupt resets it to 0!
-//		// so we correct the wait time for the time left after the 'overrun/reset'.
-//		waitFor = cntToWait - (cr/1000 * TIM_MAIN_TICK_MS - currTimerReg);
-//		// wait until TC gets reset
-//		while (mlTimer->TC > currTimerReg);
-//		// and then ...
-//	} else if (waitFor < currTimerReg) {
-//		// This only can happen when there is no Match reseting the TC. And the current TC + TimeToWait has an uint32 overrun.
-//		// As coded now this will/should never happen (until somebody sets TIM_MAIN_TICK_MS to > 178000....)
-//		// if it happens we first wait for the TC to overflow
-//		while (mlTimer->TC > currTimerReg);
-//		// and then ...
-//	}
-//
-//
-//	// ... lets wait until calculated time is reached.
-//	while (mlTimer->TC < waitFor);
 }
+
+//
+//void TimeGetCurrentSystemTime(ado_tim_systemtime_t *sysTime) {
+//    sysTime->epochNumber = adoSystemTime.epochNumber;
+//    sysTime->msAfterStart = adoSystemTime.msAfterStart;
+//    sysTime->utcOffset.year = adoSystemTime.utcOffset.year;
+//    sysTime->utcOffset.dayOfYear = adoSystemTime.utcOffset.dayOfYear;
+//}
+//
+
+void TimeSetUtc1(uint16_t year, uint8_t month, uint8_t dayOfMonth, uint8_t hour, uint8_t min, uint8_t sec) {
+    ObcSystemTime.utcOffset.year = year;
+
+    // First we get the day# depending of leap year
+    int leap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+    juliandayfraction day = timeMonthOffsetDays[leap][month] + dayOfMonth;
+    // Then we add the time fraction
+    day += ((sec / 60.0 + min) / 60.0 + hour) / 24.0;
+
+    // To store the offset to this time we subtract current ms.
+    day -= TimeMsToDayFractions(ObcSystemTime.msAfterStart);
+    ObcSystemTime.utcOffset.dayOfYear = day;
+}
+
+inline void TimeSetUtc2(RTC_TIME_T *fullTime) {
+    TimeSetUtc1(fullTime->time[RTC_TIMETYPE_YEAR],
+                fullTime->time[RTC_TIMETYPE_MONTH],
+                fullTime->time[RTC_TIMETYPE_DAYOFMONTH],
+                fullTime->time[RTC_TIMETYPE_HOUR],
+                fullTime->time[RTC_TIMETYPE_MINUTE],
+                fullTime->time[RTC_TIMETYPE_SECOND]);
+}
+
+//void TimeGetCurrentUtcTime(RTC_TIME_T *fullTime) {
+//    uint16_t year = adoSystemTime.utcOffset.year;
+//    fullTime->time[RTC_TIMETYPE_YEAR] = year;
+//    if (year == 0) {
+//        fullTime->time[RTC_TIMETYPE_MONTH] = 0;
+//        fullTime->time[RTC_TIMETYPE_DAYOFMONTH] = 0;
+//        fullTime->time[RTC_TIMETYPE_HOUR] = 0;
+//        fullTime->time[RTC_TIMETYPE_MINUTE] = 0;
+//        fullTime->time[RTC_TIMETYPE_SECOND] = 0;
+//    } else {
+//        double currentTime =  TimeGetCurrentDayOfYear();
+//        // Date conversionm
+//        int day = (int)floor(currentTime);
+//        int leap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+//        for (uint8_t month = 1; month<=12; month++) {
+//            if (timeMonthOffsetDays[leap][month] > day) {
+//                fullTime->time[RTC_TIMETYPE_MONTH] = month - 1;
+//                fullTime->time[RTC_TIMETYPE_DAYOFMONTH] = day - timeMonthOffsetDays[leap][month - 1];
+//                break;
+//            }
+//        }
+//        // Time conversion
+//        double temp = (currentTime - day) * 24.0;
+//        fullTime->time[RTC_TIMETYPE_HOUR]  = (uint32_t)floor(temp);
+//        temp = (temp - fullTime->time[RTC_TIMETYPE_HOUR]) * 60.0;
+//        fullTime->time[RTC_TIMETYPE_MINUTE]  = (uint32_t)floor(temp);
+//        fullTime->time[RTC_TIMETYPE_SECOND]  = (temp - fullTime->time[RTC_TIMETYPE_MINUTE]) * 60.0;
+//    }
+//}
+//
+//juliandayfraction TimeGetCurrentDayOfYear() {
+//    juliandayfraction currentTime = adoSystemTime.utcOffset.dayOfYear;
+//    currentTime += TimeMsToDayFractions(adoSystemTime.msAfterStart);
+//    return currentTime;
+//}
+//
+//ado_timestamp TimeGetCurrentTimestamp() {
+//    return adoSystemTime.msAfterStart;
+//}
+

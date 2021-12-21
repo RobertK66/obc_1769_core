@@ -149,7 +149,7 @@ void _SdcInitAll(sdcard_init_array_t* cards) {
 }
 
 // Old version with local card array -> if needed clone the SPI init to allocate memory for the card ....
-void *SdcInit(ado_sspid_t bus,  void(*csHandler)(bool select)) {
+void *SdcInit(ado_sbus_id_t bus,  void(*csHandler)(bool select)) {
 	// TODO: rework for memaloc version in init
 //	SdCard[bus].sdcBusNr = bus;
 //	SdCard[bus].csHandler = csHandler;

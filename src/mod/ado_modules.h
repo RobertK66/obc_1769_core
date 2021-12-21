@@ -13,7 +13,6 @@
 
 // common defines/structures used for module composition
 typedef struct {
-	//void  *initData;
 	void  (*init)(void* initData);
 	void  (*main)(void);
 	void  *initdata;

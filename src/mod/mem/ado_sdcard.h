@@ -8,6 +8,7 @@
 #ifndef MOD_ADO_SDCARD_H_
 #define MOD_ADO_SDCARD_H_
 
+//#include <chip.h>
 #include <ado_sspdma.h>
 
 #define MODULE_ID_SDCARD				0x81
@@ -51,7 +52,7 @@ void SdcWriteBlockAsync(uint8_t cardIdx, uint32_t blockNr, uint8_t *data, void (
 
 
 // obsolete
-void *SdcInit(ado_sspid_t sspId, void(*csHandler)(bool select));
+void *SdcInit(ado_sbus_id_t sspId, void(*csHandler)(bool select));
 void *SdcInitSPI(void(*csHandler)(bool select));
 
 
