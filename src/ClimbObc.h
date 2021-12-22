@@ -8,8 +8,6 @@
 
 #ifndef CLIMBOBC_H_
 #define CLIMBOBC_H_
-#include "temp-Base.h"					// TODO: get rid of this, somewhen .....
-
 
 // Available board abstractions
 #define BA_OM13085		1

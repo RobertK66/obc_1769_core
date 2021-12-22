@@ -50,12 +50,42 @@ void CsMram13(bool select) {
 	Chip_GPIO_SetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_SSP1_MRAM_CS3), PINNR_FROM_IDX(PINIDX_SSP1_MRAM_CS3), !select);
 }
 
+#if BA_BOARD == BA_OM13085_EM2T
+
+void CsSdCard0(bool select) {
+    Chip_GPIO_SetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_SSP0_CS_SD), PINNR_FROM_IDX(PINIDX_SSP0_CS_SD), !select);
+}
+
+void CsSdCard1(bool select) {
+    Chip_GPIO_SetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_SSP1_CS_SD), PINNR_FROM_IDX(PINIDX_SSP1_CS_SD), !select);
+}
+
+
+static const sdcard_init_t SdCards[] = {
+		{ADO_SBUS_SSP0, CsSdCard0},
+		{ADO_SBUS_SSP1, CsSdCard1}
+};
+
+
+
+#else
+
 void CsSdCard(bool select) {
     Chip_GPIO_SetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_SPI_CS_SD), PINNR_FROM_IDX(PINIDX_SPI_CS_SD), !select);
-    // TODO: ?? We have 2 SD Cards on OEM... Board with expansion....
-    // and there they are wired to SSP0 /SSP1
-    // climb obc core code not tested (yet) with old hardware ....
 }
+
+static const sdcard_init_t SdCards[] = {
+		{ADO_SBUS_SPI, CsSdCard},
+};
+
+#endif
+
+static const sdcard_init_array_t Cards = {
+	(sizeof(SdCards)/sizeof(sdcard_init_t)), SdCards
+};
+
+
+
 
 static const mram_chipinit_t Mrams[] = {
 		{ADO_SSP0, CsMram01},
@@ -69,14 +99,7 @@ static const mram_chipinit_array_t Chips = {
 	(sizeof(Mrams)/sizeof(mram_chipinit_t)), Mrams
 };
 
-static const sdcard_init_t SdCards[] = {
-		{ADO_SBUS_SPI, CsSdCard},
-//		{ADO_SBUS_SSP0, CsSdCard0},
-//		{ADO_SBUS_SSP1, CsSdCard1}
-};
-static const sdcard_init_array_t Cards = {
-	(sizeof(SdCards)/sizeof(sdcard_init_t)), SdCards
-};
+
 
 
 static const MODULE_DEF_T Modules[] = {

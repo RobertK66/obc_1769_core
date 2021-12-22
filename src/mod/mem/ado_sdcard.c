@@ -143,22 +143,25 @@ void _SdcInitAll(sdcard_init_array_t* cards) {
 		if (cards->chipinits[i].busnr == ADO_SBUS_SPI) {
 			SdcInitSPI(cards->chipinits[i].csHandler);
 		} else {
-			// TODO: make SSP0/1 work again....
+			SdcInit(cards->chipinits[i].busnr, cards->chipinits[i].csHandler);
 		}
 	}
 }
 
-// Old version with local card array -> if needed clone the SPI init to allocate memory for the card ....
 void *SdcInit(ado_sbus_id_t bus,  void(*csHandler)(bool select)) {
-	// TODO: rework for memaloc version in init
-//	SdCard[bus].sdcBusNr = bus;
-//	SdCard[bus].csHandler = csHandler;
-//	SdCard[bus].sdcType = ADO_SDC_CARD_UNKNOWN;
-//	SdCard[bus].sdcStatus = ADO_SDC_CARDSTATUS_UNDEFINED;
-//	SdCard[bus].sdcCmdPending = false;
-//	SdCard[bus].sdcWaitLoops = 0;
-//
-	return (void *)0; //&SdCard[bus];
+	ado_sdcard_t *newCard = 0;
+	newCard = malloc(sizeof(ado_sdcard_t));
+	if (newCard != 0) {
+		sdCards[cardCnt] = newCard;
+		sdCards[cardCnt]->sdcBusNr = bus;
+		sdCards[cardCnt]->csHandler = csHandler;
+		sdCards[cardCnt]->sdcType = ADO_SDC_CARD_UNKNOWN;
+		sdCards[cardCnt]->sdcStatus = ADO_SDC_CARDSTATUS_UNDEFINED;
+		sdCards[cardCnt]->sdcCmdPending = false;
+		sdCards[cardCnt]->sdcWaitLoops = 0;
+		cardCnt++;
+	}
+    return (void *)newCard;
 }
 
 void *SdcInitSPI(void(*csHandler)(bool select)) {
