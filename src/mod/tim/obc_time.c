@@ -12,7 +12,7 @@ The RTC IRQ is used to count/check the RTC Seconds.
 ===============================================================================
 */
 #include "obc_time.h"
-#include "../ado_modules.h"
+#include <ado_modules.h>
 #include "../../ado/obc_checksums.h"
 
 #define C_RESET_MS_OFFSET 22			// TODO: messure exact start offset

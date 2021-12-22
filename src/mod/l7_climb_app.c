@@ -10,8 +10,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include "l2_debug_com.h"
-#include "mem/ado_mram.h"
-#include "mem/ado_sdcard.h"
+#include <mod/ado_mram.h>
+#include <mod/ado_sdcard.h>
 
 #include "l3_sensors.h"
 #include "hw_check.h"

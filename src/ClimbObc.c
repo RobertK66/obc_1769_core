@@ -12,26 +12,20 @@
 #include <ado_sspdma.h>
 #include <ado_spi.h>
 
-#include "mod/ado_modules.h"
+#include <ado_modules.h>
 
 #include "mod/tim/obc_time.h"
 #include "mod/hw_check.h"
 #include "mod/l2_debug_com.h"
-#include "mod/mem/ado_sdcard.h"
-#include "mod/mem/ado_mram.h"
+#include <mod/ado_sdcard.h>
+#include <mod/ado_mram.h>
 
 #include "mod/l3_sensors.h"
 
 
 #include "mod/l7_climb_app.h"
 
-
-
-
-
-
 void CsMram01(bool select) {
-
     Chip_GPIO_SetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_SSP0_MRAM_CS1), PINNR_FROM_IDX(PINIDX_SSP0_MRAM_CS1), !select);
 }
 void CsMram02(bool select) {
@@ -51,7 +45,7 @@ void CsMram13(bool select) {
 }
 
 #if BA_BOARD == BA_OM13085_EM2T
-
+// EM2T Test Hardware has 2 SD Cards connected to SSP0/SSP1
 void CsSdCard0(bool select) {
     Chip_GPIO_SetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_SSP0_CS_SD), PINNR_FROM_IDX(PINIDX_SSP0_CS_SD), !select);
 }
@@ -70,6 +64,7 @@ static const sdcard_init_t SdCards[] = {
 
 #else
 
+// OBC Hardware has one SD Card connected to SPI
 void CsSdCard(bool select) {
     Chip_GPIO_SetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_SPI_CS_SD), PINNR_FROM_IDX(PINIDX_SPI_CS_SD), !select);
 }
