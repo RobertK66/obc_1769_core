@@ -10,7 +10,7 @@
 #define CLIMBOBC_H_
 
 // Available board abstractions
-#define BA_OM13085		1
+// #define BA_OM13085		1  Obsolete, no use any more because no mrams and adCard available.....
 #define BA_OM13085_EM2T	2
 #define BA_CLIMBOBC		3
 
@@ -33,12 +33,12 @@ typedef struct {
 	const PINMUX_GRP_T2* pinmux;
 } pinmux_array_t;
 
-
 static const pinmux_array_t ObcPins = {
 	(sizeof(pinmuxing2)/sizeof(PINMUX_GRP_T2)), pinmuxing2
 };
 
 #define PINNR_FROM_IDX(idx) (ObcPins.pinmux[idx].pinnum)
 #define PORT_FROM_IDX(idx) (ObcPins.pinmux[idx].pingrp)
+#define PTR_FROM_IDX(idx) (&ObcPins.pinmux[idx])
 
 #endif /* CLIMBOBC_H_ */

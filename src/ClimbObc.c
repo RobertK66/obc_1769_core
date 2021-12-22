@@ -13,88 +13,46 @@
 #include <ado_spi.h>
 
 #include <ado_modules.h>
+#include <mod/ado_sdcard.h>
+#include <mod/ado_mram.h>
 
 #include "mod/tim/obc_time.h"
 #include "mod/hw_check.h"
 #include "mod/l2_debug_com.h"
-#include <mod/ado_sdcard.h>
-#include <mod/ado_mram.h>
 
 #include "mod/l3_sensors.h"
-
-
 #include "mod/l7_climb_app.h"
 
-void CsMram01(bool select) {
-    Chip_GPIO_SetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_SSP0_MRAM_CS1), PINNR_FROM_IDX(PINIDX_SSP0_MRAM_CS1), !select);
-}
-void CsMram02(bool select) {
-	Chip_GPIO_SetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_SSP0_MRAM_CS2), PINNR_FROM_IDX(PINIDX_SSP0_MRAM_CS2), !select);
-}
-void CsMram03(bool select) {
-	Chip_GPIO_SetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_SSP0_MRAM_CS3), PINNR_FROM_IDX(PINIDX_SSP0_MRAM_CS3), !select);
-}
-void CsMram11(bool select) {
-	Chip_GPIO_SetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_SSP1_MRAM_CS1), PINNR_FROM_IDX(PINIDX_SSP1_MRAM_CS1), !select);
-}
-void CsMram12(bool select) {
-	Chip_GPIO_SetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_SSP1_MRAM_CS2), PINNR_FROM_IDX(PINIDX_SSP1_MRAM_CS2), !select);
-}
-void CsMram13(bool select) {
-	Chip_GPIO_SetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_SSP1_MRAM_CS3), PINNR_FROM_IDX(PINIDX_SSP1_MRAM_CS3), !select);
-}
+
 
 #if BA_BOARD == BA_OM13085_EM2T
 // EM2T Test Hardware has 2 SD Cards connected to SSP0/SSP1
-void CsSdCard0(bool select) {
-    Chip_GPIO_SetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_SSP0_CS_SD), PINNR_FROM_IDX(PINIDX_SSP0_CS_SD), !select);
-}
-
-void CsSdCard1(bool select) {
-    Chip_GPIO_SetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_SSP1_CS_SD), PINNR_FROM_IDX(PINIDX_SSP1_CS_SD), !select);
-}
-
-
 static const sdcard_init_t SdCards[] = {
-		{ADO_SBUS_SSP0, CsSdCard0},
-		{ADO_SBUS_SSP1, CsSdCard1}
+	{ADO_SBUS_SSP0, PTR_FROM_IDX(PINIDX_SSP0_CS_SD)},
+	{ADO_SBUS_SSP1, PTR_FROM_IDX(PINIDX_SSP1_CS_SD)}
 };
-
-
-
 #else
-
 // OBC Hardware has one SD Card connected to SPI
-void CsSdCard(bool select) {
-    Chip_GPIO_SetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_SPI_CS_SD), PINNR_FROM_IDX(PINIDX_SPI_CS_SD), !select);
-}
-
 static const sdcard_init_t SdCards[] = {
-		{ADO_SBUS_SPI, CsSdCard},
+	{ADO_SBUS_SPI, PTR_FROM_IDX(PINIDX_SPI_CS_SD)}
 };
-
 #endif
-
 static const sdcard_init_array_t Cards = {
 	(sizeof(SdCards)/sizeof(sdcard_init_t)), SdCards
 };
 
 
-
-
 static const mram_chipinit_t Mrams[] = {
-		{ADO_SSP0, CsMram01},
-		{ADO_SSP0, CsMram02},
-		{ADO_SSP0, CsMram03},
-		{ADO_SSP1, CsMram11},
-		{ADO_SSP1, CsMram12},
-		{ADO_SSP1, CsMram13}
+		{ADO_SSP0, PTR_FROM_IDX(PINIDX_SSP0_MRAM_CS1) },
+		{ADO_SSP0, PTR_FROM_IDX(PINIDX_SSP0_MRAM_CS2) },
+		{ADO_SSP0, PTR_FROM_IDX(PINIDX_SSP0_MRAM_CS3) },
+		{ADO_SSP1, PTR_FROM_IDX(PINIDX_SSP1_MRAM_CS1) },
+		{ADO_SSP1, PTR_FROM_IDX(PINIDX_SSP1_MRAM_CS2) },
+		{ADO_SSP1, PTR_FROM_IDX(PINIDX_SSP1_MRAM_CS3) },
 };
 static const mram_chipinit_array_t Chips = {
 	(sizeof(Mrams)/sizeof(mram_chipinit_t)), Mrams
 };
-
-
 
 
 static const MODULE_DEF_T Modules[] = {
