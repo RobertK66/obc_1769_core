@@ -38,6 +38,7 @@ void ReadAllSensorsCmd(int argc, char *argv[]);
 void SpPowerCmd(int argc, char *argv[]);
 void CardPowerOnCmd(int argc, char *argv[]);
 void CardPowerOffCmd(int argc, char *argv[]);
+void SetObcNameCmd(int argc, char *argv[]);
 
 
 //extern void *sdCard;
@@ -53,6 +54,7 @@ static const app_command_t Commands[] = {
 		//{ 'W' , WriteSdcardCmd },
 		{ 's' , ReadAllSensorsCmd },
 		{ 'p' , SpPowerCmd },
+		{ 'O' , SetObcNameCmd },
 };
 #define APP_CMD_CNT	(sizeof(Commands)/sizeof(app_command_t))
 
@@ -163,7 +165,7 @@ void ReadSdcardCmd(int argc, char *argv[]) {
 		SysEventString("uasge: R <blockNr>")
 	} else {
 		// CLI params to binary params
-		uint8_t  block = atoi(argv[1]);
+		uint32_t  block = atoi(argv[1]);
 		SdcReadBlockAsync(0, block, tempBlockData, ReadSdcardFinished);
 	 }
 }
@@ -272,4 +274,11 @@ void HwcMirrorInputCmd(int argc, char *argv[]) {
 	HwcMirrorInput(idxIn, idxOut);
 }
 
+void SetObcNameCmd(int argc, char *argv[]) {
+	if (argc != 2) {
+		SysEventString("uasge: O <instanceName>");
+	} else {
+		memChangeInstanceName(argv[1]);
+	 }
+}
 

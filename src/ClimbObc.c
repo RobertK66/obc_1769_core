@@ -21,6 +21,7 @@
 #include "mod/l2_debug_com.h"
 
 #include "mod/l3_sensors.h"
+#include "mod/mem/obc_memory.h"
 #include "mod/l7_climb_app.h"
 
 
@@ -62,6 +63,7 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( MramInitAll, MramMain, &Chips),
 		MOD_INIT( SdcInitAll, SdcMain, &Cards),
 		MOD_INIT( sen_init, sen_main, NULL),
+		MOD_INIT( memInit, memMain, NULL),
 		MOD_INIT( app_init, app_main, NULL)
 
 };
