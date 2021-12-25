@@ -11,6 +11,7 @@
 
 #include <ado_sspdma.h>
 #include <ado_spi.h>
+#include "mod/ai2c/obc_i2c.h"
 
 #include <ado_modules.h>
 #include <mod/ado_sdcard.h>
@@ -78,6 +79,10 @@ int main(void) {
     ADO_SSP_Init(ADO_SSP0, 24000000, SSP_CLOCK_MODE3);
     ADO_SSP_Init(ADO_SSP1, 24000000, SSP_CLOCK_MODE3);
     ADO_SPI_Init(0x08, SPI_CLOCK_MODE3);           	// Clock Divider 0x08 -> fastest, must be even: can be up to 0xFE for slower SPI Clocking
+
+    // Onboard I2C
+    init_i2c(LPC_I2C1, 100);		// 100 khZ
+
 
     // Init all other modules
     for (int i=0; i < MODULE_CNT; i++) {

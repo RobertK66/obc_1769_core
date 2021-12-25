@@ -12,28 +12,28 @@
 
 //void c_CRC8(char data, uint8_t *checksum);
 
-/* Update CRC8 Checksum */
-void c_CRC8(char data, uint8_t *checksum)
-{
-    uint8_t i;
-    *checksum ^= data;
-
-    for (i = 0; i < 8; ++i)
-    {
-        *checksum = (*checksum << 1) ^ ((*checksum & 0x80) ? 0x07 : 0x00);
-    }
-}
-
-/* Compute CRC8 (binary String) */
-uint8_t CRC8(uint8_t* str, size_t length)
-{
-    uint8_t checksum = 0;
-
-    for (; length--; c_CRC8(*str++, &checksum))
-        ;
-
-    return checksum;
-}
+///* Update CRC8 Checksum */
+//void c_CRC8(char data, uint8_t *checksum)
+//{
+//    uint8_t i;
+//    *checksum ^= data;
+//
+//    for (i = 0; i < 8; ++i)
+//    {
+//        *checksum = (*checksum << 1) ^ ((*checksum & 0x80) ? 0x31 : 0x00);
+//    }
+//}
+//
+///* Compute CRC8 (binary String) */
+//uint8_t CRC8(uint8_t* str, size_t length)
+//{
+//    uint8_t checksum = 0xFF;
+//
+//    for (; length--; c_CRC8(*str++, &checksum))
+//        ;
+//
+//    return checksum;
+//}
 
 uint8_t odd_parity_calc(uint8_t val)
 {

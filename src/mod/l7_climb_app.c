@@ -13,6 +13,7 @@
 #include <mod/ado_mram.h>
 #include <mod/ado_sdcard.h>
 
+#include "mem/obc_memory.h"
 #include "l3_sensors.h"
 #include "hw_check.h"
 
@@ -55,6 +56,7 @@ static const app_command_t Commands[] = {
 		{ 's' , ReadAllSensorsCmd },
 		{ 'p' , SpPowerCmd },
 		{ 'O' , SetObcNameCmd },
+
 };
 #define APP_CMD_CNT	(sizeof(Commands)/sizeof(app_command_t))
 
@@ -155,8 +157,8 @@ void CardPowerOffCmd(int argc, char *argv[]) {
 
 
 void ReadAllSensorsCmd(int argc, char *argv[]) {
-	sensor_values_t values = SenReadAllValues();
-	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_SENSORVALUES, &values, sizeof(sensor_values_t));
+	SenReadAllValues();
+	//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_SENSORVALUES, &values, sizeof(sensor_values_t));
 }
 
 uint8_t tempBlockData[2000];
@@ -281,4 +283,6 @@ void SetObcNameCmd(int argc, char *argv[]) {
 		memChangeInstanceName(argv[1]);
 	 }
 }
+
+
 

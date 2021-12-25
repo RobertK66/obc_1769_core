@@ -13,7 +13,7 @@ The RTC IRQ is used to count/check the RTC Seconds.
 */
 #include "obc_time.h"
 #include <ado_modules.h>
-#include "../../ado/obc_checksums.h"
+#include <ado_crc.h>
 
 #define C_RESET_MS_OFFSET 22			// TODO: messure exact start offset
 
@@ -250,7 +250,7 @@ void RtcWriteGpr(rtc_gpridx_t idx, uint8_t byte) {
 		// last byte of word 4 is checksum
 		ptr = gprbase + 4;
 		*((uint32_t *)tmpBytes) = *ptr;
-		tmpBytes[3] = CRC8((uint8_t*)&(LPC_RTC->GPREG), 19) + 1;
+		tmpBytes[3] = CRC8((uint8_t*)&(LPC_RTC->GPREG), 19);
 		*ptr = *((uint32_t *)tmpBytes);
 	}
 }
@@ -268,7 +268,7 @@ void RtcWriteGpr32(rtc_gpridx_t idx, uint32_t value) {
 	// last byte of word 4 is checksum
 	ptr = gprbase + 4;
 	*((uint32_t *)tmpBytes) = *ptr;
-	tmpBytes[3] = CRC8((uint8_t*)&(LPC_RTC->GPREG), 19) + 1;
+	tmpBytes[3] = CRC8((uint8_t*)&(LPC_RTC->GPREG), 19);
 	*ptr = *((uint32_t *)tmpBytes);
 }
 
@@ -283,7 +283,7 @@ bool RtcIsGprChecksumOk(void) {
 	// The rtc does not change its GPR on itself, does it?
 	// So no need to copy and/or disable the interrupts here !?
 	gprbase = (uint8_t *) &(LPC_RTC->GPREG);
-	uint8_t crc = CRC8(gprbase, 19) + 1;
+	uint8_t crc = CRC8(gprbase, 19);
 	return (gprbase[19] == crc);
 }
 
