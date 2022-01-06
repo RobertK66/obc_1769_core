@@ -73,7 +73,8 @@ static const MODULE_DEF_T Modules[] = {
 int main(void) {
     // Read clock settings and update SystemCoreClock variable.
 	// (Here in main() this sets the global available SystemCoreClock variable for the first time after all SystemInits finished)
- 	SystemCoreClockUpdate();
+
+	SystemCoreClockUpdate();
 
     // Layer 1 - Bus Inits
     ADO_SSP_Init(ADO_SSP0, 24000000, SSP_CLOCK_MODE3);

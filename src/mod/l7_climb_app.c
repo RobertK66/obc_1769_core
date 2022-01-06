@@ -26,9 +26,9 @@ typedef struct {
 // Prototypes
 void app_processCmd(int argc, char *argv[]);
 void ReadMramCmd(int argc, char *argv[]);
-void ReadMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
+void ReadMramFinished (uint8_t chipIdx,mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
 void WriteMramCmd(int argc, char *argv[]);
-void WriteMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
+void WriteMramFinished (uint8_t chipIdx,mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
 void ReadSdcardCmd(int argc, char *argv[]);
 void ReadSdcardFinished (sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_t len);
 void WriteSdcardCmd(int argc, char *argv[]);
@@ -40,6 +40,7 @@ void SpPowerCmd(int argc, char *argv[]);
 void CardPowerOnCmd(int argc, char *argv[]);
 void CardPowerOffCmd(int argc, char *argv[]);
 void SetObcNameCmd(int argc, char *argv[]);
+void ReadStatusMramCmd(int argc, char *argv[]);
 
 
 //extern void *sdCard;
@@ -56,6 +57,7 @@ static const app_command_t Commands[] = {
 		{ 's' , ReadAllSensorsCmd },
 		{ 'p' , SpPowerCmd },
 		{ 'O' , SetObcNameCmd },
+
 
 };
 #define APP_CMD_CNT	(sizeof(Commands)/sizeof(app_command_t))
@@ -204,7 +206,7 @@ void ReadMramCmd(int argc, char *argv[]) {
 	 }
 }
 
-void ReadMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
+void ReadMramFinished (uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
     if (result == MRAM_RES_SUCCESS) {
     	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_RAWDATA, data, len);
     	//deb_sendFrame((uint8_t*)data, len);
@@ -213,6 +215,8 @@ void ReadMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t 
     	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, str,strlen(str));
     }
 }
+
+
 
 void WriteMramCmd(int argc, char *argv[]) {
 	if (argc != 5) {
@@ -241,7 +245,7 @@ void WriteMramCmd(int argc, char *argv[]) {
 }
 
 
-void WriteMramFinished (mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
+void WriteMramFinished (uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
 	if (result == MRAM_RES_SUCCESS) {
 		SysEventString("SUCCESS");
 	} else {
@@ -283,6 +287,5 @@ void SetObcNameCmd(int argc, char *argv[]) {
 		memChangeInstanceName(argv[1]);
 	 }
 }
-
 
 

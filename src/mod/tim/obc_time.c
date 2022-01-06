@@ -74,7 +74,7 @@ void TimeSetUtc2(RTC_TIME_T *fullTime);
 void TimeSetUtc1(uint16_t year, uint8_t month, uint8_t dayOfMonth, uint8_t hour, uint8_t min, uint8_t sec);
 
 // Module Variables
-static obc_tim_systemtime_t ObcSystemTime;
+obc_tim_systemtime_t ObcSystemTime;
 
 // The RIT Timer IRQ counts the ms register
 void RIT_IRQHandler(void) {
@@ -360,6 +360,14 @@ inline void TimeSetUtc2(RTC_TIME_T *fullTime) {
                 fullTime->time[RTC_TIMETYPE_HOUR],
                 fullTime->time[RTC_TIMETYPE_MINUTE],
                 fullTime->time[RTC_TIMETYPE_SECOND]);
+}
+
+void tim_setEpochNumber(uint32_t resetCount) {
+	ObcSystemTime.epochNumber = resetCount;
+	RtcWriteGpr32(RTC_GPRIDX_RESETCOUNTER32, resetCount);
+}
+uint32_t tim_getEpochNumber(void) {
+	return ObcSystemTime.epochNumber;
 }
 
 //void TimeGetCurrentUtcTime(RTC_TIME_T *fullTime) {

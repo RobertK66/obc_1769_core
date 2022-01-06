@@ -10,20 +10,21 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <ado_crc.h>
 #include <ado_modules.h>
 #include <mod/ado_mram.h>
 #include <mod/ado_sdcard.h>
 
+#include "../tim/obc_time.h"
+
 
 #define C_SDCOBC_BLOCK0_MARKER (0x1A1B1CEB)
+#define C_SDCOBC_PAGE0_MARKER (0x1A1B1CEB)
 
 typedef enum {
-	MEMST_INIT,
+	MEMST_NOT_INITIALIZED,
 	MEMST_INITIALIZING,
-	MEMST_SDCARDONLY_OK,
-	MEMST_MRAMONLY_DEGRADED,
-	MEMST_MRAMONLY_OK,
-	MEMST_FULLOK,
+	MEMST_IDLE
 } mem_state_t;
 
 typedef enum {
@@ -49,10 +50,12 @@ typedef struct mem_struct_1 {
 
 typedef struct {
 	uint32_t				pageMarker;
+	uint32_t				dummy;
 	char					hwInstancename[16];
 	mem_software_version 	softwareVersion;
 	uint32_t				resetCount;
 	mem_location_entry_t	*locationTable;
+	uint16_t				crc16;
 } mem_page0_t;
 
 typedef struct {
@@ -143,10 +146,13 @@ typedef struct {
 void memInitializeMram(void);
 void memInitializeSdCard(void);
 void CreateFreshSdcBlock0(mem_block0_t *pBlock0);
+void CreateFreshPage0(mem_page0_t *pPage0);
 
+void memPage0Updated(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
 void memBlock0Updated(sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_t len);
 
 static mem_state_t   memStatus;
+static uint32_t 	 lpcChipSerialNumber[4] = {0x01010101, 0x02020202, 0x03030303, 0x04040404};
 
 static bool				block0Valid = false;
 static mem_block0_t 	sdCardBlock0;
@@ -157,62 +163,188 @@ static sdcard_block512 	tempBlock;
 static uint32_t 		tempBlockNr;
 static mem_bl0_updateReason_t bl0Reason;
 
-static bool			 page0Valid = false;
-static mem_page0_t   mramPage0;
+
+#define C_MAX_MRAMRECORD_SIZE (sizeof(mem_page0_t) + 8)		// replace with largest record size used in MRAM .....
+static bool			page0Valid = false;
+//static uint8_t		dummy;
+static mem_page0_t  mramPage0;
+static uint8_t		tempRxTxData[6][C_MAX_MRAMRECORD_SIZE];	// Data Area available per Chip-Idx.
+static uint8_t		tempChipFinishedOk;
+static uint8_t		tempChipFinishedError;
+static uint8_t		page0NeedsUpdate = 0;
+static int8_t		page0ValidCount = 0;
+
 
 
 void memInit(void *dummy) {
+	// Read Serial Number as unique hardware ID
+	unsigned int iap_param_table[5];
+	unsigned int iap_result_table[5];
+
+	iap_param_table[0] = 58; 		//IAP command
+	iap_entry(iap_param_table,iap_result_table);
+	if(iap_result_table[0] == 0) { 	//return: CODE SUCCESS
+		lpcChipSerialNumber[0] = iap_result_table[1];
+		lpcChipSerialNumber[1] = iap_result_table[2];
+		lpcChipSerialNumber[2] = iap_result_table[3];
+		lpcChipSerialNumber[3] = iap_result_table[4];
+	}
+
+
 	// we have to wait for all other modules to work, so we move initialization to main.....
-	memStatus = MEMST_INIT;
+	memStatus = MEMST_NOT_INITIALIZED;
+	page0NeedsUpdate = 0;
+	page0ValidCount = 0;
+}
+
+
+void memSendOperationalEvent() {
+	mem_eventarg_operational_t args;
+	args.sdcOperational = block0Valid;
+	args.mramOperationalMask = page0ValidCount;
+	if (block0Valid) {
+		memcpy(args.instanceName, sdCardBlock0.hwInstancename, 16);
+	} else if (page0Valid) {
+		memcpy(args.instanceName, mramPage0.hwInstancename, 16);
+	}
+	SysEvent(MODULE_ID_MEMORY, EVENT_INFO, EVENT_MEM_OPERATIONAL, &args, sizeof(mem_eventarg_operational_t));
 }
 
 
 void memMain(void) {
-
-	if (memStatus == MEMST_INIT) {
-		// Wait for SDCard to be initialized....
-		if (SdcIsCardinitialized(0)) {
+	if (memStatus == MEMST_NOT_INITIALIZED) {
+		// Wait for SDCard and MRAM to be available ...
+		if ( SdcIsCardinitialized(0)) { // && MramIsIdle(0) ) {
 			memStatus = MEMST_INITIALIZING;
-			memInitializeMram();
 			memInitializeSdCard();
+			memInitializeMram();
+		}
+	} else if(memStatus == MEMST_INITIALIZING) {
+		if ((block0Valid) && (page0Valid)) {
+			memStatus = MEMST_IDLE;
+			memSendOperationalEvent();
 		}
 	}
-	if (memStatus == MEMST_INITIALIZING) {
-		if (block0Valid) {
-			memStatus = MEMST_SDCARDONLY_OK;
-			mem_eventarg_operational_t args;
-			memcpy(args.instanceName, sdCardBlock0.hwInstancename, 16);
-			args.sdcOperational = true;
-			args.mramOperationalMask = 0x00;
-			SysEvent(MODULE_ID_MEMORY, EVENT_INFO, EVENT_MEM_OPERATIONAL, &args, sizeof(mem_eventarg_operational_t));
-		}
-		if (page0Valid) {
-			memStatus = MEMST_MRAMONLY_OK;
+	if (page0NeedsUpdate != 0x00) {
+		uint8_t mask=0x01;
+		for (int chipIdx=0;chipIdx<6;chipIdx++) {
+			if (page0NeedsUpdate & mask) {
+				WriteMramAsync(chipIdx, 0, (uint8_t*)&mramPage0, sizeof(mem_page0_t), memPage0Updated);
+			}
 		}
 	}
-	if (memStatus == MEMST_SDCARDONLY_OK) {
-		// TODO: mram init page 0
-	}
-	if (memStatus == MEMST_MRAMONLY_OK) {
-		if (block0Valid) {
-			memStatus = MEMST_FULLOK;
-			mem_eventarg_operational_t args;
-			memcpy(args.instanceName, sdCardBlock0.hwInstancename, 16);
-			args.sdcOperational = true;
-			args.mramOperationalMask = 0x00;
-			SysEvent(MODULE_ID_MEMORY, EVENT_INFO, EVENT_MEM_OPERATIONAL, &args, sizeof(mem_eventarg_operational_t));
-		}
-	}
-
 	if (block0NeedsUpdate) {
 		block0NeedsUpdate = false;
 		SdcWriteBlockAsync(0, tempBlockNr, &tempBlock, memBlock0Updated);
 	}
+	if (tempChipFinishedOk == 0x3F) {
+		tempChipFinishedOk = 0x00;
+		// all MRAM page0 reads where successful now
+		if (page0ValidCount >= 1) {
+			// we had at least one valid Page with  ok and no disagreement over content...
+			page0Valid = true;
+		} else if (page0ValidCount < 0) {
+			// TODO: there was disagreement over which one of the blocks is  the correct one ....
+			// at this moment without any more thinking let's take the one with the highest reset count....
+			mem_page0_t *validPtr = 0;
+			for (int chipIdx = 0; chipIdx < 6; chipIdx++) {
+				mem_page0_t *p = (mem_page0_t *)tempRxTxData[chipIdx];
+				if (p->pageMarker == C_SDCOBC_PAGE0_MARKER) {
+					if (validPtr == 0) {
+						validPtr = p;
+						page0NeedsUpdate =  (~(1<<chipIdx)) & 0x3F;
+					} else {
+						if (p->resetCount > validPtr->resetCount) {
+							validPtr = p;
+							page0NeedsUpdate =  (~(1<<chipIdx)) & 0x3F;
+						}
+					}
+				}
+			}
+			if (validPtr != 0) {
+				page0Valid = true;
+				memcpy(&mramPage0, validPtr, sizeof(mem_page0_t));
+			}
+		} else {
+			// Not one valid blocks found. Create a new one from scratch and write it to all Chips
+			page0Valid = true;
+			CreateFreshPage0(&mramPage0);
+			page0NeedsUpdate = 0x3F;
+		}
+		// If we already got our epoch number (aka reset count) from RTC-GP registers then we update the mram Page0 with it.
+		uint32_t epochRtc = tim_getEpochNumber();
+		if (epochRtc > mramPage0.resetCount) {
+			mramPage0.resetCount = epochRtc;
+			page0NeedsUpdate = 0x3F;
+		} else {
+			// If rtc had lower or no epoch number we use the one we got from mram now.
+			tim_setEpochNumber(mramPage0.resetCount);
+		}
+	}
+
 
 }
 
-void memInitializeMram(void) {
+void memPage0Updated(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
+	uint8_t chipMask = ~(0x01 << chipIdx);
 
+	if (result == MRAM_RES_SUCCESS) {
+		page0NeedsUpdate &= chipMask;
+	} else {
+		// TODO:?? retry counter / timeouts ....
+	}
+}
+
+void memPage0Read(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
+	uint8_t chipMask = 1 << chipIdx;
+
+	if (result == MRAM_RES_SUCCESS) {
+		tempChipFinishedOk |= chipMask;
+		mem_page0_t *page0Ptr = (mem_page0_t*)data;
+		if (page0Ptr->pageMarker == C_SDCOBC_PAGE0_MARKER) {
+			uint16_t crc = CRC16_XMODEM((uint8_t*)data, sizeof(mem_page0_t) - 2);
+			if (crc == 0x0000) {
+				if (page0ValidCount == 0) {
+					// first valid page goes into our varaible
+					memcpy(&mramPage0, page0Ptr, sizeof(mem_page0_t));
+					page0ValidCount++;
+				} else {
+					// Compare next result with already received
+					int isSame = memcmp(&mramPage0, page0Ptr, sizeof(mem_page0_t));
+					if (isSame == 0) {
+						// OK another agreement on this page.
+						page0ValidCount++;
+					} else {
+						// Mhhh what to do now. Who wins in the end !?
+						page0ValidCount = -1;
+					}
+				}
+			} else {
+				// reason: wrong crc
+				page0NeedsUpdate |= chipMask;
+			}
+		} else {
+			// reason no block marker here
+			page0NeedsUpdate |= chipMask;
+		}
+	} else {
+		// SPI Errors !?
+		// TODO: MRAM Error ..... How to work with degraded Hardware..... How to try to re-init .....
+		tempChipFinishedError |= chipMask;
+	}
+}
+
+void memInitializeMram(void) {
+	// Page0 is located in all 6 MRAM Chips. Let's read them all....
+	page0NeedsUpdate = 0x00;
+	tempChipFinishedOk = 0x00;
+	page0ValidCount = 0;
+	ReadMramAsync(0, 0, &(tempRxTxData[0][0]), sizeof(mem_page0_t), memPage0Read);
+	ReadMramAsync(1, 0, &(tempRxTxData[1][0]), sizeof(mem_page0_t), memPage0Read);
+	ReadMramAsync(2, 0, &(tempRxTxData[2][0]), sizeof(mem_page0_t), memPage0Read);
+	ReadMramAsync(3, 0, &(tempRxTxData[3][0]), sizeof(mem_page0_t), memPage0Read);
+	ReadMramAsync(4, 0, &(tempRxTxData[4][0]), sizeof(mem_page0_t), memPage0Read);
+	ReadMramAsync(5, 0, &(tempRxTxData[5][0]), sizeof(mem_page0_t), memPage0Read);
 }
 
 
@@ -254,10 +386,12 @@ void memBootBlockRead(sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_
 				}
 			 }
 		} else {
-			// TODO: Event "SDCARD no MBR/Boot resord(s) found
+			// TODO: Event "SDCARD no MBR/Boot record(s) found
+
 		}
 	} else {
 		// TODO: Event "SDCARD error!"
+
 	}
 }
 
@@ -274,25 +408,25 @@ void memBlock0Updated(sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_
 }
 
 void CreateFreshSdcBlock0(mem_block0_t *pBlock0) {
-	unsigned int iap_param_table[5];
-	unsigned int iap_result_table[5];
+//	unsigned int iap_param_table[5];
+//	unsigned int iap_result_table[5];
 
 	memset(pBlock0, 0, sizeof(mem_block0_t));
 	pBlock0->blockMarker = C_SDCOBC_BLOCK0_MARKER;
-	// Get Chip Serial Number from IAP
-	iap_param_table[0] = 58; 		//IAP command
-	iap_entry(iap_param_table,iap_result_table);
-	if(iap_result_table[0] == 0) { 	//return: CODE SUCCESS
-		pBlock0->lpcChipSerialNumber[0] = iap_result_table[1];
-		pBlock0->lpcChipSerialNumber[1] = iap_result_table[2];
-		pBlock0->lpcChipSerialNumber[2] = iap_result_table[3];
-		pBlock0->lpcChipSerialNumber[3] = iap_result_table[4];
-	} else {
-		pBlock0->lpcChipSerialNumber[0] = 0x00000000;
-		pBlock0->lpcChipSerialNumber[1] = 0x01010101;
-		pBlock0->lpcChipSerialNumber[2] = 0x02020202;
-		pBlock0->lpcChipSerialNumber[3] = 0x03030303;
-	}
+//	// Get Chip Serial Number from IAP
+//	iap_param_table[0] = 58; 		//IAP command
+//	iap_entry(iap_param_table,iap_result_table);
+//	if(iap_result_table[0] == 0) { 	//return: CODE SUCCESS
+//		pBlock0->lpcChipSerialNumber[0] = iap_result_table[1];
+//		pBlock0->lpcChipSerialNumber[1] = iap_result_table[2];
+//		pBlock0->lpcChipSerialNumber[2] = iap_result_table[3];
+//		pBlock0->lpcChipSerialNumber[3] = iap_result_table[4];
+//	} else {
+
+	pBlock0->lpcChipSerialNumber[0] = lpcChipSerialNumber[0];
+	pBlock0->lpcChipSerialNumber[1] = lpcChipSerialNumber[1];
+	pBlock0->lpcChipSerialNumber[2] = lpcChipSerialNumber[2];
+	pBlock0->lpcChipSerialNumber[3] = lpcChipSerialNumber[3];
 	// Initial Instance Name uses Chips serial Number to be unique.
 	strcpy(pBlock0->hwInstancename,"OBC-");
 	itoa(pBlock0->lpcChipSerialNumber[1], &(pBlock0->hwInstancename[4]), 16);
@@ -304,6 +438,20 @@ void CreateFreshSdcBlock0(mem_block0_t *pBlock0) {
 	pBlock0->softwareVersion.patch = 0;
 	pBlock0->signature = 0xaa55;					// Lets mark our Bloc0 as 'Boot Block'....
 }
+
+void CreateFreshPage0(mem_page0_t *pPage0) {
+	memset(pPage0, 0, sizeof(mem_page0_t));
+	pPage0->pageMarker = C_SDCOBC_PAGE0_MARKER;
+	// Initial Instance Name uses Chips serial Number to be unique.
+	strcpy(pPage0->hwInstancename,"MRAM-");
+	itoa(lpcChipSerialNumber[1], &(pPage0->hwInstancename[5]), 16);
+	pPage0->resetCount = tim_getEpochNumber();
+	uint16_t crc = CRC16_XMODEM((uint8_t*)pPage0, sizeof(mem_page0_t) - 4);
+	pPage0->crc16 = (crc <<8) | (crc>>8);
+}
+
+
+
 
 void memChangeInstanceName(char* name) {
 	if (block0Valid) {
