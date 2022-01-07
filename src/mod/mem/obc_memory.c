@@ -275,6 +275,8 @@ void memMain(void) {
 		uint32_t epochRtc = tim_getEpochNumber();
 		if (epochRtc > mramPage0.resetCount) {
 			mramPage0.resetCount = epochRtc;
+			uint16_t crc = CRC16_XMODEM((uint8_t *)&mramPage0, sizeof(mem_page0_t) - 4);
+			mramPage0.crc16 = (crc <<8) | (crc>>8);
 			page0NeedsUpdate = 0x3F;
 		} else {
 			// If rtc had lower or no epoch number we use the one we got from mram now.

@@ -10,7 +10,7 @@
 #define CLIMBOBC_H_
 
 // Available board abstractions
-// #define BA_OM13085		1  Obsolete, no use any more because no mrams and adCard available.....
+// #define BA_OM13085		1  Obsolete, no use any more because no mrams and sdCard available.....
 #define BA_OM13085_EM2T	2
 #define BA_CLIMBOBC		3
 
