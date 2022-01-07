@@ -71,16 +71,17 @@ jobs:
       #    path: pdfs
 
       # 4th try -> can I clone shrinks version and simply pass in the image feature variables....
+      # ... yes I can ;-).
       - name: Publish PDF Document
         uses: RobertK66/actions-document-publish@76253798f90b4c498c7f9f9d5ab4817b41a02289
         id: publish-document
         with:
-          sources: 'doc/front.md doc/*.md doc/back.md'
+          sources: 'doc/t/front.md doc/*.md doc/t/back.md'
           images_dir: doc/pic
           image_import: pic
       - name: Upload Document
         uses: actions/upload-artifact@v2
         id: upload-document
         with:
-          name: 'document.pdf'
+          name: 'obc-manual'
           path: ${{ steps.publish-document.outputs.pdf }}
