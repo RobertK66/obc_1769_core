@@ -1,8 +1,8 @@
----
-title: OBC Debug Interface
----
 
-General descrition
+OBC Debug Interface
+===================
+
+General description
 ------------------
 
 The Obc Debug interface is a Serial communication link which is available at the
