@@ -72,11 +72,11 @@ jobs:
 
       # 4th try -> can I clone shrinks version and simply pass in the image feature variables....
       - name: Publish PDF Document
-        uses: RobertK66/actions-document-publish@79d61444458a6db638b273bc6b50053f14ca86e2
+        uses: RobertK66/actions-document-publish@89bcaf7bc739c408e29d32a9a330ed6df5e5dee2
         id: publish-document
         with:
           sources: 'doc/front.md doc/*.md doc/back.md'
-          
+          myarg1: doc/pic
       - name: Upload Document
         uses: actions/upload-artifact@v2
         id: upload-document
