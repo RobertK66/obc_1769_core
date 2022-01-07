@@ -54,17 +54,32 @@ jobs:
       #    name: 'document.pdf'
       #    path: ${{ steps.publish-document.outputs.pdf }}
 
-      - uses: baileyjm02/markdown-to-pdf@v1
+      # 3rd try. this works fine but no single file output....
+      #- uses: baileyjm02/markdown-to-pdf@v1
+      #  with:
+      #    input_dir: doc
+      #    output_dir: pdfs
+      #    images_dir: doc/pic
+      #    # for example <img src="./images/file-name.png">
+      #    image_import: pic
+      #    # Default is true, can set to false to only get PDF files
+      #    build_html: false
+      #    
+      #- uses: actions/upload-artifact@v1
+      #  with:
+      #    name: docs
+      #    path: pdfs
+
+      # 4th try -> can I clone shrinks version and simply pass in the image feature variables....
+      - name: Publish PDF Document
+        uses: RobertK66/actions-document-publish@v1
+        id: publish-document
         with:
-          input_dir: doc
-          output_dir: pdfs
-          images_dir: doc/pic
-          # for example <img src="./images/file-name.png">
-          image_import: pic
-          # Default is true, can set to false to only get PDF files
-          build_html: false
+          sources: 'doc/front.md doc/*.md doc/back.md'
           
-      - uses: actions/upload-artifact@v1
+      - name: Upload Document
+        uses: actions/upload-artifact@v2
+        id: upload-document
         with:
-          name: docs
-          path: pdfs
+          name: 'document.pdf'
+          path: ${{ steps.publish-document.outputs.pdf }}
