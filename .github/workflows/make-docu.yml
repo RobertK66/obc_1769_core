@@ -24,17 +24,29 @@ jobs:
           
       - name: Create PDF
         # You may pin to the exact commit or the version.
-        #uses: geoffrey-vl/actions-makepdfs@e14cca39763dc833d20fd40b2a1941196cb27716 
+        uses: geoffrey-vl/actions-makepdfs@e14cca39763dc833d20fd40b2a1941196cb27716 
         #uses: mkrakowitzer/actions-makepdfs@07f1b3912a5dbcd72fe0feed3a3047a17c976d5e
-        uses: mkrakowitzer/actions-makepdfs@master
+        #uses: mkrakowitzer/actions-makepdfs@master
         with:
           # Location of markdown files in github repository
           markdown_dir: doc # default is doc
           # Location to output PDF files to
           # output_dir: # default is tmp
-          media_dir: /doc/pic
+          # media_dir: /doc/pic
 
       - uses: actions/upload-artifact@v1
         with:
           name: obc-docs
           path: tmp
+          
+      - name: Publish PDF Document
+        uses: shrink/actions-document-publish@v1
+        id: publish-document
+        with:
+          sources: 'doc/front.md doc/*.md doc/back.md'
+      - name: Upload Document
+        uses: actions/upload-artifact@v2
+        id: upload-document
+        with:
+          name: 'document.pdf'
+          path: ${{ steps.publish-document.outputs.pdf }}
