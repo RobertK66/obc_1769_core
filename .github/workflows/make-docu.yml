@@ -30,3 +30,8 @@ jobs:
           markdown_dir: doc # default is doc
           # Location to output PDF files to
           # output_dir: # default is tmp
+
+      - uses: actions/ upload-artifact@v1
+        with:
+          name: obc-docs
+          path: tmp
