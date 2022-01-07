@@ -84,4 +84,4 @@ jobs:
         id: upload-document
         with:
           name: 'obc-manual'
-          path: ${{ steps.publish-document.outputs }}
+          path: .publish-docs/
