@@ -72,7 +72,7 @@ jobs:
 
       # 4th try -> can I clone shrinks version and simply pass in the image feature variables....
       - name: Publish PDF Document
-        uses: RobertK66/actions-document-publish@v1
+        uses: RobertK66/actions-document-publish@79d61444458a6db638b273bc6b50053f14ca86e2
         id: publish-document
         with:
           sources: 'doc/front.md doc/*.md doc/back.md'
