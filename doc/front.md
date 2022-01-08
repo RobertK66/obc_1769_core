@@ -1,6 +1,5 @@
 
-![](pic/climb.jpg){:height="50%" width="50%"}
-
+![](pic/climb.jpg)
 
 OBC - User Manual
 ================= 
