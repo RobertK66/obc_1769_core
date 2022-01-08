@@ -76,7 +76,7 @@ jobs:
         uses: RobertK66/actions-document-publish@79b8e666c0f531c297a98eee730d3fdecccde9f3
         id: publish-document
         with:
-          sources: 'doc/t/front.md doc/*.md doc/t/back.md'
+          sources: 'doc/front.md doc/m*.md doc/back.md'
           images_dir: doc/pic
           image_import: pic
       - name: Upload Document
