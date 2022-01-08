@@ -48,17 +48,21 @@ where
 
  
 
-| command | params            | description                                                                                                      |
-|---------|-------------------|------------------------------------------------------------------------------------------------------------------|
-| ‘s’     | \-                | reads all on board sensor values. triggers the “\<sens\>-0x01” event.                                            |
-| ‘R’     | \<blockNr\>       | reads one block from SD-Card and triggers the “\<sys\>-data” event.                                              |
-| ‘r’     | \<c\>\<adr\>len\> | reads a number \<len\> bytes from \<adr\> of mram chip number \<c\> (0...5). It triggers a “\<sys\>-data” event. |
+| command | params                    | description                                                                                                      |
+|---------|---------------------------|------------------------------------------------------------------------------------------------------------------|
+| ‘s’     | \-                        | reads all on board sensor values. triggers the “\<sens\>-0x01” event.                                            |
+| ‘c’     | \-                        | power off the SD-Card                                                                                            |
+| ‘C’     | \-                        | power on the SD-Card                                                                                             |
+| ‘R’     | \<blockNr\>               | reads one block from SD-Card and triggers the “\<sys\>-data” event.                                              |
+| ‘r’     | \<c\>\<adr\>\<len\>       | reads a number \<len\> bytes from \<adr\> of mram chip number \<c\> (0...5). It triggers a “\<sys\>-data” event. |
+| ‘w’     | \<c\>\<adr\>\<b\>\<len\>  | writes the data byte \<b\> for \<len\> times starting at \<adr\> of mram chip number \<c\> (0...5).              |
+| 'p'     | \<abcd\|ABCD\>            | powers on or off one or more sidepanels. e.g "p ABcD" powers 3 of the 4 sidepanels. Blue LED shows on and goes off if current limiter detects short circuit | 
+| ‘O’     | \<name\>                  | sets the hardware instance name                                                                                  |
+|---------|---------------------------|------------------------------------------------------------------------------------------------------------------|
+| 'h'     | \<pinIdx\> \<mode\>       | sets an GPIO pin to mode (0: initVal, 1: high, 2: low, 3: slow blink, 4: fast osz.)                              |
+| 'm'     | \<pinIdxIn\> [\<pinIdxOut\>] | mirrors the GPI input pin to the GPIO output pin 																 |
 
- 
-
- 
-
- 
+Valid pinIdx for command 'h' and 'm' can be found in the hardware abstraction include file in source code..... 
 
 Events
 ------
@@ -107,7 +111,16 @@ where
 
 ### Events
 
-| module | eventid | format | description |
-|--------|---------|--------|-------------|
-|        |         |        |             |
-|        |         |        |             |
+| module-nr/event-id | format  | description                |
+|--------------------|---------|----------------------------|
+| 0x00 / 0x02        | n bytes | raw data                   |
+| 0x00 / 0x03        | n chars | a simple ASCII string      |
+|--------------------|---------|----------------------------|
+| 0x02 / 0x01        | 5 float | sensor values:             |
+|                    |   [0]   | SupplyVoltage in V         |
+|                    |   [1]   | Current OBC   in mA        |
+|                    |   [2]   | Current sidepanels in mA   |
+|                    |   [3]   | temperature (LM19) in °C   |
+|                    |   [4]   | temperature (SHT3X) in °C  |
+|                    |   [5]   | humminity in % 			|
+|--------------------|---------|----------------------------|
