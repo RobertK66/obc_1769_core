@@ -6,4 +6,4 @@ hardware in cubesat projects.
 
  
 
-[Debug Interface](doc/01_debug_if.md)
+[Debug Interface](doc/m01_debug_if.md)
