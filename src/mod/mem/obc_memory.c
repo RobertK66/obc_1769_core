@@ -177,11 +177,16 @@ static int8_t		page0ValidCount = 0;
 
 static memory_status_t channelStatus;
 
+uint32_t memGetSerialNumber(uint8_t idx) {
+	return lpcChipSerialNumber[idx&0x03];
+}
+
 memory_status_t memGetStatus() {
 	return channelStatus;
 }
 
 void memGetInstanceName(char* name, uint8_t maxLen) {
+	memset(name, 0, maxLen);
 	strncpy(name, "Unknown Instance Name", maxLen);
 	if (page0Valid) {
 		strncpy(name, mramPage0.hwInstancename, maxLen);
@@ -485,8 +490,15 @@ void memChangeInstanceName(char* name) {
 		memcpy(tempBlock.data, &sdCardBlock0, sizeof(sdCardBlock0));
 		mem_block0_t *p = (mem_block0_t *)tempBlock.data;
 		memset(p->hwInstancename, 0, 16);
-		strcpy(p->hwInstancename, name);
+		strncpy(p->hwInstancename, name, 16);
 		block0NeedsUpdate = true;
 		bl0Reason = BL0_UPD_INSTANCENAME_CHANGED;
+	}
+	if (page0Valid) {
+		memset(mramPage0.hwInstancename, 0, 16);
+		strncpy(mramPage0.hwInstancename, name, 16);
+		uint16_t crc = CRC16_XMODEM((uint8_t*)&mramPage0, sizeof(mem_page0_t) - 4);
+		mramPage0.crc16 = (crc <<8) | (crc>>8);
+		page0NeedsUpdate = 0x3F;
 	}
 }

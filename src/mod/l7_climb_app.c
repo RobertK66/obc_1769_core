@@ -309,11 +309,12 @@ void SetObcNameCmd(int argc, char *argv[]) {
 void GetSystemInfoCmd(int argc, char *argv[]) {
 	app_systeminfo_t info;
 	info.CurrentTime = tim_getSystemTime();
-	memGetInstanceName(info.InstanceName, 33);
+	memGetInstanceName(info.InstanceName, 36);
 	info.MemoryStatus = memGetStatus();
 	info.SdCardBlock0Number = 31;
 	info.SystemCommandCounter = climbCmdCounter;
 	info.SystemErrorCounter = climbErrorCounter;
+	info.SerialShort = memGetSerialNumber(1);
 
 	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_SYSTEMSTATUS, &info, sizeof(info));
 }

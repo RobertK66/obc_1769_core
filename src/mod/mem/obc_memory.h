@@ -34,6 +34,7 @@ void memMain(void);
 void memChangeInstanceName(char* name);
 void memGetInstanceName(char* name, uint8_t maxLen);
 memory_status_t memGetStatus(void);
+uint32_t memGetSerialNumber(uint8_t idx);
 
 #define MODULE_ID_MEMORY			0x03
 #define EVENT_MEM_OPERATIONAL		1
