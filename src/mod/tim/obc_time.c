@@ -74,7 +74,11 @@ void TimeSetUtc2(RTC_TIME_T *fullTime);
 void TimeSetUtc1(uint16_t year, uint8_t month, uint8_t dayOfMonth, uint8_t hour, uint8_t min, uint8_t sec);
 
 // Module Variables
-obc_tim_systemtime_t ObcSystemTime;
+static obc_tim_systemtime_t ObcSystemTime;
+
+obc_tim_systemtime_t tim_getSystemTime(void) {
+	return ObcSystemTime;
+}
 
 // The RIT Timer IRQ counts the ms register
 void RIT_IRQHandler(void) {

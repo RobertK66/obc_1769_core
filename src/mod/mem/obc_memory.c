@@ -151,6 +151,7 @@ void CreateFreshPage0(mem_page0_t *pPage0);
 void memPage0Updated(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
 void memBlock0Updated(sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_t len);
 
+
 static mem_state_t   memStatus;
 static uint32_t 	 lpcChipSerialNumber[4] = {0x01010101, 0x02020202, 0x03030303, 0x04040404};
 
@@ -174,7 +175,23 @@ static uint8_t		tempChipFinishedError;
 static uint8_t		page0NeedsUpdate = 0;
 static int8_t		page0ValidCount = 0;
 
+static memory_status_t channelStatus;
 
+memory_status_t memGetStatus() {
+	return channelStatus;
+}
+
+void memGetInstanceName(char* name, uint8_t maxLen) {
+	strncpy(name, "Unknown Instance Name", maxLen);
+	if (page0Valid) {
+		strncpy(name, mramPage0.hwInstancename, maxLen);
+	}
+	if (page0Valid && block0Valid) {
+		uint8_t len1 = strlen(mramPage0.hwInstancename);
+		name[len1] = '/';
+		strncpy(name+len1+1, sdCardBlock0.hwInstancename, maxLen - len1 - 1 );
+	}
+}
 
 void memInit(void *dummy) {
 	// Read Serial Number as unique hardware ID
@@ -190,9 +207,14 @@ void memInit(void *dummy) {
 		lpcChipSerialNumber[3] = iap_result_table[4];
 	}
 
-
 	// we have to wait for all other modules to work, so we move initialization to main.....
+	// we start with switchend on SDCard
+	SdcCardinitialize(0);
 	memStatus = MEMST_NOT_INITIALIZED;
+	channelStatus.ChannelAvailble = 0;
+	channelStatus.ChannelBusy = 0;
+	channelStatus.ChannelErrors = 0;
+	channelStatus.ChannelOnOff = MEM_CHANNEL_SDCARD_MASK | MEM_CHANNEL_ALLMRAM_MASK;
 	page0NeedsUpdate = 0;
 	page0ValidCount = 0;
 }
@@ -239,6 +261,7 @@ void memMain(void) {
 	}
 	if (tempChipFinishedOk == 0x3F) {
 		tempChipFinishedOk = 0x00;
+		channelStatus.ChannelAvailble |= 0x03F;
 		// all MRAM page0 reads where successful now
 		if (page0ValidCount >= 1) {
 			// we had at least one valid Page with  ok and no disagreement over content...
@@ -357,6 +380,7 @@ void memInitializeSdCard(void) {
 }
 void memBootBlockRead(sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_t len){
 	if (result == SDC_RES_SUCCESS) {
+		channelStatus.ChannelAvailble |= MEM_CHANNEL_SDCARD_MASK;
 		// Check if the SDCard is formated as we wish it to be for OBC Usage
 		// We expect either a Master Boot Record to be located in SD Cards Block0 or a 'prepared' Boot record.
 		if ( data[0x1fe] == 0x55 && data[0x1ff] == 0xAA ) {		// MBR/Boot Marker
@@ -393,7 +417,8 @@ void memBootBlockRead(sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_
 		}
 	} else {
 		// TODO: Event "SDCARD error!"
-
+		channelStatus.ChannelErrors |= MEM_CHANNEL_SDCARD_MASK;
+		channelStatus.ChannelAvailble &= ~MEM_CHANNEL_SDCARD_MASK;
 	}
 }
 

@@ -102,6 +102,7 @@ where
 | module number | module name             |
 |---------------|-------------------------|
 | 0x00          | climb application layer |
+| 0x01          | timer                   |
 | 0x02          | sensors                 |
 | 0x03          | memory                  |
 | 0x80          | mram                    |
@@ -116,11 +117,11 @@ where
 | 0x00 / 0x02        | n bytes | raw data                   |
 | 0x00 / 0x03        | n chars | a simple ASCII string      |
 |--------------------|---------|----------------------------|
-| 0x02 / 0x01        | 5 float | sensor values:             |
-|                    |   [0]   | SupplyVoltage in V         |
-|                    |   [1]   | Current OBC   in mA        |
-|                    |   [2]   | Current sidepanels in mA   |
+| 0x02 / 0x01        | 6 float | sensor values:             |
+|                    |   [0]   | supply voltage in V        |
+|                    |   [1]   | current OBC   in mA        |
+|                    |   [2]   | current side panels in mA  |
 |                    |   [3]   | temperature (LM19) in °C   |
 |                    |   [4]   | temperature (SHT3X) in °C  |
-|                    |   [5]   | humminity in % 			|
+|                    |   [5]   | humidity in %   			|
 |--------------------|---------|----------------------------|

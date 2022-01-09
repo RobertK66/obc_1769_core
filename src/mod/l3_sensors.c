@@ -21,11 +21,11 @@ typedef sensor_values_t sen_eventarg_meassurement_t;
 
 
 float convertCurrent_c0(uint16_t value) {
-    return ((value * (ADC_VREF / 4095) - 0.01) / 100 / 0.075);
+    return 1000 * ((value * (ADC_VREF / 4095) - 0.01) / 100 / 0.075);
 }
 
 float convertCurrentSp_c1(uint16_t value) {
-    return ((value * (ADC_VREF / 4095) - 0.01) / 100 / 0.075 - 0.0003);
+    return 1000 * ((value * (ADC_VREF / 4095) - 0.01) / 100 / 0.075 - 0.0003);
 }
 
 float convertTemperature_c2(uint16_t value) {
@@ -42,7 +42,7 @@ float convertTemperatureSHT30(uint16_t value) {
 }
 
 float convertHumidity(uint16_t value) {
-	return ((((float)value)*100.0)/65535.0);
+	return ((((float)value)*100.0)/6553500.0);
 }
 
 

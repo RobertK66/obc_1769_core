@@ -44,5 +44,8 @@ typedef struct {
 
 void tim_setEpochNumber(uint32_t resetCount);
 uint32_t tim_getEpochNumber(void);
-//extern obc_tim_systemtime_t ObcSystemTime;
+
+obc_tim_systemtime_t tim_getSystemTime(void);
+
+
 #endif /* MOD_TIM_OBC_TIME_H_ */

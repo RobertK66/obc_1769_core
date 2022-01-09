@@ -14,6 +14,7 @@
 #include <mod/ado_sdcard.h>
 
 #include "mem/obc_memory.h"
+#include "tim/obc_time.h"
 #include "l3_sensors.h"
 #include "hw_check.h"
 
@@ -21,6 +22,20 @@ typedef struct {
 	uint8_t	cmdId;
 	void 	(*command_function)(int argc, char *argv[]);
 } app_command_t;
+
+
+typedef struct {
+	uint32_t 				SerialShort;
+	char					InstanceName[36];
+	obc_tim_systemtime_t 	CurrentTime;
+	memory_status_t			MemoryStatus;
+	uint32_t				SdCardBlock0Number;
+	uint32_t				SystemCommandCounter;
+	uint32_t				SystemErrorCounter;
+} app_systeminfo_t;
+
+static uint32_t climbCmdCounter = 0;
+static uint32_t climbErrorCounter = 0;
 
 
 // Prototypes
@@ -41,6 +56,7 @@ void CardPowerOnCmd(int argc, char *argv[]);
 void CardPowerOffCmd(int argc, char *argv[]);
 void SetObcNameCmd(int argc, char *argv[]);
 void ReadStatusMramCmd(int argc, char *argv[]);
+void GetSystemInfoCmd(int argc, char *argv[]);
 
 
 //extern void *sdCard;
@@ -53,21 +69,21 @@ static const app_command_t Commands[] = {
 		{ 'R' , ReadSdcardCmd },
 		{ 'C' , CardPowerOnCmd },
 		{ 'c' , CardPowerOffCmd },
-		//{ 'W' , WriteSdcardCmd },
 		{ 's' , ReadAllSensorsCmd },
 		{ 'p' , SpPowerCmd },
 		{ 'O' , SetObcNameCmd },
-
-
+		{ 'i' , GetSystemInfoCmd },
 };
+
+
 #define APP_CMD_CNT	(sizeof(Commands)/sizeof(app_command_t))
 
 #define SysEventString(str) { \
-		SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, str, strlen(str)); \
+	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, str, strlen(str)); \
 }
 
 void app_init (void *dummy) {
-	SdcCardinitialize(0);
+	//SdcCardinitialize(0);
 }
 
 void app_main (void) {
@@ -82,11 +98,12 @@ void app_main (void) {
 
 
 void _SysEvent(event_t event) {
-	//deb_sendFrame(event.data, event.byteCnt);
 	deb_sendEventFrame(event.id, event.data, event.byteCnt);
+
+	if ( (event.id.severity == EVENT_ERROR) || (event.id.severity == EVENT_FATAL)) {
+		climbErrorCounter++;
+	}
 }
-
-
 
 uint8_t  tempData[MRAM_MAX_WRITE_SIZE];
 
@@ -96,6 +113,7 @@ void app_processCmd(int argc, char *argv[]) {
 	for (int i=0; i<APP_CMD_CNT; i++) {
 		if (cmd[0] == Commands[i].cmdId) {
 			Commands[i].command_function(argc, argv);
+			climbCmdCounter++;
 			break;
 		}
 	}
@@ -288,4 +306,15 @@ void SetObcNameCmd(int argc, char *argv[]) {
 	 }
 }
 
+void GetSystemInfoCmd(int argc, char *argv[]) {
+	app_systeminfo_t info;
+	info.CurrentTime = tim_getSystemTime();
+	memGetInstanceName(info.InstanceName, 33);
+	info.MemoryStatus = memGetStatus();
+	info.SdCardBlock0Number = 31;
+	info.SystemCommandCounter = climbCmdCounter;
+	info.SystemErrorCounter = climbErrorCounter;
+
+	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_SYSTEMSTATUS, &info, sizeof(info));
+}
 
