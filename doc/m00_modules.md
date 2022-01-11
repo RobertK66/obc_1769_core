@@ -12,10 +12,11 @@ NXP delivers base libraries called "LPCOpen" which cover basic generalization of
 The project is written in C. The C standard library used and linked is the NXP delivered "REDLIB" in its "Redlib(none)" version.
 
 Versions used (status 01-2022):
-	- MCUXpresso IDE 		v11.1.1 
-	-- arm-none-eabi-gcc		???
-	-- redlib(none)		 	???
-	- ADO-Lib 				\[master\] no release tag yet ...
+
+- MCUXpresso IDE: v11.1.1
+	- arm-none-eabi-gcc: ???
+	- redlib(none): ???
+- ADO-Lib: \[master\] no release tag yet ...
 
 
 Basic Architecture & Modularization
