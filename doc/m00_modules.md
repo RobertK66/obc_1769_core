@@ -18,9 +18,8 @@ The project is written in C. The C standard library used and linked is the NXP d
 
 Versions used (status 01-2022):
 	- MCUXpresso IDE 		v11.1.1 
-		- arm-none-eabi-gcc		???
-		- redlib(none)		 	???
-		
+	-- arm-none-eabi-gcc		???
+	-- redlib(none)		 	???
 	- ADO-Lib 				\[master\] no release tag yet ...
 
 
@@ -36,7 +35,7 @@ Secondary goal is to have all developed modules available for different actual (
 is limited to the LPC176x - LPC1769 chip.
 
 To achieve this goals a strict layered approach is used:
-[Basic Architecture](pic/architecture.png)
+[Basic Architecture](pic/architecture.jpg)
 
 
  
