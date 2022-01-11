@@ -58,7 +58,7 @@ where
 | ‘w’     | \<c\>\<adr\>\<b\>\<len\>  | writes the data byte \<b\> for \<len\> times starting at \<adr\> of mram chip number \<c\> (0...5).              |
 | 'p'     | \<abcd\|ABCD\>            | powers on or off one or more sidepanels. e.g "p ABcD" powers 3 of the 4 sidepanels. Blue LED shows on and goes off if current limiter detects short circuit | 
 | ‘O’     | \<name\>                  | sets the hardware instance name                                                                                  |
-|---------|---------------------------|------------------------------------------------------------------------------------------------------------------|
+| ---     | ---                       | ---                                                                                                              |
 | 'h'     | \<pinIdx\> \<mode\>       | sets an GPIO pin to mode (0: initVal, 1: high, 2: low, 3: slow blink, 4: fast osz.)                              |
 | 'm'     | \<pinIdxIn\> [\<pinIdxOut\>] | mirrors the GPI input pin to the GPIO output pin 																 |
 
