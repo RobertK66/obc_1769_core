@@ -1,6 +1,6 @@
 
 
-name: Convert MD dcumentation to PDF  
+name: OBC Manual as PDF
 
 on:
   push:
