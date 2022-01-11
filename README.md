@@ -11,3 +11,5 @@ Documentation under /doc:
 
 
 [![Wo kommt den das hier hin](https://github.com/RobertK66/obc_1769_core/actions/workflows/make-docu.yml/badge.svg)](https://github.com/RobertK66/obc_1769_core/actions/workflows/make-docu.yml)
+
+[![OBC Manual as PDF](https://github.com/RobertK66/obc_1769_core/actions/workflows/make-docu.yml/badge.svg)](https://github.com/RobertK66/obc_1769_core/actions/workflows/make-docu.yml)
