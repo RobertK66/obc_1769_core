@@ -6,7 +6,7 @@ hardware in cubesat projects.
 
  
 Documentation under /doc:
-- [Architecture](doc/m0_modules.md)
+- [Architecture](doc/m00_modules.md)
 - [Debug Interface](doc/m01_debug_if.md)
 
 
