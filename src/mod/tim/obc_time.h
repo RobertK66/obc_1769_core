@@ -9,7 +9,7 @@
 #ifndef MOD_TIM_OBC_TIME_H_
 #define MOD_TIM_OBC_TIME_H_
 
-#include <Chip.h>
+#include <chip.h>
 
 void tim_init (void *dummy);
 void tim_main (void);

@@ -9,7 +9,7 @@
 #ifndef MOD_L7_CLIMB_APP_H_
 #define MOD_L7_CLIMB_APP_H_
 
-#include <Chip.h>
+#include <chip.h>
 
 void app_init (void *dummy);
 void app_main (void);
