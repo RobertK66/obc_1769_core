@@ -1,0 +1,19 @@
+name: Build with MCU Expresso
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
+          
+      - name: Build the mcu workspace
+        uses: RobertK66/actions-build-mcuxpresso@main
+        id: publish-document
+        with:
+          project:  ClimbObc
+          
