@@ -122,7 +122,7 @@ void app_processCmd(int argc, char *argv[]) {
 static bool spOn[4]={false,false,false,false};
 void SpPowerSwitch(char sp) {
 	uint8_t pinIdx = PINIDX_SP3_VCC_EN;
-	bool *flag;
+	bool *flag  = 0;
 	if ((sp=='a')||(sp=='A')) {
 		pinIdx = PINIDX_SP1_VCC_EN;
 		flag = &spOn[0];
