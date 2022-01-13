@@ -17,3 +17,10 @@ jobs:
         with:
           project:  ClimbObc
           
+      - name: Upload Binary
+        uses: actions/upload-artifact@v2
+        id: upload-axf
+        with:
+          name: 'obc-axf'
+          path: ${{ steps.publish-document.outputs.axf }}
+          
