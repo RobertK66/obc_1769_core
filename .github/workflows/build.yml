@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v2
           
       - name: Build the mcu workspace
-        uses: RobertK66/actions-build-mcuxpresso@master
+        uses: RobertK66/actions-build-mcuxpresso@main
         id: publish-document
         with:
           project:  ClimbObc
