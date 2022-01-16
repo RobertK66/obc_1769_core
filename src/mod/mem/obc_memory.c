@@ -23,7 +23,7 @@
 
 typedef enum {
 	MEMST_NOT_INITIALIZED,
-	MEMST_INITIALIZING,
+	MEMST_INIT_MRAM,
 	MEMST_IDLE
 } mem_state_t;
 
@@ -242,11 +242,11 @@ void memMain(void) {
 	if (memStatus == MEMST_NOT_INITIALIZED) {
 		// Wait for SDCard and MRAM to be available ...
 		if ( SdcIsCardinitialized(0)) { // && MramIsIdle(0) ) {
-			memStatus = MEMST_INITIALIZING;
+			memStatus = MEMST_INIT_MRAM;
 			memInitializeSdCard();
 			memInitializeMram();
 		}
-	} else if(memStatus == MEMST_INITIALIZING) {
+	} else if(memStatus == MEMST_INIT_MRAM) {
 		if ((block0Valid) && (page0Valid)) {
 			memStatus = MEMST_IDLE;
 			memSendOperationalEvent();
