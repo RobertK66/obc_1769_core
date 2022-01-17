@@ -17,7 +17,7 @@
 
 #include "../tim/obc_time.h"
 
-#define C_MEM_BLOCK0_MARKER (0x1A1B1CEB)
+#define C_MEM_BLOCK0_MARKER (0x1B1B1CEB)
 #define C_MEM_PAGE0_MARKER (0x1A1B1CEB)
 
 typedef enum {
@@ -65,14 +65,18 @@ typedef struct {
 	uint16_t				crc16;
 } __attribute__((packed)) mem_page0_t;
 
+//typedef struct {
+//	uint32_t				lpcChipSerialNumber[4];		// SerialNr of LPC1769 Chip - used as unique ID for any OBC hardware.
+//	uint32_t        		basisBlockNumber;     		// The raw SDC-Blocknumber to start with OBC Data (Number of Block0 + 1)
+//	uint32_t        		blocksUsed;    	  	 		// already used Blocks -> makes impossible to add obcs if to much space is already used
+//    uint32_t        		blocksAvailable;     		// the size of the Partition Part usable for this OBC
+//} __attribute__((packed)) mem_sdcobcdataarea_t;;
+
 typedef struct {
-	uint32_t				blockMarker;					// 0x00 	0
-	uint32_t				lpcChipSerialNumber[4];			// 0x04		4
-	char					cardName[16];					// 0x14    20
-	mem_software_version 	softwareVersion;				// 0x24    36
-	mem_location_entry_t	*locationTableA;				// 0x28	   40
-	mem_location_entry_t	*locationTableB;				// 0x2C	   44
-	uint8_t					filler[462];					// 0x30	   48
+	uint32_t				blockMarker;					// 0x00
+	char					cardName[16];					// 0x04
+	mem_sdcobcdataarea_t    obcDataAreaDescritpion[4];		// we allow data areas for up to 4 OBC hardware instances to be persisted on one SD Card.
+	uint8_t					filler[378];
 	uint16_t         		signature;             			// 0x1FE   		 '0xaa55'
 } __attribute__((packed)) mem_block0_t;
 // This dummy typedef checks if the structure size is really equal to our SDC BLOCK  size of 512
@@ -149,7 +153,7 @@ typedef struct {
 // local Prototypes
 void memInitializeMram(void);
 void memInitializeSdCard(void);
-void memCreateFreshBlock0(mem_block0_t *pBlock0);
+void memCreateFreshBlock0(mem_block0_t *pBlock0, uint32_t baseBlock, uint32_t partionSize);
 void memCreateFreshPage0(mem_page0_t *pPage0);
 
 void memPage0Updated(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
@@ -164,11 +168,13 @@ static memory_status_t  channelStatus;
 static uint16_t			memWaitLoops = 0;
 static bool				block0Valid = false;
 static mem_block0_t 	block0;
+static uint32_t 		tempBlockNr;
 static uint32_t 		partitionSize;
-
 static bool 			block0NeedsUpdate = false;
 static sdcard_block512 	tempBlock;
-static uint32_t 		tempBlockNr;
+static mem_sdcobcdataarea_t *memObcDataArea = 0;
+
+
 static mem_bl0_updateReason_t bl0Reason;
 
 
@@ -187,6 +193,10 @@ static int8_t		page0ValidCount = 0;
 	page0.crc16 = (crc <<8) | (crc>>8); \
 	page0NeedsUpdate = mask; } \
 
+
+mem_sdcobcdataarea_t *memGetObcArea(void) {
+	return memObcDataArea;
+}
 
 uint32_t memGetSerialNumber(uint8_t idx) {
 	return memChipSerialNumber[idx&0x03];
@@ -325,23 +335,17 @@ void memMain(void) {
 			// Not one valid blocks found. Create a new one from scratch and write it to all Chips
 			page0Valid = true;
 			memCreateFreshPage0(&page0);
-			//page0NeedsUpdate = 0x3F;
 		}
 		// If we already got our epoch number (aka reset count) from RTC-GP registers then we update the mram Page0 with it.
 		uint32_t epochRtc = tim_getEpochNumber();
 		if (epochRtc > page0.resetCount) {
 			page0.resetCount = epochRtc;
 			MEM_WRITE_PAGE0(0x3F);
-//			uint16_t crc = CRC16_XMODEM((uint8_t *)&page0, sizeof(mem_page0_t) - 2);
-//			page0.crc16 = (crc <<8) | (crc>>8);
-//			page0NeedsUpdate = 0x3F;
 		} else {
 			// If rtc had lower or no epoch number we use the one we got from mram now.
 			tim_setEpochNumber(page0.resetCount);
 		}
 	}
-
-
 }
 
 void memPage0Updated(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
@@ -421,28 +425,38 @@ void memBootBlockRead(sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_
 			 if (data[0] == 0xE9 || data[0] == 0xEB	) {			// There is no MBR we have a single Boot-Block at Sector 0
 				 // Check if this is already our own Block0
 				 if (((mem_block0_t *)data)->blockMarker == C_MEM_BLOCK0_MARKER) {
-					 // This is our own Boot0 block!!!
+					 // This is our own Block0!
 					 // TODO: additional checks .... e.g. Serial Nr of Chip -> sd card moved from one HW to another .....
 					 memcpy(&block0, data, sizeof(block0));
+					 memObcDataArea = &block0.obcDataAreaDescritpion[0];
 					 block0Valid = true;
 				 } else {
 					// seems to be some other FATxx Boot block
 					// TODO: Check if it is prepared to be used by us (e.g. by Partiton name or so....)
-					block0NeedsUpdate = true;
-					bl0Reason = BL0_UPD_FIRTSINITIALIZED;
-					memCreateFreshBlock0((mem_block0_t *)tempBlock.data);
+					mem_bootsector_t *p = (mem_bootsector_t *)data;
+					if (p->volumeLabel[0] == 'O') {	// Has top start with O e.g. OBC ;-)
+						block0NeedsUpdate = true;
+						bl0Reason = BL0_UPD_FIRTSINITIALIZED;
+						memCreateFreshBlock0((mem_block0_t *)tempBlock.data, tempBlockNr, partitionSize);
+					} else {
+						// SDC not usable - wrong format
+						channelStatus.ChannelErrors |= MEM_CHANNEL_SDCARD_MASK;
+
+					}
 				 }
-			 } else {											// This seems to be a MasterBoot record
+			 } else {
+				// This seems to be a MasterBoot record
 				mem_mbrinfo_t *p = (mem_mbrinfo_t *)data;
 				// We ignore Partition 0 - this can be any normal Windows FAT or whatever we want to be available on OBC SDCards....
 				// OBC Partition always uses Partition-1 of possible 0..3
 				if (p->partitionData[1].firstSector > 0) {
 					tempBlockNr = p->partitionData[1].firstSector;
 					partitionSize = p->partitionData[1].sectorsTotal;
-
 					SdcReadBlockAsync(0, tempBlockNr, tempBlock.data, memBootBlockRead);
 				} else {
 					// TODO: Event "SDCARD no partition '1' found.
+					channelStatus.ChannelErrors |= MEM_CHANNEL_SDCARD_MASK;
+
 				}
 			 }
 		} else {
@@ -468,24 +482,23 @@ void memBlock0Updated(sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_
 	}
 }
 
-void memCreateFreshBlock0(mem_block0_t *pBlock0) {
+void memCreateFreshBlock0(mem_block0_t *pBlock0, uint32_t block0Nr, uint32_t partitionSize) {
 	memset(pBlock0, 0, sizeof(mem_block0_t));
 	pBlock0->blockMarker = C_MEM_BLOCK0_MARKER;
-
-	pBlock0->lpcChipSerialNumber[0] = memChipSerialNumber[0];
-	pBlock0->lpcChipSerialNumber[1] = memChipSerialNumber[1];
-	pBlock0->lpcChipSerialNumber[2] = memChipSerialNumber[2];
-	pBlock0->lpcChipSerialNumber[3] = memChipSerialNumber[3];
 	// Initial Instance Name uses Chips serial Number to be unique.
 	strcpy(pBlock0->cardName,"Card-");
-	itoa(pBlock0->lpcChipSerialNumber[2], &(pBlock0->cardName[5]), 16);
-	pBlock0->locationTableA = 0;
-	pBlock0->locationTableB = 0;
-	pBlock0->softwareVersion.type = SW_DEVELOPER;
-	pBlock0->softwareVersion.major = 0;
-	pBlock0->softwareVersion.minor = 0;
-	pBlock0->softwareVersion.patch = 0;
-	pBlock0->signature = 0xaa55;					// Lets mark our Bloc0 as 'Boot Block'....
+	itoa(memChipSerialNumber[2], &(pBlock0->cardName[5]), 16);
+
+	// We enter this OBC in the first Area of 4 available.
+	pBlock0->obcDataAreaDescritpion[0].lpcChipSerialNumber[0] = memChipSerialNumber[0];
+	pBlock0->obcDataAreaDescritpion[0].lpcChipSerialNumber[1] = memChipSerialNumber[1];
+	pBlock0->obcDataAreaDescritpion[0].lpcChipSerialNumber[2] = memChipSerialNumber[2];
+	pBlock0->obcDataAreaDescritpion[0].lpcChipSerialNumber[3] = memChipSerialNumber[3];
+	pBlock0->obcDataAreaDescritpion[0].basisBlockNumber = block0Nr;
+	pBlock0->obcDataAreaDescritpion[0].blocksAvailable = partitionSize;
+	pBlock0->obcDataAreaDescritpion[0].blocksUsed = 0;
+
+	pBlock0->signature = 0xaa55;					// Our Bloc0 is also marked as 'Boot Block'
 }
 
 void memCreateFreshPage0(mem_page0_t *pPage0) {

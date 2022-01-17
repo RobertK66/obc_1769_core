@@ -31,6 +31,13 @@ typedef struct {
 	uint8_t ChannelOnOff;
 } memory_status_t;
 
+typedef struct {
+	uint32_t				lpcChipSerialNumber[4];		// SerialNr of LPC1769 Chip - used as unique ID for any OBC hardware.
+	uint32_t        		basisBlockNumber;     		// The raw SDC-Blocknumber to start with OBC Data (Number of Block0 + 1)
+	uint32_t        		blocksUsed;    	  	 		// already used Blocks -> makes impossible to add obcs if to much space is already used
+    uint32_t        		blocksAvailable;     		// the size of the Partition Part usable for this OBC
+} __attribute__((packed)) mem_sdcobcdataarea_t;;
+
 void memInit(void *initdata);
 void memMain(void);
 
@@ -38,9 +45,13 @@ void memCardOff(void);
 void memCardOn(void);
 
 void memChangeInstanceName(char* name);
-void memChangeCardName(char* name);
 void memGetInstanceName(char* name, uint8_t maxLen);
+
+void memChangeCardName(char* name);
 void memGetCardName(char* name, uint8_t maxLen);
+mem_sdcobcdataarea_t *memGetObcArea();
+
+//void memReadObcBlockAsync(uint32_t blockNr, );
 
 memory_status_t memGetStatus(void);
 uint32_t memGetSerialNumber(uint8_t idx);
