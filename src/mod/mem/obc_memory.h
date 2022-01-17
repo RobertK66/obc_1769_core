@@ -5,7 +5,6 @@
  Created on	 : 23.12.2021
 ===============================================================================
 */
-
 #ifndef MOD_MEM_OBC_MEMORY_H_
 #define MOD_MEM_OBC_MEMORY_H_
 
@@ -32,7 +31,7 @@ typedef struct {
 	uint8_t ChannelOnOff;
 } memory_status_t;
 
-void memInit(void *dummy);
+void memInit(void *initdata);
 void memMain(void);
 
 void memCardOff(void);
@@ -49,7 +48,5 @@ uint32_t memGetSerialNumber(uint8_t idx);
 #define MODULE_ID_MEMORY			0x03
 #define EVENT_MEM_OPERATIONAL		1
 #define EVENT_MEM_BLOCK0_UPDATED	2
-
-
 
 #endif /* MOD_MEM_OBC_MEMORY_H_ */

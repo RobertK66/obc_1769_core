@@ -30,11 +30,9 @@ and sub units in the final CubeSat system.
 Secondary goal is to have all developed modules available for different actual (e.g. test or prototyping versions) or future projects. This goal and therefore the scope of the ADO-Lib 
 is limited to the LPC176x - LPC1769 chip.
 
-To achieve this goals a strict layered approach is used:
+To achieve this goals a strict layered approach is used (tbd...):
 ![Basic Architecture](pic/architecture.jpg)
 
 
  
-
-
   
