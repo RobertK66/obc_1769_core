@@ -26,7 +26,8 @@ typedef struct {
 
 typedef struct {
 	uint32_t 				SerialShort;
-	char					InstanceName[36];
+	char					InstanceName[16];
+	char					CardName[16];
 	obc_tim_systemtime_t 	CurrentTime;
 	memory_status_t			MemoryStatus;
 	uint32_t				SdCardBlock0Number;
@@ -57,6 +58,7 @@ void CardPowerOffCmd(int argc, char *argv[]);
 void SetObcNameCmd(int argc, char *argv[]);
 void ReadStatusMramCmd(int argc, char *argv[]);
 void GetSystemInfoCmd(int argc, char *argv[]);
+void SetSdCardNameCmd(int argc, char *argv[]);
 
 
 //extern void *sdCard;
@@ -72,6 +74,7 @@ static const app_command_t Commands[] = {
 		{ 's' , ReadAllSensorsCmd },
 		{ 'p' , SpPowerCmd },
 		{ 'O' , SetObcNameCmd },
+		{ 'N' , SetSdCardNameCmd },
 		{ 'i' , GetSystemInfoCmd },
 };
 
@@ -167,12 +170,14 @@ void SpPowerCmd(int argc, char *argv[]) {
 }
 
 void CardPowerOnCmd(int argc, char *argv[]) {
-	HwcSetOutput(PINIDX_SD_VCC_EN, HWC_Low);	// Sd Card Power On
-	SdcCardinitialize(0);		// initialize Card[0]
+	memCardOn();
+//	HwcSetOutput(PINIDX_SD_VCC_EN, HWC_Low);	// Sd Card Power On
+//	SdcCardinitialize(0);		// initialize Card[0]
 }
 
 void CardPowerOffCmd(int argc, char *argv[]) {
-	HwcSetOutput(PINIDX_SD_VCC_EN, HWC_High);
+	memCardOff();
+//	HwcSetOutput(PINIDX_SD_VCC_EN, HWC_High);
 }
 
 
@@ -220,7 +225,7 @@ void ReadMramCmd(int argc, char *argv[]) {
 		if (idx >= MRAM_CHIP_CNT) {
 		   idx = 0;
 		}
-		ReadMramAsync(idx, adr, tempData, len, ReadMramFinished);
+		MramReadAsync(idx, adr, tempData, len, ReadMramFinished);
 	 }
 }
 
@@ -258,7 +263,7 @@ void WriteMramCmd(int argc, char *argv[]) {
 		}
 
 		// Binary Command
-		WriteMramAsync(idx, adr, tempData, len,  WriteMramFinished);
+		MramWriteAsync(idx, adr, tempData, len,  WriteMramFinished);
 	}
 }
 
@@ -306,10 +311,21 @@ void SetObcNameCmd(int argc, char *argv[]) {
 	 }
 }
 
+
+void SetSdCardNameCmd(int argc, char *argv[]) {
+	if (argc != 2) {
+		SysEventString("uasge: N <cardName>");
+	} else {
+		memChangeCardName(argv[1]);
+	 }
+}
+
+
 void GetSystemInfoCmd(int argc, char *argv[]) {
 	app_systeminfo_t info;
 	info.CurrentTime = tim_getSystemTime();
-	memGetInstanceName(info.InstanceName, 36);
+	memGetInstanceName(info.InstanceName,16);
+	memGetCardName(info.CardName,20);
 	info.MemoryStatus = memGetStatus();
 	info.SdCardBlock0Number = 31;
 	info.SystemCommandCounter = climbCmdCounter;

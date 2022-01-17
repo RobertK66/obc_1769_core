@@ -56,6 +56,7 @@ static const mram_chipinit_array_t Chips = {
 	(sizeof(Mrams)/sizeof(mram_chipinit_t)), Mrams
 };
 
+static const memory_init_t MemoryInit = { PTR_FROM_IDX(PINIDX_SD_VCC_EN) };
 
 static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( deb_init, deb_main, LPC_UART2),
@@ -64,7 +65,7 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( MramInitAll, MramMain, &Chips),
 		MOD_INIT( SdcInitAll, SdcMain, &Cards),
 		MOD_INIT( sen_init, sen_main, NULL),
-		MOD_INIT( memInit, memMain, NULL),
+		MOD_INIT( memInit, memMain, &MemoryInit),
 		MOD_INIT( app_init, app_main, NULL)
 
 };

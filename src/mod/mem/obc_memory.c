@@ -24,6 +24,8 @@
 typedef enum {
 	MEMST_NOT_INITIALIZED,
 	MEMST_INIT_MRAM,
+	MEMST_WAIT_SDCARD_POWERON,
+	MEMST_INIT_SDCARD,
 	MEMST_IDLE
 } mem_state_t;
 
@@ -61,7 +63,7 @@ typedef struct {
 typedef struct {
 	uint32_t				blockMarker;					// 0x00 	0
 	uint32_t				lpcChipSerialNumber[4];			// 0x04		4
-	char					hwInstancename[16];				// 0x14    20
+	char					cardName[16];					// 0x14    20
 	mem_software_version 	softwareVersion;				// 0x24    36
 	mem_location_entry_t	*locationTableA;				// 0x28	   40
 	mem_location_entry_t	*locationTableB;				// 0x2C	   44
@@ -131,11 +133,12 @@ typedef struct {
 	bool	sdcOperational;
 	uint8_t	mramOperationalMask;
 	char	instanceName[16];
+	char	cardName[16];
 } mem_eventarg_operational_t;
 
 typedef enum {
 	BL0_UPD_FIRTSINITIALIZED = 0,
-	BL0_UPD_INSTANCENAME_CHANGED,
+	BL0_UPD_CARDNAME_CHANGED,
 	BL0_UPD_SERIALNUMBER_CHANGED,		// most prop: SDCard was moved from other Hardwareinstance...
 } mem_bl0_updateReason_t;
 
@@ -151,9 +154,10 @@ void CreateFreshPage0(mem_page0_t *pPage0);
 void memPage0Updated(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
 void memBlock0Updated(sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_t len);
 
-
-static mem_state_t   memStatus;
-static uint32_t 	 lpcChipSerialNumber[4] = {0x01010101, 0x02020202, 0x03030303, 0x04040404};
+static memory_init_t 	*memInitPtr;
+static mem_state_t   	memStatus;
+static uint16_t			memWaitLoops = 0;
+static uint32_t 	 	lpcChipSerialNumber[4] = {0x01010101, 0x02020202, 0x03030303, 0x04040404};
 
 static bool				block0Valid = false;
 static mem_block0_t 	sdCardBlock0;
@@ -185,20 +189,25 @@ memory_status_t memGetStatus() {
 	return channelStatus;
 }
 
-void memGetInstanceName(char* name, uint8_t maxLen) {
+void memGetCardName(char* name, uint8_t maxLen) {
 	memset(name, 0, maxLen);
-	strncpy(name, "Unknown Instance Name", maxLen);
-	if (page0Valid) {
-		strncpy(name, mramPage0.hwInstancename, maxLen);
-	}
-	if (page0Valid && block0Valid) {
-		uint8_t len1 = strlen(mramPage0.hwInstancename);
-		name[len1] = '/';
-		strncpy(name+len1+1, sdCardBlock0.hwInstancename, maxLen - len1 - 1 );
+	strncpy(name, "<Unknown>", maxLen);
+	if (block0Valid) {
+		strncpy(name, sdCardBlock0.cardName, maxLen);
 	}
 }
 
-void memInit(void *dummy) {
+void memGetInstanceName(char* name, uint8_t maxLen) {
+	memset(name, 0, maxLen);
+	strncpy(name, "<Unknown>", maxLen);
+	if (page0Valid) {
+		strncpy(name, mramPage0.hwInstancename, maxLen);
+	}
+}
+
+void memInit(void *initdata) {
+	memInitPtr = (memory_init_t *)initdata;
+
 	// Read Serial Number as unique hardware ID
 	unsigned int iap_param_table[5];
 	unsigned int iap_result_table[5];
@@ -230,8 +239,9 @@ void memSendOperationalEvent() {
 	args.sdcOperational = block0Valid;
 	args.mramOperationalMask = page0ValidCount;
 	if (block0Valid) {
-		memcpy(args.instanceName, sdCardBlock0.hwInstancename, 16);
-	} else if (page0Valid) {
+		memcpy(args.cardName, sdCardBlock0.cardName, 16);
+	}
+	if (page0Valid) {
 		memcpy(args.instanceName, mramPage0.hwInstancename, 16);
 	}
 	SysEvent(MODULE_ID_MEMORY, EVENT_INFO, EVENT_MEM_OPERATIONAL, &args, sizeof(mem_eventarg_operational_t));
@@ -239,15 +249,28 @@ void memSendOperationalEvent() {
 
 
 void memMain(void) {
+	if(memWaitLoops>0) {
+		memWaitLoops--;
+	}
 	if (memStatus == MEMST_NOT_INITIALIZED) {
-		// Wait for SDCard and MRAM to be available ...
-		if ( SdcIsCardinitialized(0)) { // && MramIsIdle(0) ) {
+		if ( MramIsChipItialized(5) == MRAM_RES_SUCCESS ) {
 			memStatus = MEMST_INIT_MRAM;
-			memInitializeSdCard();
+			//memInitializeSdCard();
 			memInitializeMram();
 		}
 	} else if(memStatus == MEMST_INIT_MRAM) {
-		if ((block0Valid) && (page0Valid)) {
+		if ((page0Valid) && SdcIsCardinitialized(0)) {
+			memStatus = MEMST_INIT_SDCARD;
+			memInitializeSdCard();
+		}
+
+	} else if(memStatus == MEMST_WAIT_SDCARD_POWERON) {
+		if (memWaitLoops == 0) { // or SD Card not available ....
+			SdcCardinitialize(0);
+			memStatus = MEMST_INIT_MRAM;
+		}
+	} else if(memStatus == MEMST_INIT_SDCARD) {
+		if (block0Valid) { // or SD Card not available ....
 			memStatus = MEMST_IDLE;
 			memSendOperationalEvent();
 		}
@@ -256,7 +279,7 @@ void memMain(void) {
 		uint8_t mask=0x01;
 		for (int chipIdx=0;chipIdx<6;chipIdx++) {
 			if (page0NeedsUpdate & mask) {
-				WriteMramAsync(chipIdx, 0, (uint8_t*)&mramPage0, sizeof(mem_page0_t), memPage0Updated);
+				MramWriteAsync(chipIdx, 0, (uint8_t*)&mramPage0, sizeof(mem_page0_t), memPage0Updated);
 			}
 		}
 	}
@@ -369,12 +392,12 @@ void memInitializeMram(void) {
 	page0NeedsUpdate = 0x00;
 	tempChipFinishedOk = 0x00;
 	page0ValidCount = 0;
-	ReadMramAsync(0, 0, &(tempRxTxData[0][0]), sizeof(mem_page0_t), memPage0Read);
-	ReadMramAsync(1, 0, &(tempRxTxData[1][0]), sizeof(mem_page0_t), memPage0Read);
-	ReadMramAsync(2, 0, &(tempRxTxData[2][0]), sizeof(mem_page0_t), memPage0Read);
-	ReadMramAsync(3, 0, &(tempRxTxData[3][0]), sizeof(mem_page0_t), memPage0Read);
-	ReadMramAsync(4, 0, &(tempRxTxData[4][0]), sizeof(mem_page0_t), memPage0Read);
-	ReadMramAsync(5, 0, &(tempRxTxData[5][0]), sizeof(mem_page0_t), memPage0Read);
+	MramReadAsync(0, 0, &(tempRxTxData[0][0]), sizeof(mem_page0_t), memPage0Read);
+	MramReadAsync(1, 0, &(tempRxTxData[1][0]), sizeof(mem_page0_t), memPage0Read);
+	MramReadAsync(2, 0, &(tempRxTxData[2][0]), sizeof(mem_page0_t), memPage0Read);
+	MramReadAsync(3, 0, &(tempRxTxData[3][0]), sizeof(mem_page0_t), memPage0Read);
+	MramReadAsync(4, 0, &(tempRxTxData[4][0]), sizeof(mem_page0_t), memPage0Read);
+	MramReadAsync(5, 0, &(tempRxTxData[5][0]), sizeof(mem_page0_t), memPage0Read);
 }
 
 
@@ -393,7 +416,7 @@ void memBootBlockRead(sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_
 				 // Check if this is already our own Block0
 				 if (((mem_block0_t *)data)->blockMarker == C_SDCOBC_BLOCK0_MARKER) {
 					 // This is our own Boot0 block!!!
-					 // TODO: aditional checks .... e.g. Serial Nr of Chip -> sd card moved from one HW to another .....
+					 // TODO: additional checks .... e.g. Serial Nr of Chip -> sd card moved from one HW to another .....
 					 memcpy(&sdCardBlock0, data, sizeof(sdCardBlock0));
 					 block0Valid = true;
 				 } else {
@@ -440,28 +463,16 @@ void memBlock0Updated(sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_
 }
 
 void CreateFreshSdcBlock0(mem_block0_t *pBlock0) {
-//	unsigned int iap_param_table[5];
-//	unsigned int iap_result_table[5];
-
 	memset(pBlock0, 0, sizeof(mem_block0_t));
 	pBlock0->blockMarker = C_SDCOBC_BLOCK0_MARKER;
-//	// Get Chip Serial Number from IAP
-//	iap_param_table[0] = 58; 		//IAP command
-//	iap_entry(iap_param_table,iap_result_table);
-//	if(iap_result_table[0] == 0) { 	//return: CODE SUCCESS
-//		pBlock0->lpcChipSerialNumber[0] = iap_result_table[1];
-//		pBlock0->lpcChipSerialNumber[1] = iap_result_table[2];
-//		pBlock0->lpcChipSerialNumber[2] = iap_result_table[3];
-//		pBlock0->lpcChipSerialNumber[3] = iap_result_table[4];
-//	} else {
 
 	pBlock0->lpcChipSerialNumber[0] = lpcChipSerialNumber[0];
 	pBlock0->lpcChipSerialNumber[1] = lpcChipSerialNumber[1];
 	pBlock0->lpcChipSerialNumber[2] = lpcChipSerialNumber[2];
 	pBlock0->lpcChipSerialNumber[3] = lpcChipSerialNumber[3];
 	// Initial Instance Name uses Chips serial Number to be unique.
-	strcpy(pBlock0->hwInstancename,"OBC-");
-	itoa(pBlock0->lpcChipSerialNumber[1], &(pBlock0->hwInstancename[4]), 16);
+	strcpy(pBlock0->cardName,"Card-");
+	itoa(pBlock0->lpcChipSerialNumber[2], &(pBlock0->cardName[5]), 16);
 	pBlock0->locationTableA = 0;
 	pBlock0->locationTableB = 0;
 	pBlock0->softwareVersion.type = SW_DEVELOPER;
@@ -483,17 +494,18 @@ void CreateFreshPage0(mem_page0_t *pPage0) {
 }
 
 
-
-
-void memChangeInstanceName(char* name) {
+void memChangeCardName(char* name) {
 	if (block0Valid) {
 		memcpy(tempBlock.data, &sdCardBlock0, sizeof(sdCardBlock0));
 		mem_block0_t *p = (mem_block0_t *)tempBlock.data;
-		memset(p->hwInstancename, 0, 16);
-		strncpy(p->hwInstancename, name, 16);
+		memset(p->cardName, 0, 16);
+		strncpy(p->cardName, name, 16);
 		block0NeedsUpdate = true;
-		bl0Reason = BL0_UPD_INSTANCENAME_CHANGED;
+		bl0Reason = BL0_UPD_CARDNAME_CHANGED;
 	}
+}
+
+void memChangeInstanceName(char* name) {
 	if (page0Valid) {
 		memset(mramPage0.hwInstancename, 0, 16);
 		strncpy(mramPage0.hwInstancename, name, 16);
@@ -501,4 +513,21 @@ void memChangeInstanceName(char* name) {
 		mramPage0.crc16 = (crc <<8) | (crc>>8);
 		page0NeedsUpdate = 0x3F;
 	}
+}
+
+void memCardOn(void) {
+	Chip_GPIO_SetPinOutLow(LPC_GPIO, memInitPtr->sdcPowerPin->pingrp, memInitPtr->sdcPowerPin->pinnum);
+	memStatus = MEMST_WAIT_SDCARD_POWERON;
+	memWaitLoops = 1000;
+	channelStatus.ChannelOnOff |= MEM_CHANNEL_SDCARD_MASK;
+	channelStatus.ChannelAvailble &= ~MEM_CHANNEL_SDCARD_MASK;
+	channelStatus.ChannelBusy &= ~MEM_CHANNEL_SDCARD_MASK;
+	channelStatus.ChannelErrors &= ~MEM_CHANNEL_SDCARD_MASK;	//TODO: ??? keep this
+	block0Valid = false;
+	//SdcCardinitialize(0);
+}
+
+void memCardOff(void) {
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, memInitPtr->sdcPowerPin->pingrp, memInitPtr->sdcPowerPin->pinnum);
+	channelStatus.ChannelOnOff &= ~MEM_CHANNEL_SDCARD_MASK;
 }

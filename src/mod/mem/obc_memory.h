@@ -22,6 +22,10 @@
 #define MEM_CHANNEL_MRAM_MASK(chipIdx)	(1 << chipIdx)
 
 typedef struct {
+	const PINMUX_GRP_T2*  	sdcPowerPin;
+} memory_init_t;
+
+typedef struct {
 	uint8_t ChannelErrors;
 	uint8_t ChannelBusy;
 	uint8_t ChannelAvailble;
@@ -31,8 +35,14 @@ typedef struct {
 void memInit(void *dummy);
 void memMain(void);
 
+void memCardOff(void);
+void memCardOn(void);
+
 void memChangeInstanceName(char* name);
+void memChangeCardName(char* name);
 void memGetInstanceName(char* name, uint8_t maxLen);
+void memGetCardName(char* name, uint8_t maxLen);
+
 memory_status_t memGetStatus(void);
 uint32_t memGetSerialNumber(uint8_t idx);
 
