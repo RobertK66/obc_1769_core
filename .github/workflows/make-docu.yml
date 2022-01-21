@@ -22,9 +22,12 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+      
+      - name: Show available env Variable 
+        run:  printenv
     
       - name: Find and Replace User Name - Using Build Variable 
-        run: find doc/*.md -type f -exec sed -i ''s/@TKN_COMMIT_ID@/${{ env.USER_NAME }}/g'' {} \;
+        run: find doc/*.md -type f -exec sed -i ''s/@TKN_COMMIT_ID@/XX${{ HOST_NAME }}XX/g'' {} \;
     
       - name: Show replacement resut
         run: cat doc/back.md
