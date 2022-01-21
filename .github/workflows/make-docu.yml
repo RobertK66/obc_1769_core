@@ -27,7 +27,7 @@ jobs:
         run: echo "Deploying to production server on branch $GITHUB_SHA ${{ github.event_name }}  ${{ github.ref }}"
     
       - name: Find and Replace User Name - Using Build Variable 
-        run: find doc/*.md -type f -exec sed -i ''s|@TKN_COMMIT_ID@|/${{ github.ref }}|g'' {} \;
+        run: find doc/*.md -type f -exec sed -i ''s|@TKN_COMMIT_ID@|${{ github.ref }}|g'' {} \;
 
       - name: Find and Replace User Name - Using Build Variable 
         run: find doc/*.md -type f -exec sed -i ''s/@TKN_VERSION@/${{ github.sha }}/g'' {} \;
