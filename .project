@@ -30,4 +30,11 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 		<nature>org.eclipse.xtext.ui.shared.xtextNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>workflows</name>
+			<type>2</type>
+			<locationURI>PROJECT_LOC/.github/workflows</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>
