@@ -35,7 +35,7 @@ Reconsider if
 
 Decision to reuse and rewrite the NXP provided "LPCOpen" Library as its own "ado-chip-175x-6x"
 - LPCOpen is an 'old' and depricated version of CPU and hardware abstraction from NXP. No new developments since the release 03/13/2014 (v2.10).
-- MCUXpresso projects use the LPCOpen layout and always include this 'Library' as source code in its own project. So its easy to replace and change thid to own code.
+- MCUXpresso projects use the LPCOpen layout and always include this 'Library' as source code in its own project. So its easy to replace and change this to own code.
 - There where already errors found and fixed during the pegasus project.
 
 Reconsider if
@@ -43,7 +43,7 @@ Reconsider if
 
 Usage of OS/RTOS
 ----------------
-Decisioon of not using available RTOS implementation for LPC1769 based on
+Decision of not using available RTOS implementation for LPC1769 based on
 - overhead of task switching vs. decoupling of 'modules' considered to high for this application.
 - complexity added for development and debugging ( another hurdle for students new to embedded software dev)
 

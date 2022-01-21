@@ -1,4 +1,4 @@
-How to Program the OBCs Flash
+How to program the OBCs Flash
 =============================
 
 - Connect a LPC-Link2 probe to the JTAG pins of the OBC Y- connector
@@ -15,7 +15,7 @@ How to Program the OBCs Flash
 
 ![Step2](pic/Flash2.jpg)
 
-- run the toll and check if program was successful.
+- run the tool and check if program was successful.
 
 ![Step3](pic/Flash3.jpg)
 
