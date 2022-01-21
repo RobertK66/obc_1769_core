@@ -5,7 +5,7 @@ Hardware and CPU
 ----------------
 Decission to take the own OBC design with LPC1769 is based on
 - Experience from Pegasus (the Climb predecessor project)
-- Excelent Radiation robustnes of this design (prrofed in Orbit and other ground tests).
+- Excelent radiation robustnes of this design (proofed in orbit and other ground tests).
 
 Reconsider if
 - more complex caclulations and processes needed then the LPC1769 can deliver. 
@@ -39,7 +39,7 @@ Decision to reuse and rewrite the NXP provided "LPCOpen" Library as its own "ado
 - There where already errors found and fixed during the pegasus project.
 
 Reconsider if
-- LPC1769 gets included and supported in some better new 'Embedded Software development Comunities". (e.g. MCUXpressos new SDKs)
+- LPC1769 gets included and supported in some better and new 'Embedded Software Development Communities". (e.g. MCUXpressos new SDKs)
 
 Usage of OS/RTOS
 ----------------
@@ -50,8 +50,3 @@ Decisioon of not using available RTOS implementation for LPC1769 based on
 Reconsider if
 - own solution gets to comlex and/or also introduces comparable overhead.
 
-     
- 
-
-
- 
