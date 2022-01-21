@@ -7,6 +7,7 @@ this document was genrated on github with help of github workflows. It uses the 
 Metadata
 --------
 
+|        | value             |
 |--------|-------------------|
 | branch | @TKN_COMMIT_ID@   |
 | commit | @TKN_VERSION@     |

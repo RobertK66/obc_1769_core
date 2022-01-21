@@ -1,8 +1,5 @@
 OBC-Software Architecture
 =========================
-
-For reasoning on the following facts see Appendix-A.
-
 Tool-Chain & External Dependencies
 ----------------------------------
 
@@ -18,13 +15,8 @@ Versions used (status 01-2022):
 Basic Architecture & Modularization
 -----------------------------------
 The project makes no use of any additional OS or RTOS code or libraries. It uses a self designed modularization approach based on a simple cooperative multitasking implementation.
-
 Main goal of the modularization is to have core functionality for the OBC hardware in place. Additional external units should be 'plugable' dependent of chosen external connections 
-and sub units in the final CubeSat system. 
-
-Secondary goal is to have all developed modules available for different actual (e.g. test or prototyping versions) or future projects with the LPC1769.
+and sub units in the final CubeSat system. Secondary goal is to have all developed modules available for different actual (e.g. test or prototyping versions) or future projects with the LPC1769.
 
 To achieve this goals a layered approach is used:
 ![Basic Architecture](pic/ObcArch.jpg)
- 
-  
