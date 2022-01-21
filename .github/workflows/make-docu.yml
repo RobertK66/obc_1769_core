@@ -24,10 +24,10 @@ jobs:
       - uses: actions/checkout@v2
       
       - name: test env
-        run: print ${{ env.GITHUB_SHA }} 'hello'
+        run: echo "Deploying to production server on branch $GITHUB_SHA"
     
       - name: Find and Replace User Name - Using Build Variable 
-        run: find doc/*.md -type f -exec sed -i ''s/@TKN_COMMIT_ID@/xxx/g'' {} \;
+        run: find doc/*.md -type f -exec sed -i ''s/@TKN_COMMIT_ID@/xxx$GITHUB_SHA/g'' {} \;
     
       - name: Show replacement resut
         run: cat doc/back.md
