@@ -160,10 +160,10 @@ void memPage0Updated(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *
 void memBlock0Updated(sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_t len);
 
 // Module Variables
-static memory_init_t 	*memInitPtr;
+static mem_init_t 	*memInitPtr;
 static uint32_t 	 	memChipSerialNumber[4] = {0x01010101, 0x02020202, 0x03030303, 0x04040404};
 static mem_state_t   	memStatus;
-static memory_status_t  channelStatus;
+static mem_status_t  channelStatus;
 
 static uint16_t			memWaitLoops = 0;
 static bool				block0Valid = false;
@@ -202,7 +202,7 @@ uint32_t memGetSerialNumber(uint8_t idx) {
 	return memChipSerialNumber[idx&0x03];
 }
 
-memory_status_t memGetStatus() {
+mem_status_t memGetStatus() {
 	return channelStatus;
 }
 
@@ -223,7 +223,7 @@ void memGetInstanceName(char* name, uint8_t maxLen) {
 }
 
 void memInit(void *initdata) {
-	memInitPtr = (memory_init_t *)initdata;
+	memInitPtr = (mem_init_t *)initdata;
 
 	// Read Serial Number of thid LPC1769 chip as unique hardware ID
 	unsigned int iap_param_table[5];
@@ -496,7 +496,7 @@ void memCreateFreshBlock0(mem_block0_t *pBlock0, uint32_t block0Nr, uint32_t par
 	pBlock0->obcDataAreaDescritpion[0].lpcChipSerialNumber[3] = memChipSerialNumber[3];
 	pBlock0->obcDataAreaDescritpion[0].basisBlockNumber = block0Nr;
 	pBlock0->obcDataAreaDescritpion[0].blocksAvailable = partitionSize;
-	pBlock0->obcDataAreaDescritpion[0].blocksUsed = 0;
+	pBlock0->obcDataAreaDescritpion[0].blocksUsed = 1;
 
 	pBlock0->signature = 0xaa55;					// Our Bloc0 is also marked as 'Boot Block'
 }

@@ -29,7 +29,7 @@ typedef struct {
 	char					InstanceName[16];
 	char					CardName[16];
 	obc_tim_systemtime_t 	CurrentTime;
-	memory_status_t			MemoryStatus;
+	mem_status_t			MemoryStatus;
 	uint32_t				SdCardBlock0Number;
 	uint32_t				SdCardSize;
 	uint32_t				SdCardUsed;

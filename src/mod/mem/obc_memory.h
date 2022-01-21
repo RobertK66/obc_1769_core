@@ -5,6 +5,7 @@
  Created on	 : 23.12.2021
 ===============================================================================
 */
+
 #ifndef MOD_MEM_OBC_MEMORY_H_
 #define MOD_MEM_OBC_MEMORY_H_
 
@@ -22,14 +23,14 @@
 
 typedef struct {
 	const PINMUX_GRP_T2*  	sdcPowerPin;
-} memory_init_t;
+} mem_init_t;
 
 typedef struct {
 	uint8_t ChannelErrors;
 	uint8_t ChannelBusy;
 	uint8_t ChannelAvailble;
 	uint8_t ChannelOnOff;
-} memory_status_t;
+} mem_status_t;
 
 typedef struct {
 	uint32_t				lpcChipSerialNumber[4];		// SerialNr of LPC1769 Chip - used as unique ID for any OBC hardware.
@@ -49,13 +50,14 @@ void memGetInstanceName(char* name, uint8_t maxLen);
 
 void memChangeCardName(char* name);
 void memGetCardName(char* name, uint8_t maxLen);
-mem_sdcobcdataarea_t *memGetObcArea();
 
+mem_sdcobcdataarea_t *memGetObcArea();
 //void memReadObcBlockAsync(uint32_t blockNr, );
 
-memory_status_t memGetStatus(void);
+mem_status_t memGetStatus(void);
 uint32_t memGetSerialNumber(uint8_t idx);
 
+// Defines for (internal defined) events. Can be used on debug and com APIs as generic 'Event'.
 #define MODULE_ID_MEMORY			0x03
 #define EVENT_MEM_OPERATIONAL		1
 #define EVENT_MEM_BLOCK0_UPDATED	2
