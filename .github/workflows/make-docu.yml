@@ -28,7 +28,7 @@ jobs:
           echo "Deploying to production server on branch $GITHUB_SHA ${{ github.event_name }}  ${{ github.ref }}"
           ESCAPED_REPLACE=$(printf '%s\n' "${{ github.ref }}" | sed -e 's/[\/&]/\\&/g')
           echo "xyz '$ESCAPED_REPLACE'"
-          find doc/*.md -type f -exec sed -i ''s/@TKN_COMMIT_ID@/XYZ/g'' {} \;
+          find doc/*.md -type f -exec sed -i ''s/@TKN_COMMIT_ID@/refs\/heads\/develop/g'' {} \;
           
           
       - name: Find and Replace User Name - Using Build Variable 
