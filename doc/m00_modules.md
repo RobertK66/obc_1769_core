@@ -11,11 +11,9 @@ Therefore the used IDE is NXP provided "MCUXpresso". The projects follws the NXP
 The project is written in C. The C standard library used and linked is the NXP delivered "REDLIB" in its "Redlib(none)" version.
 
 Versions used (status 01-2022):
-- MCUXpresso IDE: v11.1.1
-	- arm-none-eabi-gcc: ???
-	- redlib(none): ???
-- ADO-Lib: \[master\] no release tag yet ...
-
+ | MCUXpresso IDE | arm-none-eabi-gcc | redlib(none) | ADO-Lib |
+ |----------------|-------------------|--------------|---------| 
+ | v11.1.1        | ???               | ???          | \[master\] no release tag yet |
 
 Basic Architecture & Modularization
 -----------------------------------

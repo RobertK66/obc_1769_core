@@ -13,25 +13,16 @@ ground equipment.
 
 UART-specifications
 
-| setting   | value |
-|-----------|-------|
-| baud rate | 9600  |
-| databits  | 8     |
-| parity    | none  |
-| stop      | 1     |
-
+| baud rate | databits | parity | stop |
+|-----------|----------|--------|------|
+| 9600      | 8        | none   | 1    |
  
 
 Commanding
 ----------
-
 On Rx Line the OBC reacts to received commands. The format of a command is:
 
- 
-
 **\<cc\> [par1 [par2 [...]]]\<LF\>**
-
- 
 
 where
 
@@ -69,21 +60,14 @@ Valid pinIdx for command 'h' and 'm' can be found in the hardware abstraction in
 Events
 ------
 
- 
-
 Events are sent by using a frame start/end Character of **0x7e. **If a databyte
 of 0x7e (or 0x7d) has to be transmitted this byte is escaped by using the escape
 char: **0x7d.**
 
- 
 
 So one frame looks like this:
 
- 
-
 **0x7e \<Mod\> \<SevId\> \<byte0\> \<byte1\> ... 0x7e**
-
- 
 
 where
 
