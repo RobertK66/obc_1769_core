@@ -23,31 +23,26 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
       
-      - name: test env
+      - name: Replace MD tokens
         run: |
-          echo "Deploying to production server on branch $GITHUB_SHA ${{ github.event_name }}  ${{ github.ref }}"
           ESCAPED_REPLACE=$(printf '%s\n' "${{ github.ref }}" | sed -e 's/[\/&]/\\&/g')
-          echo "xyz '$ESCAPED_REPLACE'"
-          find doc/*.md -type f -exec sed -i "s/@TKN_COMMIT_ID@/refs\/heads\/develop/g" {} \;
-          
-          
-      - name: Find and Replace User Name - Using Build Variable 
-        run: find doc/*.md -type f -exec sed -i ''s/@TKN_VERSION@/${{ github.sha }}/g'' {} \;
+          find doc/*.md -type f -exec sed -i "s/@TKN_COMMIT_ID@/$ESCAPED_REPLACE/g" {} \;
+          find doc/*.md -type f -exec sed -i "s/@TKN_VERSION@/${{ github.sha }}/g" {} \;
       
       - name: Show replacement resut
         run: cat doc/back.md
     
-      #- name: Publish PDF Document
-      #  uses: RobertK66/actions-document-publish@79b8e666c0f531c297a98eee730d3fdecccde9f3
-      #  id: publish-document
-      #  with:
-      #    sources: 'doc/front.md doc/m*.md doc/back.md'
-      #    images_dir: doc/pic
-      #    image_import: pic
-      #- name: Upload Document
-      #  uses: actions/upload-artifact@v2
-      #  id: upload-document
-      #  with:
-      #    name: 'obc-manual'
-      #    path: ${{ steps.publish-document.outputs.pdf }}
+      - name: Publish PDF Document
+        uses: RobertK66/actions-document-publish@79b8e666c0f531c297a98eee730d3fdecccde9f3
+        id: publish-document
+        with:
+          sources: 'doc/front.md doc/m*.md doc/back.md'
+          images_dir: doc/pic
+          image_import: pic
+      - name: Upload Document
+        uses: actions/upload-artifact@v2
+        id: upload-document
+        with:
+          name: 'obc-manual'
+          path: ${{ steps.publish-document.outputs.pdf }}
 
