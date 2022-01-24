@@ -35,6 +35,7 @@ typedef struct {
 	uint32_t				SdCardUsed;
 	uint32_t				SystemCommandCounter;
 	uint32_t				SystemErrorCounter;
+	char					SwRelease[16];
 } app_systeminfo_t;
 
 static uint32_t climbCmdCounter = 0;
@@ -328,9 +329,12 @@ void GetSystemInfoCmd(int argc, char *argv[]) {
 	app_systeminfo_t info;
 	info.CurrentTime = tim_getSystemTime();
 	memGetInstanceName(info.InstanceName,16);
-	memGetCardName(info.CardName,20);
-	info.MemoryStatus = memGetStatus();
+	memGetCardName(info.CardName, 20);
 
+	memset(info.SwRelease, 0, 16);
+	strncpy(info.SwRelease, APP_SWRELEASE , 16);
+
+	info.MemoryStatus = memGetStatus();
 	mem_sdcobcdataarea_t *obcarea = memGetObcArea();
 	info.SdCardBlock0Number = obcarea->basisBlockNumber;
 	info.SdCardSize = obcarea->blocksAvailable;

@@ -21,4 +21,6 @@ void app_main (void);
 #define EID_APP_SYSTEMINIT		4
 #define EID_APP_SYSTEMSTATUS	5
 
+#define APP_SWRELEASE			"@TKN_SWRELEASE@"
+
 #endif /* MOD_L7_CLIMB_APP_H_ */

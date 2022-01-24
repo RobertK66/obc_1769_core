@@ -433,16 +433,16 @@ void memBootBlockRead(sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_
 				 } else {
 					// seems to be some other FATxx Boot block
 					// TODO: Check if it is prepared to be used by us (e.g. by Partiton name or so....)
-					mem_bootsector_t *p = (mem_bootsector_t *)data;
-					if (p->volumeLabel[0] == 'O') {	// Has top start with O e.g. OBC ;-)
+					//mem_bootsector_t *p = (mem_bootsector_t *)data;
+					//if (p->volumeLabel[0] == 'O') {	// Has top start with O e.g. OBC ;-) Ort check for old versions of OBC block marker to
+											 		// Update to new one .....
 						block0NeedsUpdate = true;
 						bl0Reason = BL0_UPD_FIRTSINITIALIZED;
 						memCreateFreshBlock0((mem_block0_t *)tempBlock.data, tempBlockNr, partitionSize);
-					} else {
+					//} else {
 						// SDC not usable - wrong format
-						channelStatus.ChannelErrors |= MEM_CHANNEL_SDCARD_MASK;
-
-					}
+					//	channelStatus.ChannelErrors |= MEM_CHANNEL_SDCARD_MASK;
+					//}
 				 }
 			 } else {
 				// This seems to be a MasterBoot record
