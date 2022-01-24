@@ -13,7 +13,7 @@ jobs:
         with:
           submodules: 'true'
 
-	  - name: Replace version token
+      - name: Replace version token
         run: |
           CUT_VERSION=$(printf '%.15s\n' "${{ github.sha }}" )
           find src/mod/l7_climb_app.h -type f -exec sed -i "s/@TKN_SWRELEASE@/$CUT_VERSION/g" {} \;
