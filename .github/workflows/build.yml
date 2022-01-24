@@ -1,6 +1,8 @@
 name: Build with MCU Expresso
 
 on:
+  push:
+    branches: [ develop ]
   workflow_dispatch:
 
 jobs:
