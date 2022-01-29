@@ -15,9 +15,11 @@ jobs:
 
       - name: Generate Build defines
         run: |
-          MYSWVERSION=$(printf '\n#define BUILD_SWVERSION "SW-%.8s"\n' "${{ github.sha }}" )
-          echo $MYSWVERSION >> src/build.h
+          MY_SWVERSION=$(printf 'SW-%.8s' "${{ github.sha }}" )
+          echo '\n#define BUILD_SWVERSION "$MY_SWVERSION"\n' >> src/build.h
+          echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
           cat src/build.h
+          pwd
           
       - name: Build the mcu workspace
         uses: RobertK66/actions-build-mcuxpresso@main
@@ -29,7 +31,7 @@ jobs:
         uses: actions/upload-artifact@v2
         id: upload-axf
         with:
-          name: 'obc-axf'
+          name: 'obc-axf-{{ env.MY_SWVERSION }}'
           path: ${{ steps.publish-document.outputs.axf }}
           if-no-files-found: error
           
