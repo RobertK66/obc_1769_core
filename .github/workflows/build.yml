@@ -29,7 +29,7 @@ jobs:
 
       - name: rename the axf file
         run: |
-          cp ${{ steps.publish-document.outputs.axf }} ClimbObc{{ env.MY_SWVERSION }}.axf          
+          cp ${{ steps.publish-document.outputs.axf }} ClimbObc${{ env.MY_SWVERSION }}.axf"          
           ls 
           
       - name: Upload Binary
@@ -37,6 +37,6 @@ jobs:
         id: upload-axf
         with:
           name: 'obc-axf-{{ env.MY_SWVERSION }}'
-          path: ClimbObc{{ env.MY_SWVERSION }}.axf 
+          path: ClimbObc${{ env.MY_SWVERSION }}.axf 
           if-no-files-found: error
           
