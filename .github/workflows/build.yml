@@ -13,10 +13,10 @@ jobs:
         with:
           submodules: 'true'
 
-      - name: Replace version token
+      - name: Generate Build defines
         run: |
-          CUT_VERSION=$(printf '@ENTRY@\n#define BUILD_SWVERSION "SW-%.8s"\n' "${{ github.sha }}" )
-          echo $CUT_VERSION >> src/build.h
+          MYSWVERSION=$(printf '\n#define BUILD_SWVERSION "SW-%.8s"\n' "${{ github.sha }}" )
+          echo $MYSWVERSION >> src/build.h
           cat src/build.h
           
       - name: Build the mcu workspace
