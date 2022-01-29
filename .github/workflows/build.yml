@@ -16,7 +16,7 @@ jobs:
       - name: Replace version token
         run: |
           CUT_VERSION=$(printf '@ENTRY@\n#define BUILD_SWVERSION "SW-%.8s"\n' "${{ github.sha }}" )
-          find src/build.h -type f -exec sed -i "s/@ENTRY@/$CUT_VERSION/g" {} \;
+          echo $CUT_VERSION >> src/build.h
           cat src/build.h
           
       - name: Build the mcu workspace
