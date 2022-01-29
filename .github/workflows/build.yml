@@ -15,8 +15,9 @@ jobs:
 
 	  - name: Replace version token
         run: |
-          CUT_VERSION=$(printf '%.15s\n' "${{ github.sha }}" )
-          find src/mod/l7_climb_app.h -type f -exec sed -i "s/@TKN_SWRELEASE@/$CUT_VERSION/g" {} \;
+          CUT_VERSION=$(printf '@ENTRY@\n#define BUILD_SWVERSION "SW-%.8s"\n' "${{ github.sha }}" )
+          find src/build.h -type f -exec sed -i "s/@ENTRY@/$CUT_VERSION/g" {} \;
+          cat src/build.h
           
       - name: Build the mcu workspace
         uses: RobertK66/actions-build-mcuxpresso@main

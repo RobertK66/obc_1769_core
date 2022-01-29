@@ -332,7 +332,7 @@ void GetSystemInfoCmd(int argc, char *argv[]) {
 	memGetCardName(info.CardName, 20);
 
 	memset(info.SwRelease, 0, 16);
-	strncpy(info.SwRelease, APP_SWRELEASE , 16);
+	strncpy(info.SwRelease, BUILD_SWRELEASE , 16);
 
 	info.MemoryStatus = memGetStatus();
 	mem_sdcobcdataarea_t *obcarea = memGetObcArea();
