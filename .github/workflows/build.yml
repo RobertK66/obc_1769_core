@@ -16,7 +16,7 @@ jobs:
       - name: Generate Build defines
         run: |
           MY_SWVERSION=$(printf 'SW-%.8s' "${{ github.sha }}" )
-          echo '\n#define BUILD_SWVERSION "$MY_SWVERSION"\n' >> src/build.h
+          echo "\n#define BUILD_SWVERSION \"$MY_SWVERSION\"\n" >> src/build.h
           echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
           cat src/build.h
           pwd
