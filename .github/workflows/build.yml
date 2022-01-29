@@ -13,7 +13,7 @@ jobs:
         with:
           submodules: 'true'
 
-	  - name: Replace version token
+      - name: Replace version token
         run: |
           CUT_VERSION=$(printf '@ENTRY@\n#define BUILD_SWVERSION "SW-%.8s"\n' "${{ github.sha }}" )
           find src/build.h -type f -exec sed -i "s/@ENTRY@/$CUT_VERSION/g" {} \;
@@ -31,4 +31,5 @@ jobs:
         with:
           name: 'obc-axf'
           path: ${{ steps.publish-document.outputs.axf }}
+          if-no-files-found: error
           
