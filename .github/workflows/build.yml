@@ -29,7 +29,7 @@ jobs:
 
       - name: rename the axf file
         run: |
-          cp ${{ steps.publish-document.outputs.axf }} ClimbObc${{ env.MY_SWVERSION }}.axf"          
+          cp ${{ steps.publish-document.outputs.axf }} ClimbObc${{ env.MY_SWVERSION }}.axf          
           ls 
           
       - name: Upload Binary
