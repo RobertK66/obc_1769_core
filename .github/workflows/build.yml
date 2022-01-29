@@ -36,7 +36,7 @@ jobs:
         uses: actions/upload-artifact@v2
         id: upload-axf
         with:
-          name: 'obc-axf-{{ env.MY_SWVERSION }}'
+          name: 'obc-axf-${{ env.MY_SWVERSION }}'
           path: ClimbObc${{ env.MY_SWVERSION }}.axf 
           if-no-files-found: error
           
