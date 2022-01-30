@@ -86,6 +86,7 @@ int main(void) {
     init_i2c(LPC_I2C1, 100);		// 100 khZ
 
 
+
     // Init all other modules
     for (int i=0; i < MODULE_CNT; i++) {
     	Modules[i].init(Modules[i].initdata);
