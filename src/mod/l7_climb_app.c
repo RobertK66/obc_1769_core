@@ -29,10 +29,13 @@ typedef struct {
 	char					InstanceName[16];
 	char					CardName[16];
 	obc_tim_systemtime_t 	CurrentTime;
-	memory_status_t			MemoryStatus;
+	mem_status_t			MemoryStatus;
 	uint32_t				SdCardBlock0Number;
+	uint32_t				SdCardSize;
+	uint32_t				SdCardUsed;
 	uint32_t				SystemCommandCounter;
 	uint32_t				SystemErrorCounter;
+	char					SwRelease[16];
 } app_systeminfo_t;
 
 static uint32_t climbCmdCounter = 0;
@@ -193,6 +196,7 @@ void ReadSdcardCmd(int argc, char *argv[]) {
 	} else {
 		// CLI params to binary params
 		uint32_t  block = atoi(argv[1]);
+		// memReadObcBlockAsync(block, tempBlockData, ReadSdcardFinished );
 		SdcReadBlockAsync(0, block, tempBlockData, ReadSdcardFinished);
 	 }
 }
@@ -325,9 +329,16 @@ void GetSystemInfoCmd(int argc, char *argv[]) {
 	app_systeminfo_t info;
 	info.CurrentTime = tim_getSystemTime();
 	memGetInstanceName(info.InstanceName,16);
-	memGetCardName(info.CardName,20);
+	memGetCardName(info.CardName, 20);
+
+	memset(info.SwRelease, 0, 16);
+	strncpy(info.SwRelease, BUILD_SWRELEASE , 16);
+
 	info.MemoryStatus = memGetStatus();
-	info.SdCardBlock0Number = 31;
+	mem_sdcobcdataarea_t *obcarea = memGetObcArea();
+	info.SdCardBlock0Number = obcarea->basisBlockNumber;
+	info.SdCardSize = obcarea->blocksAvailable;
+	info.SdCardUsed = obcarea->blocksUsed;
 	info.SystemCommandCounter = climbCmdCounter;
 	info.SystemErrorCounter = climbErrorCounter;
 	info.SerialShort = memGetSerialNumber(1);

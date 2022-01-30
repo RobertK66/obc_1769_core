@@ -1,8 +1,8 @@
-name: Build with MCU Expresso
+name: Release a build with Doku
 
 on:
-  push:
-    branches: [ develop ]
+  release:
+    types: [created]
   workflow_dispatch:
 
 jobs:
@@ -15,11 +15,13 @@ jobs:
 
       - name: Generate Build defines
         run: |
-          MY_SWVERSION=$(printf '%.8s' "${{ github.sha }}" )
+          MY_SWVERSION=$(printf '%.8s' "${{ github.event.tag }}" )
           echo "#define BUILD_SWVERSION \"SW-$MY_SWVERSION\"" >> src/build.h
           echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
           cat src/build.h
           pwd
+          printenv
+          
           
       - name: Build the mcu workspace
         uses: RobertK66/actions-build-mcuxpresso@main
@@ -39,4 +41,11 @@ jobs:
           name: 'obc-axf-${{ env.MY_SWVERSION }}'
           path: ClimbObc${{ env.MY_SWVERSION }}.axf 
           if-no-files-found: error
+          
+      - name: Release with Notes
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ClimbObc${{ env.MY_SWVERSION }}.axf
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}          
           

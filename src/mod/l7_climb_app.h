@@ -21,4 +21,12 @@ void app_main (void);
 #define EID_APP_SYSTEMINIT		4
 #define EID_APP_SYSTEMSTATUS	5
 
+#include "../build.h"
+
+#ifndef BUILD_SWRELEASE
+#define BUILD_SWRELEASE	"Dev-build"
+#endif
+
+
 #endif /* MOD_L7_CLIMB_APP_H_ */
+
