@@ -31,7 +31,7 @@ jobs:
 
       - name: rename the axf file
         run: |
-          cp ${{ steps.publish-document.outputs.axf }} ClimbObc${{ env.MY_SWVERSION }}.axf          
+          cp ${{ steps.build-it.outputs.axf }} ClimbObc${{ env.MY_SWVERSION }}.axf          
           ls 
       
       - name: Replace MD tokens
@@ -51,7 +51,7 @@ jobs:
           
       - name: rename the pdf file
         run: |
-          cp ${{ steps.publish-document.outputs.pdf }} ClimbObcManual.pdf          
+          cp ${{ steps.publish-pdf.outputs.pdf }} ClimbObcManual.pdf          
           ls     
           
           
