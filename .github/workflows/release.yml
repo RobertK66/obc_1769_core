@@ -15,7 +15,7 @@ jobs:
 
       - name: Generate Build defines
         run: |
-          MY_SWVERSION=$(printf '%.8s' "${{ github.event.tag }}" )
+          MY_SWVERSION=$(printf '%.10s' "$GITHUB_REF_NAME" )
           echo "#define BUILD_SWVERSION \"SW-$MY_SWVERSION\"" >> src/build.h
           echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
           cat src/build.h
@@ -25,7 +25,7 @@ jobs:
           
       - name: Build the mcu workspace
         uses: RobertK66/actions-build-mcuxpresso@main
-        id: publish-document
+        id: build-it
         with:
           project:  ClimbObc
 
@@ -33,19 +33,40 @@ jobs:
         run: |
           cp ${{ steps.publish-document.outputs.axf }} ClimbObc${{ env.MY_SWVERSION }}.axf          
           ls 
-          
-      - name: Upload Binary
-        uses: actions/upload-artifact@v2
-        id: upload-axf
+      
+      - name: Replace MD tokens
+        run: |
+          ESCAPED_REPLACE=$(printf '%s\n' "${{ github.ref }}" | sed -e 's/[\/&]/\\&/g')
+          find doc/*.md -type f -exec sed -i "s/@TKN_COMMIT_ID@/$ESCAPED_REPLACE/g" {} \;
+          find doc/*.md -type f -exec sed -i "s/@TKN_VERSION@/${{ github.sha }}/g" {} \;
+          cat doc/back.md
+    
+      - name: Publish PDF Document
+        uses: RobertK66/actions-document-publish@79b8e666c0f531c297a98eee730d3fdecccde9f3
+        id: publish-pdf
         with:
-          name: 'obc-axf-${{ env.MY_SWVERSION }}'
-          path: ClimbObc${{ env.MY_SWVERSION }}.axf 
-          if-no-files-found: error
+          sources: 'doc/front.md doc/m*.md doc/back.md'
+          images_dir: doc/pic
+          image_import: pic
+          
+      - name: rename the pdf file
+        run: |
+          cp ${{ steps.publish-document.outputs.pdf }} ClimbObcManual.pdf          
+          ls     
+          
+          
+      #- name: Upload Binary
+      #  uses: actions/upload-artifact@v2
+      #  id: upload-axf
+      #  with:
+      #    name: 'obc-axf-${{ env.MY_SWVERSION }}'
+      #    path: ClimbObc${{ env.MY_SWVERSION }}.axf 
+      #    if-no-files-found: error
           
       - name: Release with Notes
         uses: softprops/action-gh-release@v1
         with:
-          files: ClimbObc${{ env.MY_SWVERSION }}.axf
+          files: ClimbObc*.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}          
           
