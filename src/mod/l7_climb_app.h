@@ -23,8 +23,8 @@ void app_main (void);
 
 #include "../build.h"
 
-#ifndef BUILD_SWRELEASE
-#define BUILD_SWRELEASE	"Dev-build"
+#ifndef BUILD_SWVERSION
+#define BUILD_SWVERSION	"Dev-build"
 #endif
 
 
