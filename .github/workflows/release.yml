@@ -25,7 +25,7 @@ jobs:
           
       - name: Build the mcu workspace
         uses: RobertK66/actions-build-mcuxpresso@main
-        id: publish-document
+        id: build-it
         with:
           project:  ClimbObc
 
@@ -34,7 +34,7 @@ jobs:
           cp ${{ steps.publish-document.outputs.axf }} ClimbObc${{ env.MY_SWVERSION }}.axf          
           ls 
       
-       - name: Replace MD tokens
+      - name: Replace MD tokens
         run: |
           ESCAPED_REPLACE=$(printf '%s\n' "${{ github.ref }}" | sed -e 's/[\/&]/\\&/g')
           find doc/*.md -type f -exec sed -i "s/@TKN_COMMIT_ID@/$ESCAPED_REPLACE/g" {} \;
@@ -43,7 +43,7 @@ jobs:
     
       - name: Publish PDF Document
         uses: RobertK66/actions-document-publish@79b8e666c0f531c297a98eee730d3fdecccde9f3
-        id: publish-document
+        id: publish-pdf
         with:
           sources: 'doc/front.md doc/m*.md doc/back.md'
           images_dir: doc/pic
