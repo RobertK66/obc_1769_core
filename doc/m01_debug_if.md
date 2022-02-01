@@ -60,7 +60,7 @@ Valid pinIdx for command 'h' and 'm' can be found in the hardware abstraction in
 Events
 ------
 
-Events are sent by using a frame start/end Character of **0x7e. **If a databyte
+Events are sent by using a frame start/end Character of **0x7e.** If a databyte
 of 0x7e (or 0x7d) has to be transmitted this byte is escaped by using the escape
 char: **0x7d.**
 

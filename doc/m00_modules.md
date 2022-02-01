@@ -4,13 +4,13 @@ Tool-Chain & External Dependencies
 ----------------------------------
 
 The software for the OBC runs on dedicated hardware. The CPU used is a LPC1769 from NXP. 
-Therefore the used IDE is NXP provided "MCUXpresso". The projects follws the NXP "LPCOpen-project-layout" but iso IDE delivered "175x-6x" we use our own development based on NXPs code [here](https://github.com/RobertK66/ado-chip-175x-6x).
+Therefore the used IDE is NXP provided "MCUXpresso". The projects follws the NXP "LPCOpen-project-layout" but iso IDE delivered "175x-6x" we use our own library development based on NXPs code [here](https://github.com/RobertK66/ado-chip-175x-6x).
 The project is written in C. The C standard library used and linked is the NXP delivered "REDLIB" in its "Redlib(none)" version.
 
 Versions used (status 01-2022):
- | MCUXpresso IDE | arm-none-eabi-gcc | redlib(none) | ADO-Lib |
- |----------------|-------------------|--------------|---------| 
- | v11.1.1        | ???               | ???          | \[master\] no release tag yet |
+ | MCUXpresso IDE | arm-none-eabi-gcc | redlib(none) | ADO-Lib                       |
+ |----------------|-------------------|--------------|-------------------------------| 
+ | v11.4.0_6237   | ???               | ???          | \[release_1_0\] branch! (no release tag yet!) |
 
 Basic Architecture & Modularization
 -----------------------------------
