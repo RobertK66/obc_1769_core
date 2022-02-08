@@ -4,9 +4,10 @@ name: OBC Manual as PDF
 
 on:
   push:
-    branches: [ develop ]
+    branches: 
+      - develop 
     paths:
-      - 'doc/**'
+      - doc/**
      
   pull_request:
     branches: [ master ]
