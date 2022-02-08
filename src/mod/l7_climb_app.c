@@ -62,6 +62,8 @@ void SetObcNameCmd(int argc, char *argv[]);
 void ReadStatusMramCmd(int argc, char *argv[]);
 void GetSystemInfoCmd(int argc, char *argv[]);
 void SetSdCardNameCmd(int argc, char *argv[]);
+void TriggerWatchdogCmd(int argc, char *argv[]);
+void SetUtcDateTimeCmd(int argc, char *argv[]);
 
 
 //extern void *sdCard;
@@ -79,6 +81,8 @@ static const app_command_t Commands[] = {
 		{ 'O' , SetObcNameCmd },
 		{ 'N' , SetSdCardNameCmd },
 		{ 'i' , GetSystemInfoCmd },
+		{ 'd' , TriggerWatchdogCmd },
+		{ 't' , SetUtcDateTimeCmd }
 };
 
 
@@ -185,6 +189,10 @@ void CardPowerOnCmd(int argc, char *argv[]) {
 void CardPowerOffCmd(int argc, char *argv[]) {
 	memCardOff();
 //	HwcSetOutput(PINIDX_SD_VCC_EN, HWC_High);
+}
+
+void TriggerWatchdogCmd(int argc, char *argv[]) {
+	while(true);
 }
 
 
@@ -348,5 +356,41 @@ void GetSystemInfoCmd(int argc, char *argv[]) {
 	info.SerialShort = memGetSerialNumber(1);
 
 	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_SYSTEMSTATUS, &info, sizeof(info));
+}
+
+void SetUtcDateTimeCmd(int argc, char *argv[]) {
+	// setTime <year><Month><day><hours><minutes><seconds> as single uint32
+	uint16_t year = 0;
+	uint8_t month = 0;
+	uint8_t dayOfMonth = 0;
+	uint8_t sec = 0;
+	uint8_t min = 0;
+	uint8_t hrs = 0;
+
+	uint32_t date;
+	uint32_t time;
+
+	if (argc != 3) {
+		SysEventString("uasge: t <date> <time>");
+	} else {
+		date = atol(argv[1]);
+		time = atol(argv[2]);
+
+		year = date / 10000;
+		date %= 10000;
+
+		month = date / 100;
+		dayOfMonth = date % 100;
+
+		hrs = time / 10000;
+		time %= 10000;
+
+		min = time / 100;
+		sec = time % 100;
+
+		// binary cmd
+		TimeSetUtc1(year, month, dayOfMonth, hrs, min, sec, true);
+	}
+
 }
 

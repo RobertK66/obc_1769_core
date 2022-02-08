@@ -20,11 +20,14 @@ void app_main (void);
 #define EID_APP_STRING			3
 #define EID_APP_SYSTEMINIT		4
 #define EID_APP_SYSTEMSTATUS	5
+#define EID_APP_INIT			6
 
 #include "../build.h"
 
 #ifndef BUILD_SWVERSION
-#define BUILD_SWVERSION	"Dev-build"
+#define BUILD_SWVERSION	"Dev-"__TIME__
+
+
 #endif
 
 

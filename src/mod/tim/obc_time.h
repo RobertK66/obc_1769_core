@@ -37,6 +37,25 @@ typedef struct {
 } obc_tim_systemtime_t;
 
 
+typedef union {
+    struct {
+        uint16_t reset: 		  6;
+        uint16_t hwWatchdog : 	  1;
+        uint16_t oddEven: 		  1;
+        uint16_t rtcOscFail:	  1;
+        uint16_t rtcOscError:	  1;
+        uint16_t rtcSetDefault:	  1;
+        uint16_t rtcCrcError:	  1;
+        uint16_t rtcSynchronized: 1;
+        uint16_t dummy:			  3;
+    };
+    struct {
+    	uint16_t resetBits;
+    	uint16_t rtcOscDelayMs;
+    	uint32_t gprResetCount;
+    };
+} init_report_t;
+
 // API module functions
 void tim_init (void *dummy);
 void tim_main (void);
@@ -46,6 +65,7 @@ uint32_t tim_getEpochNumber(void);
 
 obc_tim_systemtime_t tim_getSystemTime(void);
 
+void TimeSetUtc1(uint16_t year, uint8_t month, uint8_t dayOfMonth, uint8_t hour, uint8_t min, uint8_t sec, bool syncRTC);
 
 // Event defines (Internal defined event structs can be used on debug and com APIs as generic 'Event'.
 #define MODULE_ID_TIME			0x01
