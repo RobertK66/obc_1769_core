@@ -28,7 +28,7 @@ typedef struct {
 	uint32_t 				SerialShort;
 	char					InstanceName[16];
 	char					CardName[16];
-	obc_tim_systemtime_t 	CurrentTime;
+//	tim_synced_systime_t 	CurrentTime;
 	mem_status_t			MemoryStatus;
 	uint32_t				SdCardBlock0Number;
 	uint32_t				SdCardSize;
@@ -64,7 +64,7 @@ void GetSystemInfoCmd(int argc, char *argv[]);
 void SetSdCardNameCmd(int argc, char *argv[]);
 void TriggerWatchdogCmd(int argc, char *argv[]);
 void SetUtcDateTimeCmd(int argc, char *argv[]);
-
+void GetFullTimeCmd(int argc, char *argv[]);
 
 //extern void *sdCard;
 
@@ -82,7 +82,8 @@ static const app_command_t Commands[] = {
 		{ 'N' , SetSdCardNameCmd },
 		{ 'i' , GetSystemInfoCmd },
 		{ 'd' , TriggerWatchdogCmd },
-		{ 't' , SetUtcDateTimeCmd }
+		{ 't' , SetUtcDateTimeCmd },
+		{ 'T' , GetFullTimeCmd }
 };
 
 
@@ -339,7 +340,7 @@ void SetSdCardNameCmd(int argc, char *argv[]) {
 
 void GetSystemInfoCmd(int argc, char *argv[]) {
 	app_systeminfo_t info;
-	info.CurrentTime = tim_getSystemTime();
+	//info.CurrentTime = tim_getSystemTime();
 	memGetInstanceName(info.InstanceName,16);
 	memGetCardName(info.CardName, 20);
 
@@ -389,8 +390,13 @@ void SetUtcDateTimeCmd(int argc, char *argv[]) {
 		sec = time % 100;
 
 		// binary cmd
-		TimeSetUtc1(year, month, dayOfMonth, hrs, min, sec, true);
+		TimSetUtc1(year, month, dayOfMonth, hrs, min, sec, true);
 	}
+}
 
+
+void GetFullTimeCmd(int argc, char *argv[]) {
+	obc_utc_fulltime_t ft = timGetUTCTime();
+	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_FULLTIMEINFO, &ft, sizeof(ft));
 }
 

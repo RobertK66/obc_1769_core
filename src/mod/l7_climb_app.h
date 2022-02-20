@@ -16,6 +16,7 @@ void app_main (void);
 
 #define MODULE_ID_CLIMBAPP		0x00
 //#define EID_APP_SENSORVALUES	1
+#define EID_APP_FULLTIMEINFO    1
 #define EID_APP_RAWDATA			2
 #define EID_APP_STRING			3
 #define EID_APP_SYSTEMINIT		4

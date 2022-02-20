@@ -66,7 +66,7 @@ static init_report_t InitReport;
 
 static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( deb_init, deb_main, LPC_UART2),
-		MOD_INIT( tim_init, tim_main, &InitReport ),
+		MOD_INIT( timInit, timMain, &InitReport ),
 		MOD_INIT( hwc_init, hwc_main, &ObcPins ),
 		MOD_INIT( MramInitAll, MramMain, &Chips),
 		MOD_INIT( SdcInitAll, SdcMain, &Cards),
