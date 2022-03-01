@@ -18,6 +18,7 @@
 #include <mod/ado_mram.h>
 
 #include "mod/tim/obc_time.h"
+#include "mod/tim/climb_gps.h"
 #include "mod/hw_check.h"
 #include "mod/l2_debug_com.h"
 
@@ -64,6 +65,12 @@ static const mem_init_t MemoryInit = { PTR_FROM_IDX(PINIDX_SD_VCC_EN) };
 
 static init_report_t InitReport;
 
+static gps_initdata_t GpsInit = {
+		LPC_UART0,
+		PTR_FROM_IDX(PINIDX_GPIO4_CP),
+		PTR_FROM_IDX(PINIDX_STACIE_C_IO1_P)
+};
+
 static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( deb_init, deb_main, LPC_UART2),
 		MOD_INIT( timInit, timMain, &InitReport ),
@@ -72,6 +79,7 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( SdcInitAll, SdcMain, &Cards),
 		MOD_INIT( sen_init, sen_main, NULL),
 		MOD_INIT( memInit, memMain, &MemoryInit),
+		MOD_INIT( gpsInit, gpsMain, &GpsInit),
 		MOD_INIT( app_init, app_main, NULL)
 
 };

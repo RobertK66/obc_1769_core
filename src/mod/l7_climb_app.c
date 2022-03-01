@@ -17,6 +17,7 @@
 #include "tim/obc_time.h"
 #include "l3_sensors.h"
 #include "hw_check.h"
+#include "tim/climb_gps.h"
 
 typedef struct {
 	uint8_t	cmdId;
@@ -65,6 +66,7 @@ void SetSdCardNameCmd(int argc, char *argv[]);
 void TriggerWatchdogCmd(int argc, char *argv[]);
 void SetUtcDateTimeCmd(int argc, char *argv[]);
 void GetFullTimeCmd(int argc, char *argv[]);
+void SendToGpsUartCmd(int argc, char *argv[]);
 
 //extern void *sdCard;
 
@@ -83,7 +85,8 @@ static const app_command_t Commands[] = {
 		{ 'i' , GetSystemInfoCmd },
 		{ 'd' , TriggerWatchdogCmd },
 		{ 't' , SetUtcDateTimeCmd },
-		{ 'T' , GetFullTimeCmd }
+		{ 'T' , GetFullTimeCmd },
+		{ 'g' , SendToGpsUartCmd }
 };
 
 
@@ -165,6 +168,11 @@ void SpPowerSwitch(char sp) {
 		HwcSetOutput(PINIDX_LED, HWC_Low);	// Led Off
 	}
 }
+
+void SendToGpsUartCmd(int argc, char *argv[]) {
+	gpsSendBytes((uint8_t *)"Hello GPS!", 11);
+}
+
 
 void SpPowerCmd(int argc, char *argv[]) {
 	if (argc != 2) {
