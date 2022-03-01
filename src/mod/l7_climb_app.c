@@ -18,6 +18,7 @@
 #include "l3_sensors.h"
 #include "hw_check.h"
 #include "tim/climb_gps.h"
+#include "thr/thr.h"
 
 typedef struct {
 	uint8_t	cmdId;
@@ -68,9 +69,14 @@ void SetUtcDateTimeCmd(int argc, char *argv[]);
 void GetFullTimeCmd(int argc, char *argv[]);
 void SendToGpsUartCmd(int argc, char *argv[]);
 
+void JevgeniDebugCmd(int argc, char *argv[]); // STP JEVGENI
+void ThrSendVersionRequestCmd(int argc, char *argv[]); // STP JEVGENI : VERSION REQUEST SEND TO THRUSTER SIMULATOR HARDWARE
+
 //extern void *sdCard;
 
 static const app_command_t Commands[] = {
+		{ 'j' , JevgeniDebugCmd }, //IT DOES NOT WORK WHEN NEW COMMAND ADDED ???
+		{ 'J' , ThrSendVersionRequestCmd }, //IT DOES NOT WORK WHEN NEW COMMAND ADDED ???
 		{ 'h' , HwcSetOutputCmd },
 		{ 'm' , HwcMirrorInputCmd },
 		{ 'r' , ReadMramCmd },
@@ -87,6 +93,7 @@ static const app_command_t Commands[] = {
 		{ 't' , SetUtcDateTimeCmd },
 		{ 'T' , GetFullTimeCmd },
 		{ 'g' , SendToGpsUartCmd }
+
 };
 
 
@@ -107,8 +114,13 @@ void app_init (void *dummy) {
 void app_main (void) {
 	// Debug Command Polling (direct from L2 CLI Module)
 	DEB_L2_CMD_T cmd;
+	char* test_hex_main = "\x01\x02\x03"; // bytes mean that chars being processed //DEBUG
 	if ( deb_getCommandIfAvailable(&cmd) ) {
+		SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, test_hex_main, strlen(test_hex_main));//SEND HEX ARRAY
 		app_processCmd(cmd.parCnt, cmd.pars);
+
+
+
 	}
 	// handle event - queue ....
 
@@ -408,3 +420,36 @@ void GetFullTimeCmd(int argc, char *argv[]) {
 	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_FULLTIMEINFO, &ft, sizeof(ft));
 }
 
+// THIS DOES NOT WORK
+void JevgeniDebugCmd(int argc, char *argv[]){
+	//SysEventString("executed");
+	char* test_hex = "\x04\x05\x06"; // bytes mean that chars being processed
+	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, test_hex, strlen(test_hex));//SEND HEX ARRAY
+
+}
+
+
+
+
+
+
+
+void ThrSendVersionRequestCmd(int argc, char *argv[]){
+
+
+	uint8_t request[8];
+	request[0]= 0x00;
+	request[1]= 0xFF;
+	request[2]= 0x03;
+	request[3]= 0x14;
+	request[4]= 0x02;
+	request[5]= 0x00;
+	request[6]= 0x00;
+	request[7]= 0x01;
+
+
+	int len = sizeof(request);
+	thrSendBytes(request, len);
+
+
+}

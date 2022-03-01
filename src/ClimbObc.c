@@ -22,6 +22,9 @@
 #include "mod/hw_check.h"
 #include "mod/l2_debug_com.h"
 
+
+#include "mod/thr/thr.h"
+
 #include "mod/l3_sensors.h"
 #include "mod/mem/obc_memory.h"
 #include "mod/l7_climb_app.h"
@@ -71,6 +74,14 @@ static gps_initdata_t GpsInit = {
 		PTR_FROM_IDX(PINIDX_STACIE_C_IO1_P)
 };
 
+///////////////JEVGENI STP
+static thr_initdata_t ThrInit = {
+		LPC_UART3, /// WILL USE UART3 since it is on Y+ side, which according to doccumentation given to me should be used for RS485 thruster
+		PTR_FROM_IDX(PINIDX_GPIO4_CP),
+		PTR_FROM_IDX(PINIDX_STACIE_C_IO1_P)
+};
+///////////////STP
+
 static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( deb_init, deb_main, LPC_UART2),
 		MOD_INIT( timInit, timMain, &InitReport ),
@@ -80,6 +91,7 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( sen_init, sen_main, NULL),
 		MOD_INIT( memInit, memMain, &MemoryInit),
 		MOD_INIT( gpsInit, gpsMain, &GpsInit),
+		MOD_INIT( thrInit, thrMain, &ThrInit), //// JEVGENI STP
 		MOD_INIT( app_init, app_main, NULL)
 
 };
