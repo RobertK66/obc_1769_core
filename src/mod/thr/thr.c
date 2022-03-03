@@ -6,7 +6,8 @@
  */
 #include "thr.h"
 #include <ado_uart.h>
-//#include "../l7_climb_app.h"
+#include "../l7_climb_app.h"
+#include "../l2_debug_com.h"
 // prototypes
 void thrUartIRQ(LPC_USART_T *pUART);
 void thrProcessRxByte(uint8_t rxByte);
@@ -114,6 +115,7 @@ void thrSendBytes(uint8_t *data, uint8_t len) {
 	for (int i=0;i<len;i++) {
 		thrSendByte(data[i]);
 	}
+
 }
 
 

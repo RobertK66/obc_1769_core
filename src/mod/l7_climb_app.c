@@ -20,6 +20,7 @@
 #include "tim/climb_gps.h"
 #include "thr/thr.h"
 
+
 typedef struct {
 	uint8_t	cmdId;
 	void 	(*command_function)(int argc, char *argv[]);
@@ -109,14 +110,46 @@ void app_init (void *dummy) {
 	ver[31] = 0;
 	strncpy(&ver[12], BUILD_SWVERSION, 18);
 	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, ver, 12 + strlen(BUILD_SWVERSION));
+
+
+
+	//char buffer[30] = "commands :";
+	//strncpy(&buffer[12], APP_CMD_CNT, 18);
+	//SysEventString(buffer);
+
+
+	// SEND SOME BYTES TO THRUSTER DURING INITIALIZATION
+	uint8_t request[5];
+		request[0]= 0xFF;
+		request[1]= 0x31;
+		request[2]= 0x32;
+		request[3]= 0x33;
+		request[4]= 0xFF;
+		thrSendBytes(request, sizeof(request));
 }
 
 void app_main (void) {
 	// Debug Command Polling (direct from L2 CLI Module)
 	DEB_L2_CMD_T cmd;
-	char* test_hex_main = "\x01\x02\x03"; // bytes mean that chars being processed //DEBUG
+	//char* test_hex_main = "\x01\x02\x03"; // bytes mean that chars being processed //DEBUG
 	if ( deb_getCommandIfAvailable(&cmd) ) {
-		SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, test_hex_main, strlen(test_hex_main));//SEND HEX ARRAY
+
+
+		/*
+		//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, test_hex_main, strlen(test_hex_main));//SEND HEX ARRAY
+		uint8_t request[8];
+		request[0]= 0x00;
+		request[1]= 0xFF;
+		request[2]= 0x03;
+		request[3]= 0x14;
+		request[4]= 0x02;
+		request[5]= 0x00;
+		request[6]= 0x00;
+		request[7]= 0x01;
+		int len = sizeof(request);
+		thrSendBytes(request, len);
+		*/
+
 		app_processCmd(cmd.parCnt, cmd.pars);
 
 
@@ -181,8 +214,29 @@ void SpPowerSwitch(char sp) {
 	}
 }
 
+
 void SendToGpsUartCmd(int argc, char *argv[]) {
 	gpsSendBytes((uint8_t *)"Hello GPS!", 11);
+
+	////////////////////////////////////////
+	/*
+	uint8_t request[8];
+		request[0]= 0x00;
+		request[1]= 0xFF;
+		request[2]= 0x03;
+		request[3]= 0x14;
+		request[4]= 0x02;
+		request[5]= 0x00;
+		request[6]= 0x00;
+		request[7]= 0x01;
+
+
+		int len = sizeof(request);
+		thrSendBytes(request, len);
+		*/
+		//////////////////////////////////////////
+
+
 }
 
 
@@ -220,6 +274,22 @@ void TriggerWatchdogCmd(int argc, char *argv[]) {
 void ReadAllSensorsCmd(int argc, char *argv[]) {
 	SenReadAllValues();
 	//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_SENSORVALUES, &values, sizeof(sensor_values_t));
+
+	////////////////////////////////////////
+	uint8_t request[8];
+		request[0]= 0x00;
+		request[1]= 0xFF;
+		request[2]= 0x03;
+		request[3]= 0x14;
+		request[4]= 0x02;
+		request[5]= 0x00;
+		request[6]= 0x00;
+		request[7]= 0x01;
+
+
+		int len = sizeof(request);
+		thrSendBytes(request, len);
+		//////////////////////////////////////////
 }
 
 uint8_t tempBlockData[2000];
@@ -450,6 +520,8 @@ void ThrSendVersionRequestCmd(int argc, char *argv[]){
 
 	int len = sizeof(request);
 	thrSendBytes(request, len);
+
+
 
 
 }
