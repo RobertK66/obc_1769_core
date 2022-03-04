@@ -170,7 +170,7 @@ void SpPowerSwitch(char sp) {
 }
 
 void SendToGpsUartCmd(int argc, char *argv[]) {
-	gpsSendBytes((uint8_t *)"Hello GPS!", 11);
+	gpsSendBytes((uint8_t *)"1U2", 3);
 }
 
 
