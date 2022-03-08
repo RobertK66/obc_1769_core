@@ -21,6 +21,11 @@
 #include "thr/thr.h"
 
 
+#include "ai2c/obc_i2c.h"
+#include "ai2c/obc_i2c_rb.h"
+#include "ai2c/obc_i2c_int.h"
+
+
 typedef struct {
 	uint8_t	cmdId;
 	void 	(*command_function)(int argc, char *argv[]);
@@ -73,11 +78,14 @@ void SendToGpsUartCmd(int argc, char *argv[]);
 void JevgeniDebugCmd(int argc, char *argv[]); // STP JEVGENI
 void ThrSendVersionRequestCmd(int argc, char *argv[]); // STP JEVGENI : VERSION REQUEST SEND TO THRUSTER SIMULATOR HARDWARE
 
+void I2cSendCmd(int argc, char *argv[]); // Michael
+
 //extern void *sdCard;
 
 static const app_command_t Commands[] = {
 		{ 'j' , JevgeniDebugCmd }, //IT DOES NOT WORK WHEN NEW COMMAND ADDED ???
 		{ 'J' , ThrSendVersionRequestCmd }, //IT DOES NOT WORK WHEN NEW COMMAND ADDED ???
+		{ 'k' , I2cSendCmd }, // Michael
 		{ 'h' , HwcSetOutputCmd },
 		{ 'm' , HwcMirrorInputCmd },
 		{ 'r' , ReadMramCmd },
@@ -113,11 +121,6 @@ void app_init (void *dummy) {
 
 
 
-	//char buffer[30] = "commands :";
-	//strncpy(&buffer[12], APP_CMD_CNT, 18);
-	//SysEventString(buffer);
-
-
 	// SEND SOME BYTES TO THRUSTER DURING INITIALIZATION
 	uint8_t request[5];
 		request[0]= 0xFF;
@@ -126,29 +129,17 @@ void app_init (void *dummy) {
 		request[3]= 0x33;
 		request[4]= 0xFF;
 		thrSendBytes(request, sizeof(request));
+
+
+		// INITIALIZE I2C
+		init_i2c(LPC_I2C0, 400); // I2C0  , there are also I2C1 and I2C2 - what are those ? How to locate those on physical OBC pins ?
 }
 
 void app_main (void) {
 	// Debug Command Polling (direct from L2 CLI Module)
 	DEB_L2_CMD_T cmd;
-	//char* test_hex_main = "\x01\x02\x03"; // bytes mean that chars being processed //DEBUG
 	if ( deb_getCommandIfAvailable(&cmd) ) {
 
-
-		/*
-		//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, test_hex_main, strlen(test_hex_main));//SEND HEX ARRAY
-		uint8_t request[8];
-		request[0]= 0x00;
-		request[1]= 0xFF;
-		request[2]= 0x03;
-		request[3]= 0x14;
-		request[4]= 0x02;
-		request[5]= 0x00;
-		request[6]= 0x00;
-		request[7]= 0x01;
-		int len = sizeof(request);
-		thrSendBytes(request, len);
-		*/
 
 		app_processCmd(cmd.parCnt, cmd.pars);
 
@@ -525,3 +516,50 @@ void ThrSendVersionRequestCmd(int argc, char *argv[]){
 
 
 }
+
+
+
+
+void I2cSendCmd(int argc, char *argv[]){
+
+		uint8_t request[8];
+		request[0]= 0x00;
+		request[1]= 0xFF;
+		request[2]= 0x03;
+		request[3]= 0x14;
+		request[4]= 0x02;
+		request[5]= 0x00;
+		request[6]= 0x00;
+		request[7]= 0x01;
+		uint8_t len = sizeof(request);
+
+		I2C_Data i2c_message; // create structure that will contain i2c message
+		i2c_message.tx_data=request; // assign "request" bytes into transmit data buffer
+		i2c_message.tx_size = len; // length of transmit message ?
+
+		uint8_t add_job_return =  i2c_add_job(&i2c_message); // add job ??? and message is transmitted ? // unused wariable warning
+
+}
+
+		// How to send bytes over I2C ??
+		//How to assemble I2C_Data structure ????
+
+		/*
+		 typedef struct
+{
+	uint8_t tx_count;
+	uint8_t rx_count;
+	uint8_t dir;
+	uint8_t status;
+	uint8_t tx_size;
+	uint8_t rx_size;
+	uint8_t* tx_data;
+	uint8_t* rx_data;
+	uint8_t job_done;
+	uint8_t adress;
+	enum i2c_errors_e error;
+	LPC_I2C_T *device;
+} volatile I2C_Data;
+		 */
+
+
