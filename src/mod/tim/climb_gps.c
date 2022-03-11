@@ -7,16 +7,55 @@
 #include "climb_gps.h"
 
 #include <string.h>
+#include <stdlib.h>
 #include <ado_uart.h>
 #include <ado_modules.h>
 
 // prototypes
 void gpsUartIRQ(LPC_USART_T *pUART);
 void gpsProcessRxByte(uint8_t rxByte);
-void gpsProcessNmeaMessage(int argc, char *argv[]);
+bool gpsProcessNmeaMessage(int argc, char *argv[]);
 
 // local/module variables
 static gps_initdata_t *gpsInitData;
+
+
+// Event structs - used as API to ground station (or debug IF) only
+typedef struct {
+	char	talker;
+	uint8_t	msgNr;
+	uint8_t	msgCnt;
+	uint8_t	nrOfSatellites;
+} gps_gsvmsg_t;
+
+typedef struct __attribute__((__packed__)) {
+	char		talker;
+	char		fix;
+	uint32_t	utcTimeSec;
+	uint16_t	utcTimeMs;
+} gps_ggamsg_t;
+
+typedef struct __attribute__((__packed__)) {
+	char	talker;
+	char	mode;
+	char	fixstatus;
+} gps_gsamsg_t;
+
+
+typedef struct __attribute__((__packed__)) {
+	char	talker;
+	char	posmode;
+} gps_vtgmsg_t;
+
+typedef struct __attribute__((__packed__)) {
+	char		talker;
+	char		valid;
+	char		posmode;
+	uint32_t	utcTimeSec;
+	uint16_t	utcTimeMs;
+} gps_rmcmsg_t;
+
+
 
 // ************************** TX Circular byte Buffer Begin ********************
 #define GPS_TX_BUFFERSIZE	200
@@ -97,8 +136,60 @@ void gpsUartIRQ(LPC_USART_T *pUART) {
 
 
 
-void gpsProcessNmeaMessage(int argc, char *argv[]) {
-
+bool gpsProcessNmeaMessage(int argc, char *argv[]) {
+	bool processed = false;
+	char msg[8];
+	strncpy(msg, argv[0], 8);
+	if (strncmp(msg, "PMTK",4)==0) {
+		// PNTK Messages are responses to PMTK commands (or sent on Power on)
+		processed = true;
+	} else if (strncmp(&msg[2], "GSV", 3)==0) {
+		// xxGSV Message shows number of satellites in View
+		processed = true;
+		gps_gsvmsg_t gsvmsg;
+		gsvmsg.talker = msg[1];	// 'P' for GPS, 'L' for GLONASS
+		gsvmsg.msgCnt = atoi(argv[1]);
+		gsvmsg.msgNr = atoi(argv[2]);
+		gsvmsg.nrOfSatellites = atoi(argv[3]);
+		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_GSV, &gsvmsg, sizeof(gsvmsg));
+	} else if (strncmp(&msg[2], "GGA", 3)==0) {
+		// xxGGA Message shows essential fix data
+		processed = true;
+		gps_ggamsg_t ggamsg;
+		ggamsg.talker = msg[1];					// 'P' for GPS, 'L' for GLONASS, 'N' for 'generic' method?
+		ggamsg.fix = argv[6][0];				// '0' invalid, '1' GNSS fix, '2' DGPS fix, ...
+		ggamsg.utcTimeSec = atoi(argv[1]);		// argv[1] is format 'hhmmss.sss' -> to int gives hhmmsss as integer
+		ggamsg.utcTimeMs = atoi(&(argv[1][7])); // argv[1] is format 'hhmmss.sss' -> to int from position [1][7] gives ms as integer
+		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_GGA, &ggamsg, sizeof(ggamsg));
+	} else if (strncmp(&msg[2], "GSA", 3)==0) {
+		// xxGSA Message shows fix details
+		processed = true;
+		gps_gsamsg_t gsamsg;
+		gsamsg.talker = msg[1];					// 'P' for GPS, 'L' for GLONASS, 'N' for 'generic' method?
+		gsamsg.mode = argv[1][0];				// 'M' for manuell forced 2D/3D switch, 'A' allowed to switch 2D/3D automatically
+		gsamsg.fixstatus = argv[2][0];			// '1' No Fix, '2' 2D fix, '3' 3D fix
+		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_GSA, &gsamsg, sizeof(gsamsg));
+	} else if (strncmp(&msg[2], "VTG", 3)==0) {
+		// xxVTG Message shows track mode and ground speed
+		processed = true;
+		gps_vtgmsg_t vtgmsg;
+		vtgmsg.talker = msg[1];					// 'P' for GPS, 'L' for GLONASS, 'N' for 'generic' method?
+		vtgmsg.posmode = argv[9][0];			// 'N' no Fix, 'A' Autonomous fix, 'D' Differential Fix
+		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_VTG, &vtgmsg, sizeof(vtgmsg));
+	} else if (strncmp(&msg[2], "RMC", 3)==0) {
+		// xxRMC Message shows minimum recommended position data
+		processed = true;
+		gps_rmcmsg_t rmcmsg;
+		rmcmsg.talker = msg[1];					// 'P' for GPS, 'L' for GLONASS, 'N' for 'generic' method?
+		rmcmsg.posmode = argv[12][0];			// 'N' no Fix, 'A' Autonomous fix, 'D' Differential Fix
+		rmcmsg.valid = argv[2][0];				// 'V' invalid, 'A' valid !
+		rmcmsg.utcTimeSec = atoi(argv[1]);		// argv[1] is format 'hhmmss.sss' -> to int gives hhmmsss as integer
+		rmcmsg.utcTimeMs = atoi(&(argv[1][7])); // argv[1] is format 'hhmmss.sss' -> to int from position [1][7] gives ms as integer
+		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_RMC, &rmcmsg, sizeof(rmcmsg));
+} else {
+		//SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_RAW, gpsRxBuffer, gpsRxIdx);
+	}
+	return processed;
 }
 
 
@@ -148,11 +239,13 @@ typedef enum {
 
 static uint8_t gpsRxChecksum;
 static uint8_t gpsRxBuffer[GPS_NMEA_MAXBYTES];
-static char*  gpsNmeaMessage[GPS_NMEA_MAXFIELDS];
+static char* gpsNmeaMessage[GPS_NMEA_MAXFIELDS];
+
 static uint8_t gpsRxIdx = 0;
 static uint8_t gpsFieldIdx = 0;
 static uint8_t gpsFieldCnt = 0;
 static gps_rx_state gpsRxStatus = GPS_RX_IDLE;
+
 
 void gpsProcessRxByte(uint8_t rxByte) {
 
@@ -176,7 +269,7 @@ void gpsProcessRxByte(uint8_t rxByte) {
 			if (rxByte == ',') {
 				//replace field separator with \0 to generate the argc,argv structure for message processing
 				rxByte = 0x00;
-				gpsNmeaMessage[gpsFieldCnt++] = (char*)(&gpsRxBuffer[gpsRxIdx]);
+				gpsNmeaMessage[gpsFieldCnt++] = (char*)(&gpsRxBuffer[gpsRxIdx+1]);
 				if (gpsFieldCnt>=GPS_NMEA_MAXFIELDS) {
 					SysEvent(MODULE_ID_GPS, EVENT_ERROR, EID_GPS_RXFIELDBUFFERFULL, NULL, 0);
 					gpsRxStatus = GPS_RX_IDLE;
@@ -234,8 +327,9 @@ void gpsProcessRxByte(uint8_t rxByte) {
 	case GPS_RX_LF:
 		if (rxByte == 0x0a) {
 			// ok the message is finally good here.
-			SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_RAW, gpsNmeaMessage[0], gpsRxIdx);
-			gpsProcessNmeaMessage(gpsFieldCnt, gpsNmeaMessage);
+			if (!gpsProcessNmeaMessage(gpsFieldCnt, gpsNmeaMessage)) {
+				SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_RAW, gpsRxBuffer, gpsRxIdx);
+			}
 			gpsRxStatus = GPS_RX_IDLE;
 		} else {
 			SysEvent(MODULE_ID_GPS, EVENT_ERROR, EID_GPS_MSGERROR, NULL, 0);
