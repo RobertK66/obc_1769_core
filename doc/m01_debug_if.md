@@ -49,11 +49,13 @@ where
 | ‘w’     | \<c\>\<adr\>\<b\>\<len\>  | writes the data byte \<b\> for \<len\> times starting at \<adr\> of mram chip number \<c\> (0...5).              |
 | 'p'     | \<abcd\|ABCD\>            | powers on or off one or more sidepanels. e.g "p ABcD" powers 3 of the 4 sidepanels. Blue LED shows on and goes off if current limiter detects short circuit | 
 | ‘O’     | \<name\>                  | sets the hardware instance name                                                                                  |
-| 'N'     | \<name\>                  | sets the sd-card name                                                                                  |
-| 'i'     | \-                        | gives general information about obc board, versions, ....
+| 'N'     | \<name\>                  | sets the sd-card name                                                                                            |
+| 'i'     | \-                        | gives general information about obc board, versions, ....                                                        |
+| 'T'     | \-                        | gives the current UTC time in RTC and TLE (juliandayfraction) format                                             |
+| 't'     | \<date\> \<time\>         | sets the UTC time to d´the given date / time. Format: yyyyMMdd hhmmss                                            |
 | ---     | ---                       | ---                                                                                                              |
 | 'h'     | \<pinIdx\> \<mode\>       | sets an GPIO pin to mode (0: initVal, 1: high, 2: low, 3: slow blink, 4: fast osz.)                              |
-| 'm'     | \<pinIdxIn\> [\<pinIdxOut\>] | mirrors the GPI input pin to the GPIO output pin 																 |
+| 'm'     | \<pinIdxIn\> [\<pinIdxOut\>] | mirrors the GPI input pin to the GPIO output pin 															 |
 
 Valid pinIdx for command 'h' and 'm' can be found in the hardware abstraction include file in source code..... 
 
@@ -110,4 +112,10 @@ where
 |                    |   [3]   | temperature (LM19) in °C   |
 |                    |   [4]   | temperature (SHT3X) in °C  |
 |                    |   [5]   | humidity in %   			|
+|--------------------|---------|----------------------------|
+| 0x01 / 0x03        |         | UTC time was synchronized  |
+|                    | uint32  | current reset number       |
+|                    | double  | old UTC Offset             |
+|                    | double  | new UTC Offset             |
+|                    | byte    | Sync Source (1 GPS, 2 Cmd, 3 RTC) |
 |--------------------|---------|----------------------------|

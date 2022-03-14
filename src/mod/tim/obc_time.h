@@ -67,14 +67,25 @@ void timMain (void);
 
 void 	 			timSetResetNumber(uint32_t resetCount);
 uint32_t 			timGetResetNumber(void);
+obc_systime32_t		timGetSystime(void);
 
-void 				TimSetUtc1(uint16_t year, uint8_t month, uint8_t dayOfMonth, uint8_t hour, uint8_t min, uint8_t sec, bool syncRTC);
+void 				TimSetUtc1(uint16_t year, uint8_t month, uint8_t dayOfMonth, uint8_t hour, uint8_t min, uint8_t sec, bool syncRTC, uint8_t syncSource);
+void 				timSyncUtc(uint16_t year, obc_systime32_t systemTime, juliandayfraction utcDateTime, uint8_t syncSource);
 obc_utc_fulltime_t 	timGetUTCTime(void);
+
+juliandayfraction 	timConvertUtcTimeToJdf(uint32_t gpsTime, uint16_t gpsMs);
+juliandayfraction 	timConvertUtcDateToJdf(uint32_t gpsDate);
+
 
 
 // Event defines (Internal defined event structs can be used on debug and com APIs as generic 'Event'.
 #define MODULE_ID_TIME			0x01
 #define EVENT_TIM_INITIALIZED	1
 #define EVENT_TIM_XTALSTARTED	2				// This is only sent when XTAl Error from init 'disappears'.
+#define EVENT_TIM_SYNCHRONIZED	3
+
+#define TIM_SYNCSOURCE_GPS			1
+#define TIM_SYNCSOURCE_DEBUGCMD		2
+#define TIM_SYNCSOURCE_ONBOARDRTC 	3
 
 #endif /* MOD_TIM_OBC_TIME_H_ */

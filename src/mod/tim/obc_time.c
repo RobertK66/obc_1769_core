@@ -12,12 +12,15 @@ The RTC IRQ is used to count/check the RTC Seconds.
 ===============================================================================
 */
 #include "obc_time.h"
+
+#include <math.h>
 #include <ado_modules.h>
 #include <ado_crc.h>
 
+
 #define C_RESET_MS_OFFSET 22			// TODO: measure exact start offset
 
-static const int timeMonthOffsetDays[2][13] = {
+static const uint16_t timeMonthOffsetDays[2][13] = {
    {0,   0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334},  // non leap year
    {0,   0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335}   // leap year
 };
@@ -45,10 +48,19 @@ typedef struct {
 
 typedef struct {
     uint32_t                resetNumber;	// current running 'reset-epoch'
-    obc_systime32_t           msAfterReset;	// as is named ;-)
+    obc_systime32_t         msAfterReset;	// as is named ;-)
     obc_tle_fulltime_t      utcOffset;      // defines the UTC time (in TLE format) when this reset epoch started.
     double					drift;			// current difference between XTAL(ms)-system based UTC time calculation and current time in hardware RTC.
 } tim_synced_systime_t;
+
+typedef struct __attribute__((packed)) {
+	uint32_t			resetNumber;
+	juliandayfraction 	oldOffset;
+	juliandayfraction   newOffset;
+	uint8_t				source;
+} tim_syncdata_t;
+
+
 
 
 // Prototypes
@@ -77,14 +89,14 @@ static inline uint32_t rtc_get_time(void) {
 static inline uint32_t rtc_get_date(void) {
 	return (LPC_RTC->TIME[RTC_TIMETYPE_DAYOFMONTH] + LPC_RTC->TIME[RTC_TIMETYPE_MONTH] * 100 + (LPC_RTC->TIME[RTC_TIMETYPE_YEAR]) * 10000);
 }
-static inline void timSetUtc2(RTC_TIME_T *fullTime) {
+static inline void timSetUtc2(RTC_TIME_T *fullTime, uint8_t syncSource) {
     TimSetUtc1(fullTime->time[RTC_TIMETYPE_YEAR],
                fullTime->time[RTC_TIMETYPE_MONTH],
                fullTime->time[RTC_TIMETYPE_DAYOFMONTH],
                fullTime->time[RTC_TIMETYPE_HOUR],
                fullTime->time[RTC_TIMETYPE_MINUTE],
                fullTime->time[RTC_TIMETYPE_SECOND],
-			   false);
+			   false, syncSource);
 }
 
 // Module Variables
@@ -197,7 +209,7 @@ void timInit (void *initData) {
 				// RTC was synchronized before Reset (and survived) so we can use it to synchronize again.
 				RTC_TIME_T 	time;
 				Chip_RTC_GetFullTime(LPC_RTC, &time);
-				timSetUtc2(&time);
+				timSetUtc2(&time, TIM_SYNCSOURCE_ONBOARDRTC);
 				pInitReport->rtcSynchronized = true;
 			}
 		} else {
@@ -306,17 +318,120 @@ void timBlockMs(uint16_t ms) {
 	}
 }
 
-void TimSetUtc1(uint16_t year, uint8_t month, uint8_t dayOfMonth, uint8_t hour, uint8_t min, uint8_t sec, bool syncRTC) {
+// conversion routines for different date/time formats
+static inline uint16_t timGetDayOfYear(uint16_t year,uint8_t month,uint8_t dayOfMonth) {
+	int leap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+	return timeMonthOffsetDays[leap][month] + dayOfMonth;
+}
+
+
+// gpsTime: format uint value with hhmmss
+juliandayfraction timConvertUtcTimeToJdf(uint32_t gpsTime, uint16_t gpsMs) {
+	uint8_t  sec = (uint8_t)(gpsTime % 100);
+	uint8_t  min = (uint8_t)((gpsTime / 100) % 100);
+	uint8_t  hour = (uint8_t)(gpsTime / 10000);
+
+	juliandayfraction timetoday;
+	if ((sec < 60) & (min < 60) & (hour < 23) & (gpsMs < 1000)) {
+		timetoday = (((sec / 60.0 + min) / 60.0 + hour) / 24.0 ) + (gpsMs/86400000.0);
+	} else {
+		timetoday = 0.0;
+	}
+	return timetoday;
+}
+
+// gpsDate: format uintvalue with ddmmyy
+juliandayfraction timConvertUtcDateToJdf(uint32_t gpsDate) {
+	uint16_t year = 2000 + (gpsDate % 100);
+	uint8_t  month = (uint8_t)((gpsDate/100) % 100);
+	uint8_t  dayOfMonth = (uint8_t)(gpsDate/10000);
+
+	if ((month < 12) && (dayOfMonth < 32)) {
+		uint16_t dayOfYear = timGetDayOfYear(year, month, dayOfMonth);
+		return (juliandayfraction)dayOfYear;
+	} else {
+		return 0.0;
+	}
+}
+
+
+void timSyncUtc(uint16_t year, obc_systime32_t systemTime, juliandayfraction utcDateTime, uint8_t syncSource) {
+
+	// Calculate and store the offset for this systime-utc time pair (stored some 'NMEA records ago!)
+	// So this does not show current time here!
+	tim_syncdata_t syncData;
+
+
+	syncData.oldOffset = ObcSystemTime.utcOffset.dayOfYear;
+	syncData.newOffset = utcDateTime - TimConvertMsToDoyf(systemTime);
+
+	float diff = fabs(syncData.newOffset - syncData.oldOffset);
+	if ( diff > 0.00005) {
+		ObcSystemTime.utcOffset.dayOfYear = syncData.newOffset;
+
+		// Now we (re)calculate current Time (from systime and offset) and set this to our RTC registers
+		RTC_TIME_T 	time;
+
+		juliandayfraction currenttime = ObcSystemTime.utcOffset.dayOfYear + TimConvertMsToDoyf(ObcSystemTime.msAfterReset);
+		// Calculate month and day of month for this year
+		uint16_t dayInYear = (uint16_t)currenttime;
+		int leap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+		uint8_t month;
+		for (month = 1; month < 13; month++) {
+			if (dayInYear < timeMonthOffsetDays[leap][month]) {
+				break;
+			}
+		}
+		month--;
+		uint8_t dayOfMonth = dayInYear - timeMonthOffsetDays[leap][month];
+
+		time.time[RTC_TIMETYPE_YEAR] = year;
+
+		time.time[RTC_TIMETYPE_DAYOFMONTH] = dayOfMonth;
+		time.time[RTC_TIMETYPE_DAYOFWEEK] = 1;
+		time.time[RTC_TIMETYPE_DAYOFYEAR] = dayInYear;
+		time.time[RTC_TIMETYPE_MONTH] = month;
+
+
+		currenttime -= dayInYear;	// This should give time (of day) only part.
+		currenttime *= 24;
+		uint8_t hours = (uint8_t)currenttime;
+		currenttime -= hours;
+		currenttime *= 60;
+		uint8_t minutes = (uint8_t)currenttime;
+		currenttime -= minutes;
+		currenttime *= 60;
+		uint8_t seconds = (uint8_t)currenttime;
+
+		time.time[RTC_TIMETYPE_SECOND] = seconds;
+		time.time[RTC_TIMETYPE_MINUTE] = minutes;
+		time.time[RTC_TIMETYPE_HOUR] = hours;
+
+		// TODO make this RTC setting somehow ms accurate !!!
+		Chip_RTC_SetFullTime(LPC_RTC, &time);
+		RtcWriteGpr(RTC_GPRIDX_STATUS, RTC_STAT_SYNCHRONIZED);
+
+		syncData.resetNumber = ObcSystemTime.resetNumber;
+		syncData.source = syncSource;
+		SysEvent(MODULE_ID_TIME, EVENT_INFO, EVENT_TIM_SYNCHRONIZED, &syncData, sizeof(syncData));
+	}
+}
+
+void TimSetUtc1(uint16_t year, uint8_t month, uint8_t dayOfMonth, uint8_t hour, uint8_t min, uint8_t sec, bool syncRTC,uint8_t syncSource) {
+	tim_syncdata_t syncData;
+	syncData.oldOffset = ObcSystemTime.utcOffset.dayOfYear;
+
     ObcSystemTime.utcOffset.year = year;
 
     // First we calculate the day depending of leap year
-    int leap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
-    juliandayfraction day = timeMonthOffsetDays[leap][month] + dayOfMonth;
+    juliandayfraction day = (juliandayfraction)timGetDayOfYear(year, month, dayOfMonth);
+
     // Then we add the time fraction
     day += ((sec / 60.0 + min) / 60.0 + hour) / 24.0;
 
     // To store the offset to this time we subtract current ms.
     ObcSystemTime.utcOffset.dayOfYear = day - TimConvertMsToDoyf(ObcSystemTime.msAfterReset);;
+    syncData.newOffset = ObcSystemTime.utcOffset.dayOfYear;
 
     // Now we synchronize this UTC time into RTC
     if (syncRTC) {
@@ -335,20 +450,14 @@ void TimSetUtc1(uint16_t year, uint8_t month, uint8_t dayOfMonth, uint8_t hour, 
     	RtcWriteGpr(RTC_GPRIDX_STATUS, RTC_STAT_SYNCHRONIZED);
     }
 
+    syncData.resetNumber = ObcSystemTime.resetNumber;
+    syncData.source = syncSource;
+    SysEvent(MODULE_ID_TIME, EVENT_INFO, EVENT_TIM_SYNCHRONIZED, &syncData, sizeof(syncData));
+
     // and finally we reset the offset between XTAL and RTC -> this triggers immediate recalc with next sec RTC IRQ.
     ObcSystemTime.drift = 0.0; // in [seconds]
 
 }
-
-//inline void timSetUtc2(RTC_TIME_T *fullTime) {
-//    TimSetUtc1(fullTime->time[RTC_TIMETYPE_YEAR],
-//                fullTime->time[RTC_TIMETYPE_MONTH],
-//                fullTime->time[RTC_TIMETYPE_DAYOFMONTH],
-//                fullTime->time[RTC_TIMETYPE_HOUR],
-//                fullTime->time[RTC_TIMETYPE_MINUTE],
-//                fullTime->time[RTC_TIMETYPE_SECOND],
-//				false);
-//}
 
 void timSetResetNumber(uint32_t resetCount) {
 	ObcSystemTime.resetNumber = resetCount;
@@ -369,3 +478,6 @@ obc_utc_fulltime_t timGetUTCTime(void) {
 	return retVal;
 }
 
+obc_systime32_t inline	timGetSystime(void) {
+	return ObcSystemTime.msAfterReset;
+}

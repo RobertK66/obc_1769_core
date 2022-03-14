@@ -26,4 +26,19 @@ void gpsMain (void);
 void gpsSendBytes(uint8_t *data, uint8_t len);
 
 
+
+#define MODULE_ID_GPS 				0x04
+
+#define EID_GPS_NMEA_MSG_RAW		1
+#define EID_GPS_CRCERROR			2
+#define EID_GPS_MSGERROR			3
+#define EID_GPS_RXBYTEBUFFERFULL	4
+#define EID_GPS_RXFIELDBUFFERFULL	5
+#define EID_GPS_SATELLITES_IN_SIGHT	6
+//#define EID_GPS_NMEA_MSG_GGA		7
+//#define EID_GPS_NMEA_MSG_GSA		8
+//#define EID_GPS_NMEA_MSG_VTG		9
+//#define EID_GPS_NMEA_MSG_RMC		10
+
+
 #endif /* MOD_TIM_CLIMB_GPS_H_ */

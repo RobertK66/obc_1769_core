@@ -170,7 +170,7 @@ void SpPowerSwitch(char sp) {
 }
 
 void SendToGpsUartCmd(int argc, char *argv[]) {
-	gpsSendBytes((uint8_t *)"Hello GPS!", 11);
+	gpsSendBytes((uint8_t *)"1U2", 3);
 }
 
 
@@ -398,7 +398,7 @@ void SetUtcDateTimeCmd(int argc, char *argv[]) {
 		sec = time % 100;
 
 		// binary cmd
-		TimSetUtc1(year, month, dayOfMonth, hrs, min, sec, true);
+		TimSetUtc1(year, month, dayOfMonth, hrs, min, sec, true, TIM_SYNCSOURCE_DEBUGCMD);
 	}
 }
 
