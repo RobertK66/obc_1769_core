@@ -48,5 +48,6 @@ Decision of not using available RTOS implementation for LPC1769 based on
 - complexity added for development and debugging ( another hurdle for students new to embedded software dev)
 
 Reconsider if
-- own solution gets to comlex and/or also introduces comparable overhead.
+- own solution gets to complex and/or also introduces comparable overhead.
+- reuse of available other solutions (based on RTOS). 
 
