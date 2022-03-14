@@ -11,43 +11,40 @@
 #include <ado_uart.h>
 #include <ado_modules.h>
 
-// prototypes
-void gpsUartIRQ(LPC_USART_T *pUART);
-void gpsProcessRxByte(uint8_t rxByte);
-bool gpsProcessNmeaMessage(int argc, char *argv[]);
-
-// local/module variables
-static gps_initdata_t *gpsInitData;
-
+#include "obc_time.h"
 
 // Event structs - used as API to ground station (or debug IF) only
-typedef struct {
-	char	talker;
-	uint8_t	msgNr;
-	uint8_t	msgCnt;
-	uint8_t	nrOfSatellites;
-} gps_gsvmsg_t;
+//typedef struct __attribute__((packed)) {
+//	char	talker;
+//	uint8_t	msgNr;
+//	uint8_t	msgCnt;
+//	uint8_t	nrOfSatellites;
+//} gps_gsvmsg_t;
+typedef struct __attribute__((packed)) {
+	uint8_t gpsSeen;
+	uint8_t glonassSeen;
+} gps_satcnt_t;
 
-typedef struct __attribute__((__packed__)) {
+typedef struct __attribute__((packed)) {
 	char		talker;
 	char		fix;
 	uint32_t	utcTimeSec;
 	uint16_t	utcTimeMs;
 } gps_ggamsg_t;
 
-typedef struct __attribute__((__packed__)) {
+typedef struct __attribute__((packed)) {
 	char	talker;
 	char	mode;
 	char	fixstatus;
 } gps_gsamsg_t;
 
 
-typedef struct __attribute__((__packed__)) {
+typedef struct __attribute__((packed)) {
 	char	talker;
 	char	posmode;
 } gps_vtgmsg_t;
 
-typedef struct __attribute__((__packed__)) {
+typedef struct __attribute__((packed)) {
 	char		talker;
 	char		valid;
 	char		posmode;
@@ -55,6 +52,27 @@ typedef struct __attribute__((__packed__)) {
 	uint16_t	utcTimeMs;
 } gps_rmcmsg_t;
 
+
+// local/module variables
+
+static gps_initdata_t *gpsInitData;
+
+static uint8_t gpsGPSSatsInView = 0;
+static uint8_t gpsGLONASSSatsInView= 0;
+
+#define GPS_TIMESYNC_COUNT	3
+typedef struct __attribute__((packed)) {
+	uint16_t	year;
+	juliandayfraction gpsUTC[GPS_TIMESYNC_COUNT];
+	obc_systime32_t sysTime[GPS_TIMESYNC_COUNT];
+} gps_syncdata_t;
+static uint8_t gpsSyncIdx = 0;
+static gps_syncdata_t gpsSyncData;
+
+// local prototypes
+void gpsUartIRQ(LPC_USART_T *pUART);
+void gpsProcessRxByte(uint8_t rxByte);
+bool gpsProcessNmeaMessage(int argc, char *argv[]);
 
 
 // ************************** TX Circular byte Buffer Begin ********************
@@ -108,6 +126,7 @@ void gpsInit (void *initData) {
 	// Init UART
 	InitUart(gpsInitData->pUart, 9600, gpsUartIRQ);
 	gpsFirstByteAfterReset = true;
+
 }
 
 void gpsMain (void) {
@@ -144,49 +163,105 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 		// PNTK Messages are responses to PMTK commands (or sent on Power on)
 		processed = true;
 	} else if (strncmp(&msg[2], "GSV", 3)==0) {
-		// xxGSV Message shows number of satellites in View
-		processed = true;
-		gps_gsvmsg_t gsvmsg;
-		gsvmsg.talker = msg[1];	// 'P' for GPS, 'L' for GLONASS
-		gsvmsg.msgCnt = atoi(argv[1]);
-		gsvmsg.msgNr = atoi(argv[2]);
-		gsvmsg.nrOfSatellites = atoi(argv[3]);
-		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_GSV, &gsvmsg, sizeof(gsvmsg));
+		// GxGSV Message shows number of satellites in View.
+		// We are only interested in total number of sats in view. Not in details and sat ids....
+		uint8_t nrOfSatellites = atoi(argv[3]);
+		// We have one value for GPS and one for GLONASS
+		uint8_t *storedValuePtr;
+		if (msg[1] == 'P') {
+			processed = true;
+			storedValuePtr = &gpsGPSSatsInView;
+		} else if (msg[1] == 'L') {
+			processed = true;
+			storedValuePtr = &gpsGLONASSSatsInView;
+		}
+		if (processed) {
+			if (*storedValuePtr != nrOfSatellites) {
+				// Value changed. Store it and trigger event to send new numbers.
+				*storedValuePtr = nrOfSatellites;
+				gps_satcnt_t satcnt;
+				satcnt.gpsSeen = gpsGPSSatsInView;
+				satcnt.glonassSeen = gpsGLONASSSatsInView;
+				SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_SATELLITES_IN_SIGHT, &satcnt, sizeof(satcnt));
+			}
+		}
 	} else if (strncmp(&msg[2], "GGA", 3)==0) {
 		// xxGGA Message shows essential fix data
 		processed = true;
-		gps_ggamsg_t ggamsg;
-		ggamsg.talker = msg[1];					// 'P' for GPS, 'L' for GLONASS, 'N' for 'generic' method?
-		ggamsg.fix = argv[6][0];				// '0' invalid, '1' GNSS fix, '2' DGPS fix, ...
-		ggamsg.utcTimeSec = atoi(argv[1]);		// argv[1] is format 'hhmmss.sss' -> to int gives hhmmsss as integer
-		ggamsg.utcTimeMs = atoi(&(argv[1][7])); // argv[1] is format 'hhmmss.sss' -> to int from position [1][7] gives ms as integer
-		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_GGA, &ggamsg, sizeof(ggamsg));
+//		gps_ggamsg_t ggamsg;
+//		ggamsg.talker = msg[1];					// 'P' for GPS, 'L' for GLONASS, 'N' for 'generic' method?
+//		ggamsg.fix = argv[6][0];				// '0' invalid, '1' GNSS fix, '2' DGPS fix, ...
+//		ggamsg.utcTimeSec = atoi(argv[1]);		// argv[1] is format 'hhmmss.sss' -> to int gives hhmmss as integer
+//		ggamsg.utcTimeMs = atoi(&(argv[1][7])); // argv[1] is format 'hhmmss.sss' -> to int from position [1][7] gives ms as integer
+//		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_GGA, &ggamsg, sizeof(ggamsg));
 	} else if (strncmp(&msg[2], "GSA", 3)==0) {
 		// xxGSA Message shows fix details
 		processed = true;
-		gps_gsamsg_t gsamsg;
-		gsamsg.talker = msg[1];					// 'P' for GPS, 'L' for GLONASS, 'N' for 'generic' method?
-		gsamsg.mode = argv[1][0];				// 'M' for manuell forced 2D/3D switch, 'A' allowed to switch 2D/3D automatically
-		gsamsg.fixstatus = argv[2][0];			// '1' No Fix, '2' 2D fix, '3' 3D fix
-		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_GSA, &gsamsg, sizeof(gsamsg));
+//		gps_gsamsg_t gsamsg;
+//		gsamsg.talker = msg[1];					// 'P' for GPS, 'L' for GLONASS, 'N' for 'generic' method?
+//		gsamsg.mode = argv[1][0];				// 'M' for manuell forced 2D/3D switch, 'A' allowed to switch 2D/3D automatically
+//		gsamsg.fixstatus = argv[2][0];			// '1' No Fix, '2' 2D fix, '3' 3D fix
+//		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_GSA, &gsamsg, sizeof(gsamsg));
 	} else if (strncmp(&msg[2], "VTG", 3)==0) {
 		// xxVTG Message shows track mode and ground speed
 		processed = true;
-		gps_vtgmsg_t vtgmsg;
-		vtgmsg.talker = msg[1];					// 'P' for GPS, 'L' for GLONASS, 'N' for 'generic' method?
-		vtgmsg.posmode = argv[9][0];			// 'N' no Fix, 'A' Autonomous fix, 'D' Differential Fix
-		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_VTG, &vtgmsg, sizeof(vtgmsg));
+//		gps_vtgmsg_t vtgmsg;
+//		vtgmsg.talker = msg[1];					// 'P' for GPS, 'L' for GLONASS, 'N' for 'generic' method?
+//		vtgmsg.posmode = argv[9][0];			// 'N' no Fix, 'A' Autonomous fix, 'D' Differential Fix
+//		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_VTG, &vtgmsg, sizeof(vtgmsg));
 	} else if (strncmp(&msg[2], "RMC", 3)==0) {
 		// xxRMC Message shows minimum recommended position data
 		processed = true;
-		gps_rmcmsg_t rmcmsg;
-		rmcmsg.talker = msg[1];					// 'P' for GPS, 'L' for GLONASS, 'N' for 'generic' method?
-		rmcmsg.posmode = argv[12][0];			// 'N' no Fix, 'A' Autonomous fix, 'D' Differential Fix
-		rmcmsg.valid = argv[2][0];				// 'V' invalid, 'A' valid !
-		rmcmsg.utcTimeSec = atoi(argv[1]);		// argv[1] is format 'hhmmss.sss' -> to int gives hhmmsss as integer
-		rmcmsg.utcTimeMs = atoi(&(argv[1][7])); // argv[1] is format 'hhmmss.sss' -> to int from position [1][7] gives ms as integer
-		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_RMC, &rmcmsg, sizeof(rmcmsg));
-} else {
+		if (argv[2][0] == 'A') {
+			// valid fix
+			uint32_t time = atoi(argv[1]);		// argv[1] is format 'hhmmss.sss' -> to int gives hhmmss as integer
+			uint16_t ms  = atoi(&(argv[1][7])); // argv[1] is format 'hhmmss.sss' -> to int from position [1][7] gives ms as integer
+			uint32_t date = atoi(argv[9]);		// argv[9] is format 'ddMMyy'
+
+			juliandayfraction day = timConvertUtcTimeToJdf(time, ms);
+			if (day > 0.0) {
+				day += timConvertUtcDateToJdf(date);
+				if (day > 1.0) {
+					// Seems to be a valid date/time reception -> store in Sync Structure
+					if (gpsSyncIdx == 0) {
+						gpsSyncData.year = 2000 + (date % 100);
+					}
+					gpsSyncData.gpsUTC[gpsSyncIdx] = day;
+					gpsSyncData.sysTime[gpsSyncIdx] = timGetSystime();
+					if (gpsSyncData.year != 2000 + (date % 100)) {
+						// The year changed while sync record collection -> restart new (either it was corrupted message or really silvester -> taker next sequenxe of 3)
+						gpsSyncIdx = 0;
+					} else {
+						gpsSyncIdx++;
+					}
+					if (gpsSyncIdx >= GPS_TIMESYNC_COUNT) {
+						gpsSyncIdx = 0;
+						// We got 3 timestamps. Unfortunately NMEA checksum does not really prevent (double) flipping numbers. So we make
+						// a plausibility check here.
+						bool ok = true;
+						for (int i = 0; i < GPS_TIMESYNC_COUNT - 1 ; i++) {
+							double diff = gpsSyncData.gpsUTC[i+1] - gpsSyncData.gpsUTC[i];
+							if ((diff > 0.0000116) || (diff < 0.0000115)) {	// We assume a record exactly every second here !!
+								ok = false;
+								break;
+							}
+						}
+						if (ok) {
+							// Synchronize the RTC (if needed) with the (first) recorded gps timestamp.
+							timSyncUtc(gpsSyncData.year, gpsSyncData.sysTime[0],gpsSyncData.gpsUTC[0], TIM_SYNCSOURCE_GPS);
+						}
+					}
+				}
+			}
+		}
+//		gps_rmcmsg_t rmcmsg;
+//		rmcmsg.talker = msg[1];					// 'P' for GPS, 'N' for 'other'
+//		rmcmsg.posmode = argv[12][0];			// 'N' no Fix, 'A' Autonomous fix, 'D' Differential Fix
+//		rmcmsg.valid = argv[2][0];				// 'V' invalid, 'A' valid !
+//		rmcmsg.utcTimeSec = atoi(argv[1]);		// argv[1] is format 'hhmmss.sss' -> to int gives hhmmss as integer
+//		rmcmsg.utcTimeMs = atoi(&(argv[1][7])); // argv[1] is format 'hhmmss.sss' -> to int from position [1][7] gives ms as integer
+//		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_RMC, &rmcmsg, sizeof(rmcmsg));
+	} else {
 		//SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_RAW, gpsRxBuffer, gpsRxIdx);
 	}
 	return processed;
@@ -344,3 +419,4 @@ void gpsProcessRxByte(uint8_t rxByte) {
 }
 
 //*** GPS NMEA RX state machine end
+

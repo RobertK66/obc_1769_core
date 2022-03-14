@@ -398,7 +398,7 @@ void SetUtcDateTimeCmd(int argc, char *argv[]) {
 		sec = time % 100;
 
 		// binary cmd
-		TimSetUtc1(year, month, dayOfMonth, hrs, min, sec, true);
+		TimSetUtc1(year, month, dayOfMonth, hrs, min, sec, true, TIM_SYNCSOURCE_DEBUGCMD);
 	}
 }
 
