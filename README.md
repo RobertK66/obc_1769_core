@@ -8,6 +8,7 @@ hardware in cubesat projects.
 Documentation under /doc:
 - [Architecture](doc/m00_modules.md)
 - [Debug Interface](doc/m01_debug_if.md)
+- [How to Flash the OBC image](doc/m02_flash_prog.md)
 
 
 

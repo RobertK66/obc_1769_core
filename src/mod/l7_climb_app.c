@@ -17,6 +17,7 @@
 #include "tim/obc_time.h"
 #include "l3_sensors.h"
 #include "hw_check.h"
+#include "tim/climb_gps.h"
 
 typedef struct {
 	uint8_t	cmdId;
@@ -28,7 +29,7 @@ typedef struct {
 	uint32_t 				SerialShort;
 	char					InstanceName[16];
 	char					CardName[16];
-	obc_tim_systemtime_t 	CurrentTime;
+//	tim_synced_systime_t 	CurrentTime;
 	mem_status_t			MemoryStatus;
 	uint32_t				SdCardBlock0Number;
 	uint32_t				SdCardSize;
@@ -62,7 +63,10 @@ void SetObcNameCmd(int argc, char *argv[]);
 void ReadStatusMramCmd(int argc, char *argv[]);
 void GetSystemInfoCmd(int argc, char *argv[]);
 void SetSdCardNameCmd(int argc, char *argv[]);
-
+void TriggerWatchdogCmd(int argc, char *argv[]);
+void SetUtcDateTimeCmd(int argc, char *argv[]);
+void GetFullTimeCmd(int argc, char *argv[]);
+void SendToGpsUartCmd(int argc, char *argv[]);
 
 //extern void *sdCard;
 
@@ -79,6 +83,10 @@ static const app_command_t Commands[] = {
 		{ 'O' , SetObcNameCmd },
 		{ 'N' , SetSdCardNameCmd },
 		{ 'i' , GetSystemInfoCmd },
+		{ 'd' , TriggerWatchdogCmd },
+		{ 't' , SetUtcDateTimeCmd },
+		{ 'T' , GetFullTimeCmd },
+		{ 'g' , SendToGpsUartCmd }
 };
 
 
@@ -161,6 +169,11 @@ void SpPowerSwitch(char sp) {
 	}
 }
 
+void SendToGpsUartCmd(int argc, char *argv[]) {
+	gpsSendBytes((uint8_t *)"1U2", 3);
+}
+
+
 void SpPowerCmd(int argc, char *argv[]) {
 	if (argc != 2) {
 		SysEventString("uasge: p <a|A/b|B/c|C/d|D>");
@@ -185,6 +198,10 @@ void CardPowerOnCmd(int argc, char *argv[]) {
 void CardPowerOffCmd(int argc, char *argv[]) {
 	memCardOff();
 //	HwcSetOutput(PINIDX_SD_VCC_EN, HWC_High);
+}
+
+void TriggerWatchdogCmd(int argc, char *argv[]) {
+	while(true);
 }
 
 
@@ -331,7 +348,7 @@ void SetSdCardNameCmd(int argc, char *argv[]) {
 
 void GetSystemInfoCmd(int argc, char *argv[]) {
 	app_systeminfo_t info;
-	info.CurrentTime = tim_getSystemTime();
+	//info.CurrentTime = tim_getSystemTime();
 	memGetInstanceName(info.InstanceName,16);
 	memGetCardName(info.CardName, 20);
 
@@ -348,5 +365,46 @@ void GetSystemInfoCmd(int argc, char *argv[]) {
 	info.SerialShort = memGetSerialNumber(1);
 
 	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_SYSTEMSTATUS, &info, sizeof(info));
+}
+
+void SetUtcDateTimeCmd(int argc, char *argv[]) {
+	// setTime <year><Month><day><hours><minutes><seconds> as single uint32
+	uint16_t year = 0;
+	uint8_t month = 0;
+	uint8_t dayOfMonth = 0;
+	uint8_t sec = 0;
+	uint8_t min = 0;
+	uint8_t hrs = 0;
+
+	uint32_t date;
+	uint32_t time;
+
+	if (argc != 3) {
+		SysEventString("uasge: t <date> <time>");
+	} else {
+		date = atol(argv[1]);
+		time = atol(argv[2]);
+
+		year = date / 10000;
+		date %= 10000;
+
+		month = date / 100;
+		dayOfMonth = date % 100;
+
+		hrs = time / 10000;
+		time %= 10000;
+
+		min = time / 100;
+		sec = time % 100;
+
+		// binary cmd
+		TimSetUtc1(year, month, dayOfMonth, hrs, min, sec, true, TIM_SYNCSOURCE_DEBUGCMD);
+	}
+}
+
+
+void GetFullTimeCmd(int argc, char *argv[]) {
+	obc_utc_fulltime_t ft = timGetUTCTime();
+	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_FULLTIMEINFO, &ft, sizeof(ft));
 }
 

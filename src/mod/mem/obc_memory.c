@@ -337,13 +337,13 @@ void memMain(void) {
 			memCreateFreshPage0(&page0);
 		}
 		// If we already got our epoch number (aka reset count) from RTC-GP registers then we update the mram Page0 with it.
-		uint32_t epochRtc = tim_getEpochNumber();
+		uint32_t epochRtc = timGetResetNumber();
 		if (epochRtc > page0.resetCount) {
 			page0.resetCount = epochRtc;
 			MEM_WRITE_PAGE0(0x3F);
 		} else {
 			// If rtc had lower or no epoch number we use the one we got from mram now.
-			tim_setEpochNumber(page0.resetCount);
+			timSetResetNumber(page0.resetCount);
 		}
 	}
 }
@@ -507,7 +507,7 @@ void memCreateFreshPage0(mem_page0_t *pPage0) {
 	// Initial Instance Name uses Chips serial Number to be unique.
 	strcpy(pPage0->hwInstancename,"MRAM-");
 	itoa(memChipSerialNumber[1], &(pPage0->hwInstancename[5]), 16);
-	pPage0->resetCount = tim_getEpochNumber();
+	pPage0->resetCount = timGetResetNumber();
 	MEM_WRITE_PAGE0(0x3f);
 //	uint16_t crc = CRC16_XMODEM((uint8_t*)pPage0, sizeof(mem_page0_t) - 4);
 //	pPage0->crc16 = (crc <<8) | (crc>>8);

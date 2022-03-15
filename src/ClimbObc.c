@@ -18,6 +18,7 @@
 #include <mod/ado_mram.h>
 
 #include "mod/tim/obc_time.h"
+#include "mod/tim/climb_gps.h"
 #include "mod/hw_check.h"
 #include "mod/l2_debug_com.h"
 
@@ -26,6 +27,10 @@
 #include "mod/l7_climb_app.h"
 
 
+//typedef struct {
+//	uint8_t resetBits;
+//} init_report_t;
+//
 
 #if BA_BOARD == BA_OM13085_EM2T
 // EM2T Test Hardware has 2 SD Cards connected to SSP0/SSP1
@@ -58,14 +63,23 @@ static const mram_chipinit_array_t Chips = {
 
 static const mem_init_t MemoryInit = { PTR_FROM_IDX(PINIDX_SD_VCC_EN) };
 
+static init_report_t InitReport;
+
+static gps_initdata_t GpsInit = {
+		LPC_UART0,
+		PTR_FROM_IDX(PINIDX_GPIO4_CP),
+		PTR_FROM_IDX(PINIDX_STACIE_C_IO1_P)
+};
+
 static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( deb_init, deb_main, LPC_UART2),
-		MOD_INIT( tim_init, tim_main, NULL ),
+		MOD_INIT( timInit, timMain, &InitReport ),
 		MOD_INIT( hwc_init, hwc_main, &ObcPins ),
 		MOD_INIT( MramInitAll, MramMain, &Chips),
 		MOD_INIT( SdcInitAll, SdcMain, &Cards),
 		MOD_INIT( sen_init, sen_main, NULL),
 		MOD_INIT( memInit, memMain, &MemoryInit),
+		MOD_INIT( gpsInit, gpsMain, &GpsInit),
 		MOD_INIT( app_init, app_main, NULL)
 
 };
@@ -74,29 +88,52 @@ static const MODULE_DEF_T Modules[] = {
 int main(void) {
     // Read clock settings and update SystemCoreClock variable.
 	// (Here in main() this sets the global available SystemCoreClock variable for the first time after all SystemInits finished)
-
 	SystemCoreClockUpdate();
+
+	// Determine reset reason
+	InitReport.resetBits = LPC_SYSCON->RSID & 0x003F;
+	InitReport.rtcOscDelayMs = 0;
+
+	// Clear all (set) bits in this register (if possible).
+	LPC_SYSCON->RSID = InitReport.resetBits;
+
+	if (Chip_GPIO_GetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_EXT_WDT_TRIGGERED), PINNR_FROM_IDX(PINIDX_EXT_WDT_TRIGGERED))) {
+		InitReport.hwWatchdog = true;
+		// Reset the WD Flip Flop. (Clear pin must be initialized as output now)
+		Chip_GPIO_SetPinDIROutput(LPC_GPIO, PORT_FROM_IDX(PINIDX_CLR_WDT_FLPFLP), PINNR_FROM_IDX(PINIDX_CLR_WDT_FLPFLP));
+		Chip_GPIO_SetPinOutLow(LPC_GPIO, PORT_FROM_IDX(PINIDX_CLR_WDT_FLPFLP), PINNR_FROM_IDX(PINIDX_CLR_WDT_FLPFLP));
+	}
+	if (Chip_GPIO_GetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_BL_SEL1), PINNR_FROM_IDX(PINIDX_BL_SEL1))) {
+		// Every 2nd Reset.
+		InitReport.oddEven = true;
+	}
 
     // Layer 1 - Bus Inits
     ADO_SSP_Init(ADO_SSP0, 24000000, SSP_CLOCK_MODE3);
     ADO_SSP_Init(ADO_SSP1, 24000000, SSP_CLOCK_MODE3);
-    ADO_SPI_Init(0x08, SPI_CLOCK_MODE3);           	// Clock Divider 0x08 -> fastest, must be even: can be up to 0xFE for slower SPI Clocking
+    ADO_SPI_Init(0x08, SPI_CLOCK_MODE3);    // Clock Divider 0x08 -> fastest, must be even: can be up to 0xFE for slower SPI Clocking
 
     // Onboard I2C
-    init_i2c(LPC_I2C1, 100);		// 100 khZ
-
-
+    init_i2c(LPC_I2C1, 100);		// 100 kHz
 
     // Init all other modules
     for (int i=0; i < MODULE_CNT; i++) {
     	Modules[i].init(Modules[i].initdata);
     }
 
+    // End WD reset pulse and make clr pin input again
+    Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_CLR_WDT_FLPFLP), PINNR_FROM_IDX(PINIDX_CLR_WDT_FLPFLP));
+    Chip_GPIO_SetPinDIRInput(LPC_GPIO, PORT_FROM_IDX(PINIDX_CLR_WDT_FLPFLP), PINNR_FROM_IDX(PINIDX_CLR_WDT_FLPFLP));
+
+
+    SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_INIT, &InitReport, sizeof(InitReport) );
+
     // Enter an infinite loop calling all registered modules main function.
     while(1) {
     	for (int i=0; i < MODULE_CNT; i++) {
     		Modules[i].main();
     	}
+    	Chip_GPIO_SetPinToggle(LPC_GPIO, PORT_FROM_IDX(PINIDX_WATCHDOG_FEED), PINNR_FROM_IDX(PINIDX_WATCHDOG_FEED));
     }
     return 0;
 }
