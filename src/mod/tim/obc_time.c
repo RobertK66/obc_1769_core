@@ -51,6 +51,7 @@ typedef struct {
     obc_systime32_t         msAfterReset;	// as is named ;-)
     obc_tle_fulltime_t      utcOffset;      // defines the UTC time (in TLE format) when this reset epoch started.
     double					drift;			// current difference between XTAL(ms)-system based UTC time calculation and current time in hardware RTC.
+    double					gpsDrift;		// current difference between XTAL(ms)-system based UTC time and gps UTC fix time (of last successfull fix)
 } tim_synced_systime_t;
 
 typedef struct __attribute__((packed)) {
@@ -365,8 +366,11 @@ void timSyncUtc(uint16_t year, obc_systime32_t systemTime, juliandayfraction utc
 	syncData.oldOffset = ObcSystemTime.utcOffset.dayOfYear;
 	syncData.newOffset = utcDateTime - TimConvertMsToDoyf(systemTime);
 
-	float diff = fabs(syncData.newOffset - syncData.oldOffset);
-	if ( diff > 0.00005) {
+	double diff = syncData.newOffset - syncData.oldOffset;
+	if (syncSource == TIM_SYNCSOURCE_GPS) {
+		ObcSystemTime.gpsDrift = diff*86400.0; // in [seconds];
+	}
+	if ( fabs(diff) > 2.0/86400.0) { // resync only if difference is > 2 sec.
 		ObcSystemTime.utcOffset.dayOfYear = syncData.newOffset;
 
 		// Now we (re)calculate current Time (from systime and offset) and set this to our RTC registers
@@ -474,7 +478,7 @@ obc_utc_fulltime_t timGetUTCTime(void) {
 	retVal.rtcTime = rtc_get_time();
 	retVal.tleDay =  ObcSystemTime.utcOffset.dayOfYear + (ObcSystemTime.msAfterReset / 86400000.0);
 	retVal.currentDiff = ObcSystemTime.drift;
-
+	retVal.gpsDiff = ObcSystemTime.gpsDrift;
 	return retVal;
 }
 

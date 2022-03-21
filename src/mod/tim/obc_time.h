@@ -40,6 +40,7 @@ typedef struct {
 	uint32_t	 		rtcTime;		// UTC Time in format HHMMSS	(from hardware RTC)
 	juliandayfraction	tleDay;			// UTC Time in TLE dayOfYear format (calculated from XTAL Systime and last UTC Sync command)
 	double				currentDiff;    // in Seconds. The drift of XTAL Clock vs RTC since last Sync command.
+	double 				gpsDiff; 		// in Seconds. The drift of XTAL Clock vs GPS Clock (from last GPS fix)
 } obc_utc_fulltime_t;
 
 typedef union {
