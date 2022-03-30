@@ -37,7 +37,7 @@ all accuracy and temp dependent drifts and offsets have to be investigated in mo
 time date and timestamp formats
 -------------------------------
 
-obc_time module has the function timGetSystime() which delivers current ms after reset as obc_systime33_t (an alias for uint32_t).
+obc_time module has the function timGetSystime() which delivers current ms after reset as obc_systime32_t (an alias for uint32_t).
 
 To get the UTC time (if synchronized) the function timGetUTCTime() can be used. It gives a
 obc_utc_fulltime_t 	structure containing following members:
