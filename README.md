@@ -6,7 +6,7 @@ hardware in cubesat projects.
 
 Documentation
 -------------
-- [Architecture](doc/m00_modules.md)
+- [Architecture](doc/m00_modules.md) [Reasoning...](doc/m90_apendix_a.md)
 - [Debug Interface](doc/m01_debug_if.md)
 - [How to Flash the OBC image](doc/m02_flash_prog.md)
 - [OBC Timestamps/RTC and related time formats](doc/m03_systime.md)
