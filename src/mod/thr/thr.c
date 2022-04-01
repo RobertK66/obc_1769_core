@@ -21,6 +21,7 @@ static uint8_t 		   thrTxBuffer[THR_TX_BUFFERSIZE];
 static uint8_t         thrTxWriteIdx = 0;
 static uint8_t         thrTxReadIdx  = 0;
 static bool		  	   thrTxBufferFull = false;
+static bool				thrFirstByteAfterReset=true;
 
 static bool inline thrTxBufferEmpty() {
 	if (thrTxBufferFull) {
@@ -67,6 +68,7 @@ void thrInit (void *initData) {
 
 	// Init UART
 	InitUart(thrInitData->pUart, 9600, thrUartIRQ);
+	thrFirstByteAfterReset = true;
 }
 
 void thrMain (void) {
@@ -83,6 +85,7 @@ void thrUartIRQ(LPC_USART_T *pUART) {
 	if (thrInitData->pUart->IER & UART_IER_THREINT) {
 		// Transmit register is empty now (byte was sent out)
 		if (thrTxBufferEmpty() == false) {
+			// Send next byte
 			uint8_t nextByte = thrTxGetByte();
 			Chip_UART_SendByte(thrInitData->pUart, nextByte);
 		} else {
@@ -100,20 +103,28 @@ void thrSendByte(uint8_t b) {
 
 
 
-	if (thrTxBufferEmpty()) {
+	//if (thrTxBufferEmpty()) {
 		// First Byte: Store in Buffer and initiate TX
-		thrTxAddByte(b);
+		//thrTxAddByte(b);
 		// Put this byte on the UART Line.
-		Chip_UART_SendByte(thrInitData->pUart, b);
+	if(thrTxBufferEmpty()){
+				// first time after reset the THRE IRQ will not be triggered by just enabling it here
+				// So we have to really send the byte here and do not put this into buffer. From next byte on
+				// we always put bytes to the TX buffer and enabling the IRQ will trigger it when THR (transmit hold register)
+				// gets empty (or also if it was and is still empty!)
+				// see UM10360 Datasheet rev 4.1  page 315 first paragraph for details of this behavior!
+				thrFirstByteAfterReset = false;
+				Chip_UART_SendByte(thrInitData->pUart, b);
 	} else {
-		// add byte to Tx buffer. Tx should be running already...
+		// add byte to buffer if there is room left
+			// and wait for IRQ to fetch it
 		if (thrTxAddByte(b) == false) {
 			// Buffer Full Error. Byte is skipped -> count errors or signal event ?????
 			// .....
 		}
 	}
 
-	// enable irq after handling tx buffer
+	// enable irq after handling tx buffer.
 	Chip_UART_IntEnable(thrInitData->pUart, UART_IER_THREINT);
 
 	Chip_GPIO_SetPinOutHigh(LPC_GPIO, 1, 19); //  This is PINIDX_RS485_TX_RXP  SET HIGH - back to receive
