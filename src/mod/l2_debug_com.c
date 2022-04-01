@@ -18,6 +18,7 @@ The escaped data is Xored by 0x20.
 ===============================================================================
 */
 #include "l2_debug_com.h"
+#include "l7_climb_app.h"
 
 #include <string.h>
 #include <ado_uart.h>
@@ -67,16 +68,26 @@ void _deb_init (LPC_USART_T *pUart) {
 }
 
 void deb_main (void) {
+
+	char* debug_print;
+	uint8_t request[3];
+	request[0]= 0xFF;
+	request[1]= 0x33;
+	request[2]= 0xFF;
+	debug_print = (char*)request;
+
 	int32_t stat = Chip_UART_ReadLineStatus(deb_Uart);
 	if (stat & UART_LSR_RDR) {
 		int ch = (int)Chip_UART_ReadByte(deb_Uart);
 		if (ch != 0x0a &&
 			ch != 0x0d) {
 			deb_InputLine[deb_RxIdx++] = (char)(ch);
+			//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, (char)(ch), strlen((char)(ch))); ///print if something received
 		}
 
 		if ((deb_RxIdx >= DEB_L2_MAX_CHARPERLINE - 1) ||
 			 ch == DEB_EOL_CHAR ) 	{
+			//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, request, strlen(request)); ///print if something received
 			deb_InputLine[deb_RxIdx] = 0x00;
 			deb_processLine();
 			deb_RxIdx = 0;
@@ -91,10 +102,18 @@ void deb_processLine(void) {
 		// TODO:
 
 		// ?? throw away new command or overwrite old one !?
+		//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, deb_InputLine, strlen(deb_InputLine)); ///print if something received
 	} else {
 		// copy the received line to our command line buffer in order to get room for next RX bytes.
 		strcpy(deb_CommandLine, deb_InputLine);
 		deb_CommandAvailable = true;
+
+		//investigation of why DEBUG UART works unreliable
+		// print received line
+		//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, deb_InputLine, strlen(deb_InputLine));
+		//char* debug_print = "debug print";
+		//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, debug_print, strlen(debug_print));
+		SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, deb_InputLine, strlen(deb_InputLine)); ///print if something received
 	}
 }
 

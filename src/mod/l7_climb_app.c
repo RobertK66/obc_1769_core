@@ -164,6 +164,7 @@ uint8_t  tempData[MRAM_MAX_WRITE_SIZE];
 void app_processCmd(int argc, char *argv[]) {
 	char* cmd = argv[0];
 
+
 	for (int i=0; i<APP_CMD_CNT; i++) {
 		if (cmd[0] == Commands[i].cmdId) {
 			Commands[i].command_function(argc, argv);

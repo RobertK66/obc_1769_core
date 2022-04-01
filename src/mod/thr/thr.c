@@ -97,7 +97,7 @@ void thrUartIRQ(LPC_USART_T *pUART) {
 
 void thrSendByte(uint8_t b) {
 
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, 1, 19); //  This is PINIDX_RS485_TX_RX  SET LOW MEANS SWTCH TO TX
+	//Chip_GPIO_SetPinOutLow(LPC_GPIO, 1, 19); //  This is PINIDX_RS485_TX_RX  SET LOW MEANS SWTCH TO TX
 	// block irq while handling tx buffer
 	Chip_UART_IntDisable(thrInitData->pUart, UART_IER_THREINT);
 
@@ -124,21 +124,28 @@ void thrSendByte(uint8_t b) {
 		}
 	}
 
-	// enable irq after handling tx buffer.
+	// enable irq after handling tx buffer
 	Chip_UART_IntEnable(thrInitData->pUart, UART_IER_THREINT);
 
-	Chip_GPIO_SetPinOutHigh(LPC_GPIO, 1, 19); //  This is PINIDX_RS485_TX_RXP  SET HIGH - back to receive
+	//Chip_GPIO_SetPinOutHigh(LPC_GPIO, 1, 19); //  This is PINIDX_RS485_TX_RXP  SET HIGH - back to receive
 }
 
 void thrSendBytes(uint8_t *data, uint8_t len) {
+	Chip_GPIO_SetPinOutLow(LPC_GPIO, 1, 19); //  This is PINIDX_RS485_TX_RX  SET LOW MEANS SWTCH TO TX
 	for (int i=0;i<len;i++) {
 		thrSendByte(data[i]);
 	}
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, 1, 19); //  This is PINIDX_RS485_TX_RXP  SET HIGH - back to receive
 
 }
 
 
 void thrProcessRxByte(uint8_t rxByte) {
 	// do your processing of RX here....
+	// Simply print RX into debug UART
+	char* Byte;
+
+	Byte = (char*) rxByte;
+	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, Byte, strlen(Byte));
 
 }
