@@ -14,7 +14,7 @@ Documentation
 
 Build Status
 ------------
-[![Build with MCU Expresso](https://github.com/RobertK66/obc_1769_core/workflows/Build%20with%20MCU%20Expresso/badge.svg)](https://github.com/RobertK66/obc_1769_core/actions/workflows/build.yml) [![OBC Manual as PDF](https://github.com/RobertK66/obc_1769_core/actions/workflows/make-docu.yml/badge.svg)](https://github.com/RobertK66/obc_1769_core/actions/workflows/make-docu.yml) [![Latest Release](https://github.com/RobertK66/obc_1769_core/actions/workflows/release.yml/badge.svg)](https://github.com/RobertK66/obc_1769_core/actions/workflows/release.yml)
+[![Build with MCU Expresso](https://github.com/RobertK66/obc_1769_core/workflows/Build%20with%20MCU%20Expresso/badge.svg)](https://github.com/RobertK66/obc_1769_core/actions/workflows/build.yml) [![OBC Manual as PDF](https://github.com/RobertK66/obc_1769_core/workflows/OBC%20Manual%20as%20PDF/badge.svg)](https://github.com/RobertK66/obc_1769_core/actions/workflows/make-docu.yml) [![Latest Release](https://github.com/RobertK66/obc_1769_core/workflows/Release%20a%20build%20with%20Doku/badge.svg)](https://github.com/RobertK66/obc_1769_core/actions/workflows/release.yml)
 
 Download
 --------
