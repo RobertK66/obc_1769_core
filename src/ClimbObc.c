@@ -24,6 +24,7 @@
 
 #include "mod/l3_sensors.h"
 #include "mod/mem/obc_memory.h"
+#include "mod/mem/obc_vram.h"
 #include "mod/l7_climb_app.h"
 
 
@@ -71,17 +72,30 @@ static gps_initdata_t GpsInit = {
 		PTR_FROM_IDX(PINIDX_STACIE_C_IO1_P)
 };
 
-static const MODULE_DEF_T Modules[] = {
-		MOD_INIT( deb_init, deb_main, LPC_UART2),
-		MOD_INIT( timInit, timMain, &InitReport ),
-		MOD_INIT( hwc_init, hwc_main, &ObcPins ),
-		MOD_INIT( MramInitAll, MramMain, &Chips),
-		MOD_INIT( SdcInitAll, SdcMain, &Cards),
-		MOD_INIT( sen_init, sen_main, NULL),
-		MOD_INIT( memInit, memMain, &MemoryInit),
-		MOD_INIT( gpsInit, gpsMain, &GpsInit),
-		MOD_INIT( app_init, app_main, NULL)
+#define EVENTSTORE_BASEADDRR	0x0100
+#define EVENTSTORE_SIZE			0x2000
 
+static vram_sectiondef_t MemorySections[] = {
+	{0, VRAM_HSVS, 0b10111111, 0, 1234},							// not used/implemented yet
+	{1, VRAM_VS, 0b00100000, EVENTSTORE_BASEADDRR, EVENTSTORE_SIZE}	// use as eventstore in Chip 5
+};
+
+static vram_initdata_t VramInit = {
+	MemorySections,
+	(sizeof(MemorySections)/sizeof(vram_sectiondef_t))
+};
+
+static const MODULE_DEF_T Modules[] = {
+	MOD_INIT( deb_init, deb_main, LPC_UART2),
+	MOD_INIT( timInit, timMain, &InitReport ),
+	MOD_INIT( hwc_init, hwc_main, &ObcPins ),
+	MOD_INIT( MramInitAll, MramMain, &Chips),
+	MOD_INIT( SdcInitAll, SdcMain, &Cards),
+	MOD_INIT( sen_init, sen_main, NULL),
+	MOD_INIT( memInit, memMain, &MemoryInit),
+	MOD_INIT( gpsInit, gpsMain, &GpsInit),
+	MOD_INIT( vramInit, vramMain, &VramInit),
+	MOD_INIT( app_init, app_main, NULL)
 };
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
 

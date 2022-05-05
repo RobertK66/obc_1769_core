@@ -107,7 +107,7 @@ static tim_synced_systime_t ObcSystemTime;
 void RIT_IRQHandler(void) {
     LPC_RITIMER->CTRL |= 0x0001;                    // Clear the RITINT flag;
     ObcSystemTime.msAfterReset++;
-    //Chip_GPIO_SetPinToggle(LPC_GPIO, 0, 27);
+    Chip_GPIO_SetPinToggle(LPC_GPIO, 0, 27);
 }
 
 // The RTC Seconds Timer IRQ.

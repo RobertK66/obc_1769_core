@@ -96,6 +96,7 @@ static const app_command_t Commands[] = {
 	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, str, strlen(str)); \
 }
 
+
 void app_init (void *dummy) {
 	//SdcCardinitialize(0);
 	char ver[32] = "SW-Version: ";
@@ -113,6 +114,15 @@ void app_main (void) {
 	// handle event - queue ....
 
 }
+
+//
+//void  SIGhandler(int);
+//
+//void  SIGhandler(int sig)
+//{
+//	int i = 555;
+//   //exit(0);
+//}
 
 
 void _SysEvent(event_t event) {
