@@ -23,6 +23,13 @@ static uint8_t         thrTxReadIdx  = 0;
 static bool		  	   thrTxBufferFull = false;
 static bool				thrFirstByteAfterReset=true;
 
+
+/////////////////// MODULE LOCAL VARIABLES////////////
+
+#define THR_BUFFERLEN 8
+int thr_counter = 0;
+char thr_receiveBuffer[THR_BUFFERLEN] ="";
+
 static bool inline thrTxBufferEmpty() {
 	if (thrTxBufferFull) {
 		return false;
@@ -62,13 +69,21 @@ void thrInit (void *initData) {
 	thrInitData = (thr_initdata_t*) initData;
 
 	// Switch the 'enable' pin to low (no internal Volage regulator needed
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, thrInitData->pEnablePin->pingrp, thrInitData->pEnablePin->pinnum);
+	//Chip_GPIO_SetPinOutLow(LPC_GPIO, thrInitData->pEnablePin->pingrp, thrInitData->pEnablePin->pinnum);
 
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, 2, 5); //  This is PINIDX_RS485_TX_RX
+	//// IMPORTANT PINIDX_RS485_TX_RX   HIGH - TRANSMIT              LOW - RECEIVE
+
+	// SET TO RECEIVE UPON INITIALIZATION
+	//Chip_GPIO_SetPinOutLow(LPC_GPIO, 2, 5); //  This is PINIDX_RS485_TX_RX RECEIVE
+	//Chip_GPIO_SetPinOutHigh(LPC_GPIO, 2, 5); //  This is PINIDX_RS485_TX_RX TRANSMIT
+
+
 
 	// Init UART
 	InitUart(thrInitData->pUart, 9600, thrUartIRQ);
 	thrFirstByteAfterReset = true;
+
+
 }
 
 void thrMain (void) {
@@ -76,6 +91,8 @@ void thrMain (void) {
 	int32_t stat = Chip_UART_ReadLineStatus(thrInitData->pUart);
 	if (stat & UART_LSR_RDR) {
 		// there is a byte available. Lets read and process it.
+
+
 		uint8_t b = Chip_UART_ReadByte(thrInitData->pUart);
 		thrProcessRxByte(b);
 	}
@@ -97,7 +114,6 @@ void thrUartIRQ(LPC_USART_T *pUART) {
 
 void thrSendByte(uint8_t b) {
 
-	//Chip_GPIO_SetPinOutLow(LPC_GPIO, 1, 19); //  This is PINIDX_RS485_TX_RX  SET LOW MEANS SWTCH TO TX
 	// block irq while handling tx buffer
 	Chip_UART_IntDisable(thrInitData->pUart, UART_IER_THREINT);
 
@@ -127,15 +143,25 @@ void thrSendByte(uint8_t b) {
 	// enable irq after handling tx buffer
 	Chip_UART_IntEnable(thrInitData->pUart, UART_IER_THREINT);
 
-	//Chip_GPIO_SetPinOutHigh(LPC_GPIO, 1, 19); //  This is PINIDX_RS485_TX_RXP  SET HIGH - back to receive
 }
 
 void thrSendBytes(uint8_t *data, uint8_t len) {
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, 1, 19); //  This is PINIDX_RS485_TX_RX  SET LOW MEANS SWTCH TO TX
+	//set to transmit when sending data package
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, 2, 5); //  This is PINIDX_RS485_TX_RX TRANSMIT
+
+	for (int i=0;i<1000000;i++) {
+			// DELAY
+		}
+
 	for (int i=0;i<len;i++) {
 		thrSendByte(data[i]);
 	}
-	Chip_GPIO_SetPinOutHigh(LPC_GPIO, 1, 19); //  This is PINIDX_RS485_TX_RXP  SET HIGH - back to receive
+
+	for (int i=0;i<1000000;i++) {
+				// DELAY
+			}
+	// switch back to receive when data transmission end
+	Chip_GPIO_SetPinOutLow(LPC_GPIO, 2, 5); //  This is PINIDX_RS485_TX_RX RECEIVE
 
 }
 
@@ -143,9 +169,26 @@ void thrSendBytes(uint8_t *data, uint8_t len) {
 void thrProcessRxByte(uint8_t rxByte) {
 	// do your processing of RX here....
 	// Simply print RX into debug UART
-	char* Byte;
+	//char* Byte;
 
-	Byte = (char*) rxByte;
-	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, Byte, strlen(Byte));
+	//Byte = (char*) rxByte;
+	//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, Byte, strlen(Byte));
+
+	if (thr_counter<= THR_BUFFERLEN){
+
+		thr_receiveBuffer[thr_counter]=(char*) rxByte;
+
+
+		thr_counter++;
+
+	}
+	else {
+		thr_counter =0;
+		//print whole receive buffer
+		SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, thr_receiveBuffer, strlen(thr_receiveBuffer));
+
+	}
+
+
 
 }

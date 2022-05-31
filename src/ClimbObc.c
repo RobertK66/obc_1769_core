@@ -76,7 +76,7 @@ static gps_initdata_t GpsInit = {
 
 ///////////////JEVGENI STP
 static thr_initdata_t ThrInit = {
-		LPC_UART3, /// WILL USE UART3 since it is on Y+ side, which according to doccumentation given to me should be used for RS485 thruster
+		LPC_UART1, /// WILL USE UART3 since it is on Y+ side, which according to doccumentation given to me should be used for RS485 thruster LPC_UART1
 		PTR_FROM_IDX(PINIDX_GPIO4_CP),
 		PTR_FROM_IDX(PINIDX_STACIE_C_IO1_P)
 };
