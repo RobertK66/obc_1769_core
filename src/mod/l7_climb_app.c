@@ -98,7 +98,7 @@ static const app_command_t Commands[] = {
 
 void app_init (void *dummy) {
 	//SdcCardinitialize(0);
-	char ver[32] = "SW-Version: ";
+	char ver[32] = "MYSW-Version: ";
 	ver[31] = 0;
 	strncpy(&ver[12], BUILD_SWVERSION, 18);
 	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, ver, 12 + strlen(BUILD_SWVERSION));
