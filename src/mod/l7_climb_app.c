@@ -74,7 +74,7 @@ static const app_command_t Commands[] = {
 		{ 'h' , HwcSetOutputCmd },
 		{ 'm' , HwcMirrorInputCmd },
 		{ 'r' , ReadMramCmd },
-		{ 'w' , WriteMramCmd },
+		//{ 'w' , WriteMramCmd }, do not write !!
 		{ 'R' , ReadSdcardCmd },
 		{ 'C' , CardPowerOnCmd },
 		{ 'c' , CardPowerOffCmd },

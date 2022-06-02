@@ -16,6 +16,7 @@
 #include <ado_modules.h>
 #include <mod/ado_sdcard.h>
 #include <mod/ado_mram.h>
+#include "mod/ado_wirebus.h"
 
 #include "mod/tim/obc_time.h"
 #include "mod/tim/climb_gps.h"
@@ -25,6 +26,8 @@
 #include "mod/l3_sensors.h"
 #include "mod/mem/obc_memory.h"
 #include "mod/l7_climb_app.h"
+
+
 
 
 //typedef struct {
@@ -48,7 +51,6 @@ static const sdcard_init_array_t Cards = {
 	(sizeof(SdCards)/sizeof(sdcard_init_t)), SdCards
 };
 
-
 static const mram_chipinit_t Mrams[] = {
 		{ADO_SSP0, PTR_FROM_IDX(PINIDX_SSP0_MRAM_CS1) },
 		{ADO_SSP0, PTR_FROM_IDX(PINIDX_SSP0_MRAM_CS2) },
@@ -70,6 +72,18 @@ static gps_initdata_t GpsInit = {
 		PTR_FROM_IDX(PINIDX_GPIO4_CP),
 		PTR_FROM_IDX(PINIDX_STACIE_C_IO1_P)
 };
+
+
+// List of (wire) busses to be initialized.
+static ado_wbus_config_t WBuses[] = {
+		{ADO_WBUS_SPI,    0, LPC_SPI  },
+		{ADO_WBUS_SSPDMA, 0, LPC_SSP0 },
+		{ADO_WBUS_SSPDMA, 0, LPC_SSP1 },
+		{ADO_WBUS_I2C, 	  0, LPC_I2C0 },
+		{ADO_WBUS_I2C,    0, LPC_I2C1 },
+		{ADO_WBUS_I2C,    0, LPC_I2C2 }
+};
+#define WBUS_CNT (sizeof(WBuses)/sizeof(ado_wbus_config_t))
 
 static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( deb_init, deb_main, LPC_UART2),
@@ -107,6 +121,9 @@ int main(void) {
 		// Every 2nd Reset.
 		InitReport.oddEven = true;
 	}
+
+	ADO_WBUS_Init(WBuses, WBUS_CNT);
+
 
     // Layer 1 - Bus Inits
     ADO_SSP_Init(ADO_SSP0, 24000000, SSP_CLOCK_MODE3);
