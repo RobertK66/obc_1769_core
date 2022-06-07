@@ -83,6 +83,10 @@ void thrInit (void *initData) {
 	InitUart(thrInitData->pUart, 9600, thrUartIRQ);
 	thrFirstByteAfterReset = true;
 
+	//Enable Auto direction controll fo UART1
+	uint32_t uart_bit_mask = 1 << 4; // DCRTL at 4th bit position
+	LPC_UART1->RS485CTRL = ( ( LPC_UART1->RS485CTRL &~ uart_bit_mask)  |   (1<<4)        );
+	// NOTE - THIS HAD NO EFFECT ON RS485 Dirrection controll perfomance
 
 }
 
@@ -108,6 +112,9 @@ void thrUartIRQ(LPC_USART_T *pUART) {
 		} else {
 			// No more bytes available -> stop the THRE IRQ.
 			Chip_UART_IntDisable(thrInitData->pUart, UART_IER_THREINT);
+
+			// switch back to receive when all bytes are transmited
+			Chip_GPIO_SetPinOutLow(LPC_GPIO, 2, 5); //  This is PINIDX_RS485_TX_RX RECEIVE
 		}
 	}
 }
@@ -148,20 +155,25 @@ void thrSendByte(uint8_t b) {
 void thrSendBytes(uint8_t *data, uint8_t len) {
 	//set to transmit when sending data package
 	Chip_GPIO_SetPinOutHigh(LPC_GPIO, 2, 5); //  This is PINIDX_RS485_TX_RX TRANSMIT
-
+	/*
 	for (int i=0;i<1000000;i++) {
 			// DELAY
 		}
-
+	*/
 	for (int i=0;i<len;i++) {
 		thrSendByte(data[i]);
 	}
-
+	/*
 	for (int i=0;i<1000000;i++) {
 				// DELAY
 			}
+
+	*/
 	// switch back to receive when data transmission end
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, 2, 5); //  This is PINIDX_RS485_TX_RX RECEIVE
+	//Chip_GPIO_SetPinOutLow(LPC_GPIO, 2, 5); //  This is PINIDX_RS485_TX_RX RECEIVE
+
+	// SWITCHING BACK TO RX IS MOVED INTO void thrUartIRQ(LPC_USART_T *pUART)
+	// No delays
 
 }
 

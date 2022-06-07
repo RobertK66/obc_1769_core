@@ -537,6 +537,8 @@ void I2cSendCmd(int argc, char *argv[]){
 		I2C_Data i2c_message; // create structure that will contain i2c message
 		i2c_message.tx_data=request; // assign "request" bytes into transmit data buffer
 		i2c_message.tx_size = len; // length of transmit message ?
+		i2c_message.adress = 4; // address of device to which we send data
+		i2c_message.device = LPC_I2C1;// which I2C on which side
 
 		uint8_t add_job_return =  i2c_add_job(&i2c_message); // add job ??? and message is transmitted ? // unused wariable warning
 
