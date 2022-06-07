@@ -29,6 +29,8 @@
 #include "mod/mem/obc_memory.h"
 #include "mod/l7_climb_app.h"
 
+#include "mod/i2c_arduino/i2c_arduino.h"
+
 
 //typedef struct {
 //	uint8_t resetBits;
@@ -80,7 +82,17 @@ static thr_initdata_t ThrInit = {
 		PTR_FROM_IDX(PINIDX_GPIO4_CP),
 		PTR_FROM_IDX(PINIDX_STACIE_C_IO1_P)
 };
+
+
+
+static i2c_arduino_initdata_t i2cArduinoInitData = {
+		LPC_I2C1, //device
+		100 // frequency
+
+};
+
 ///////////////STP
+
 
 static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( deb_init, deb_main, LPC_UART2),
@@ -92,7 +104,8 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( memInit, memMain, &MemoryInit),
 		MOD_INIT( gpsInit, gpsMain, &GpsInit),
 		MOD_INIT( thrInit, thrMain, &ThrInit), //// JEVGENI STP
-		MOD_INIT( app_init, app_main, NULL)
+		MOD_INIT( app_init, app_main, NULL),
+		MOD_INIT( i2c_arduino_init, i2c_arduino_main, &i2cArduinoInitData)
 
 };
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
@@ -125,8 +138,8 @@ int main(void) {
     ADO_SSP_Init(ADO_SSP1, 24000000, SSP_CLOCK_MODE3);
     ADO_SPI_Init(0x08, SPI_CLOCK_MODE3);    // Clock Divider 0x08 -> fastest, must be even: can be up to 0xFE for slower SPI Clocking
 
-    // Onboard I2C
-    init_i2c(LPC_I2C1, 100);		// 100 kHz
+    // Onboard I2C | will be initialized with i2c_arduino module
+    //init_i2c(LPC_I2C1, 100);		// 100 kHz
 
     // Init all other modules
     for (int i=0; i < MODULE_CNT; i++) {
