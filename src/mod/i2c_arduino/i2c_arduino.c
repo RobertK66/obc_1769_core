@@ -17,7 +17,7 @@
 #include "../ai2c/obc_i2c.h"
 #include "../l7_climb_app.h"
 #include "../l2_debug_com.h"
-
+#include "../../ClimbObc.h"
 
 
 static bool readInProgress = false;
@@ -30,6 +30,37 @@ static i2c_arduino_initdata_t *i2c_arduino_InitData;
 
 void i2c_arduino_init (void *initData) {
 	i2c_arduino_InitData = (i2c_arduino_initdata_t*) initData;
+
+	// ENABLE A and B
+
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_A_EN), PINNR_FROM_IDX(PINIDX_I2C_A_EN));
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_B_EN), PINNR_FROM_IDX(PINIDX_I2C_B_EN));
+
+
+
+ /*
+	if(i2c_arduino_InitData->pI2C == LPC_I2C0){
+
+		//I2C0 is on C/D sides  (X-/ Y+)
+
+		//enable C and D
+		Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_C_EN), PINNR_FROM_IDX(PINIDX_I2C_C_EN));
+		Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_D_EN), PINNR_FROM_IDX(PINIDX_I2C_D_EN));
+
+
+	}
+
+	if(i2c_arduino_InitData->pI2C == LPC_I2C2){
+		//I2C2 is on A/B sides  (X+/ Y-)
+
+		//enable A and B
+		Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_A_EN), PINNR_FROM_IDX(PINIDX_I2C_A_EN));
+		Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_B_EN), PINNR_FROM_IDX(PINIDX_I2C_B_EN));
+
+
+		}
+
+*/
 
 
 
@@ -77,15 +108,26 @@ bool i2cArduino_SendReadRequest() {  //when send i2c read request we add READ JO
 	}
 	readInProgress = true;
 
-	///////////////request that is intender to be send
-	uint8_t read_request[2];
-	read_request[0] = 0xFF;
-	read_request[1] = 0x00;
+	///////////////request that is intender to be send//////////////////
+
+
+	uint8_t read_request[9];
+	read_request[0] = 0x4f;
+	read_request[1] = 0x42;
+	read_request[2] = 0x43;
+	read_request[3] = 0x5f;
+	read_request[4] = 0x68;
+	read_request[5] = 0x65;
+	read_request[6] = 0x6c;
+	read_request[7] = 0x6c;
+	read_request[8] = 0x6f;
+
 	///////////////////////////
 
 
-	readJob.device = LPC_I2C1;
-	readJob.tx_size = sizeof(read_request)/sizeof(uint8_t); // number of entries in read request array
+	readJob.device = LPC_I2C2;
+	//readJob.tx_size = sizeof(read_request)/sizeof(uint8_t); // number of entries in read request array
+	readJob.tx_size = 9; // number of entries in read request array
 	readJob.tx_data = read_request;
 	readJob.rx_size = 6;
 	readJob.rx_data = readRx;

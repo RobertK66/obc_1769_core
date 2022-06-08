@@ -132,7 +132,7 @@ void app_init (void *dummy) {
 
 
 		// INITIALIZE I2C
-		init_i2c(LPC_I2C0, 400); // I2C0  , there are also I2C1 and I2C2 - what are those ? How to locate those on physical OBC pins ?
+		init_i2c(LPC_I2C0, 100); // I2C0  , there are also I2C1 and I2C2 - what are those ? How to locate those on physical OBC pins ?
 }
 
 void app_main (void) {
