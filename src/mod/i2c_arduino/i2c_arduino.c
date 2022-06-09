@@ -22,9 +22,13 @@
 
 static bool readInProgress = false;
 static I2C_Data readJob;
-static uint8_t readRx[8];
+
+uint8_t readRx[6];
+uint8_t read2[6];
 
 static i2c_arduino_initdata_t *i2c_arduino_InitData;
+
+int i2c_delayCounter = 0;
 
 
 
@@ -33,8 +37,23 @@ void i2c_arduino_init (void *initData) {
 
 	// ENABLE A and B
 
-	Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_A_EN), PINNR_FROM_IDX(PINIDX_I2C_A_EN));
-	Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_B_EN), PINNR_FROM_IDX(PINIDX_I2C_B_EN));
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_A_EN), PINNR_FROM_IDX(PINIDX_I2C_A_EN)); //ENABLE I2C on X+ side
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_B_EN), PINNR_FROM_IDX(PINIDX_I2C_B_EN)); //ENABLE I2C on  Y- side
+
+	Chip_GPIO_SetPinOutLow(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_C_EN), PINNR_FROM_IDX(PINIDX_I2C_C_EN)); // ENABLE I2C on X- side
+	Chip_GPIO_SetPinOutLow(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_D_EN), PINNR_FROM_IDX(PINIDX_I2C_D_EN)); //ENABLE I2C on Y+ side
+
+ /*
+	read2[0]= 1;
+	read2[1]= 2;
+	read2[2]= 3;
+	read2[3]= 4;
+	read2[4]= 5;
+	read2[5]= 6;
+
+	i2c_debugPrintBuffer(&read2,6);
+	*/
+
 
 
 
@@ -63,7 +82,6 @@ void i2c_arduino_init (void *initData) {
 */
 
 
-
 	// Init I2C
 	init_i2c(i2c_arduino_InitData->pI2C, i2c_arduino_InitData->frequency);		// 100 kHz
 
@@ -71,6 +89,13 @@ void i2c_arduino_init (void *initData) {
 	// send test request with initialization
 
 	bool init_test = i2cArduino_SendReadRequest();
+
+
+	////////////////// FROM ADO LIB
+		 //Chip_I2C_Init(I2C2);
+	 	 //uint8_t *i2c_send_buff = "hello";
+	 	 //uint8_t i2c_buffLen = sizeof(i2c_send_buff)/sizeof(uint8_t);
+		//int i2c_test = Chip_I2C_MasterSend(I2C2, 4, &i2c_send_buff, i2c_buffLen);
 
 }
 
@@ -89,13 +114,27 @@ void i2c_arduino_main() { // in main we check for active read jobs
 				//uint8_t byte3 = readRx[3];
 
 				//  lets just print the received buffer string
-				SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, readRx, strlen(readRx));
+				//i2c_debugPrintBuffer(&read2,6);
+				i2c_debugPrintBuffer(&readRx,6);
 
 			} // end if no errors
 
 		} //end if job done
 	}//end if read in progress
-}
+
+
+	///////// SEND I2C bytes every once in a while
+	i2c_delayCounter++;
+	if(i2c_delayCounter ==100000){
+		i2c_delayCounter=0;
+		i2cArduino_SendReadRequest();
+		//i2cArduino_Read();
+
+	}// end if delay
+
+
+
+}// end main
 
 
 
@@ -126,14 +165,46 @@ bool i2cArduino_SendReadRequest() {  //when send i2c read request we add READ JO
 
 
 	readJob.device = LPC_I2C2;
-	//readJob.tx_size = sizeof(read_request)/sizeof(uint8_t); // number of entries in read request array
-	readJob.tx_size = 9; // number of entries in read request array
+	readJob.tx_size = sizeof(read_request)/sizeof(uint8_t); // number of entries in read request array
+	//readJob.tx_size = 9; // number of entries in read request array
 	readJob.tx_data = read_request;
-	readJob.rx_size = 6;
+	readJob.rx_size = sizeof(readRx)/sizeof(uint8_t);
 	readJob.rx_data = readRx;
-	readJob.adress = 4;
+	readJob.adress = 57;
 
 	i2c_add_job(&readJob);
 	return true;
 }
 
+
+
+bool i2cArduino_Read() {  //when send i2c read request we add READ JOB expecting replly bytes
+	if (readInProgress) {
+		return false;
+	}
+	readInProgress = true;
+
+
+	readJob.device = LPC_I2C2;
+	//readJob.tx_size = sizeof(read_request)/sizeof(uint8_t); // number of entries in read request array
+	readJob.tx_size = 0; // number of entries in read request array
+	//readJob.tx_data = read_request;
+	readJob.rx_size = sizeof(read2)/sizeof(uint8_t);
+	readJob.rx_data = read2;
+	readJob.adress = 57;
+
+	i2c_add_job(&readJob);
+	return true;
+}
+
+
+void i2c_debugPrintBuffer(uint8_t *buffer,int bufferlen){
+
+	//LPC_UART2 is debug UART
+
+	for (int i=0;i<bufferlen;i++){
+		Chip_UART_SendByte(LPC_UART2, buffer[i]);
+
+	}
+
+}

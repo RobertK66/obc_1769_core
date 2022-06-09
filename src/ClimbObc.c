@@ -87,7 +87,7 @@ static thr_initdata_t ThrInit = {
 
 static i2c_arduino_initdata_t i2cArduinoInitData = {
 		LPC_I2C2, //device
-		100 // frequency
+		100 // frequency [kHz]
 
 };
 

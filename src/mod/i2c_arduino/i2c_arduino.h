@@ -25,7 +25,8 @@ void i2c_arduino_main();
 
 
 
-
+bool i2cArduino_Read();
 bool i2cArduino_SendReadRequest();
+void i2c_debugPrintBuffer(uint8_t *buffer,int bufferlen);
 
 #endif /* MOD_L3_SENSORS_H_ */
