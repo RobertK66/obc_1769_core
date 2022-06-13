@@ -14,13 +14,10 @@
 
 #include <ado_modules.h>
 
-#include "../ai2c/obc_i2c.h"
-#include "../l7_climb_app.h"
-#include "../l2_debug_com.h"
-#include "../../ClimbObc.h"
 
 
-static bool readInProgress = false;
+
+
 static I2C_Data readJob;
 
 uint8_t readRx[6];
@@ -89,6 +86,7 @@ void i2c_arduino_init (void *initData) {
 	// send test request with initialization
 
 	bool init_test = i2cArduino_SendReadRequest();
+	//i2cArduino_Read();
 
 
 	////////////////// FROM ADO LIB
@@ -100,27 +98,10 @@ void i2c_arduino_init (void *initData) {
 }
 
 void i2c_arduino_main() { // in main we check for active read jobs
-	if (readInProgress) {
-		if (readJob.job_done == 1) {
-			readInProgress = false;
 
-			if (readJob.error == I2C_ERROR_NO_ERROR) {
-				// if no errors
 
-				// parse data
-				//uint8_t byte0 = readRx[0];
-				//uint8_t byte1 = readRx[1];
-				//uint8_t byte2 = readRx[2];
-				//uint8_t byte3 = readRx[3];
-
-				//  lets just print the received buffer string
-				//i2c_debugPrintBuffer(&read2,6);
-				i2c_debugPrintBuffer(&readRx,6);
-
-			} // end if no errors
-
-		} //end if job done
-	}//end if read in progress
+	i2c_Proccess_Received_Buffer(readJob, readRx,6);
+	//i2c_Proccess_Received_Buffer(readJob, read2,6);
 
 
 	///////// SEND I2C bytes every once in a while
@@ -165,8 +146,8 @@ bool i2cArduino_SendReadRequest() {  //when send i2c read request we add READ JO
 
 
 	readJob.device = LPC_I2C2;
-	readJob.tx_size = sizeof(read_request)/sizeof(uint8_t); // number of entries in read request array
-	//readJob.tx_size = 9; // number of entries in read request array
+	//readJob.tx_size = sizeof(read_request)/sizeof(uint8_t); // number of entries in read request array
+	readJob.tx_size = 9; // number of entries in read request array
 	readJob.tx_data = read_request;
 	readJob.rx_size = sizeof(readRx)/sizeof(uint8_t);
 	readJob.rx_data = readRx;
@@ -206,5 +187,27 @@ void i2c_debugPrintBuffer(uint8_t *buffer,int bufferlen){
 		Chip_UART_SendByte(LPC_UART2, buffer[i]);
 
 	}
+
+}
+
+
+
+void i2c_Proccess_Received_Buffer(I2C_Data i2cJob, uint8_t *i2c_buffer,uint8_t i2c_buffer_len){
+
+
+	if (readInProgress) {
+			if (i2cJob.job_done == 1) {
+				readInProgress = false;
+
+				if (i2cJob.error == I2C_ERROR_NO_ERROR) {
+
+					// do stuff with received buffer
+					//print received buffer
+					i2c_debugPrintBuffer(i2c_buffer,i2c_buffer_len);
+
+				} // end if no errors
+
+			} //end if job done
+		}//end if read in progress
 
 }
