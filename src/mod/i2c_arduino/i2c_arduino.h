@@ -35,7 +35,7 @@ void i2c_arduino_main();
 
 
 bool i2cArduino_Read();
-bool i2cArduino_SendReadRequest();
+bool i2cArduino_SendReadRequest(uint8_t *read_request );
 void i2c_debugPrintBuffer(uint8_t *buffer,int bufferlen);
 void i2c_Proccess_Received_Buffer(I2C_Data i2cJob, uint8_t *i2c_buffer,uint8_t i2c_buffer_len);
 

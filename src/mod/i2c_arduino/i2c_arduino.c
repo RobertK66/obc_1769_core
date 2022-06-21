@@ -20,8 +20,11 @@
 
 static I2C_Data readJob;
 
-uint8_t readRx[6];
-uint8_t read2[6];
+uint8_t readRx[6]; // receive buffer of  i2cArduino_SendReadRequest()  // here we send data  and receive reply
+uint8_t read2[6]; // receive buffer of i2cArduino_Read() // here we send request only with empty tx buffer
+
+uint8_t i2c_arduino_read_request[9]; // tx buffer of i2cArduino_SendReadRequest()
+// tx buffer of i2cArduino_Read() is empty
 
 static i2c_arduino_initdata_t *i2c_arduino_InitData;
 
@@ -85,7 +88,7 @@ void i2c_arduino_init (void *initData) {
 
 	// send test request with initialization
 
-	bool init_test = i2cArduino_SendReadRequest();
+	i2cArduino_SendReadRequest(i2c_arduino_read_request);
 	//i2cArduino_Read();
 
 
@@ -108,7 +111,7 @@ void i2c_arduino_main() { // in main we check for active read jobs
 	i2c_delayCounter++;
 	if(i2c_delayCounter ==100000){
 		i2c_delayCounter=0;
-		i2cArduino_SendReadRequest();
+		i2cArduino_SendReadRequest(i2c_arduino_read_request);
 		//i2cArduino_Read();
 
 	}// end if delay
@@ -122,7 +125,7 @@ void i2c_arduino_main() { // in main we check for active read jobs
 
 
 
-bool i2cArduino_SendReadRequest() {  //when send i2c read request we add READ JOB expecting replly bytes
+bool i2cArduino_SendReadRequest(uint8_t *read_request ) {  //when send i2c read request we add READ JOB expecting replly bytes
 	if (readInProgress) {
 		return false;
 	}
@@ -131,7 +134,7 @@ bool i2cArduino_SendReadRequest() {  //when send i2c read request we add READ JO
 	///////////////request that is intender to be send//////////////////
 
 
-	uint8_t read_request[9];
+	 // declare transmit buffer as a global variable of a module. Pass pointer to a tx buffer into function
 	read_request[0] = 0x4f;
 	read_request[1] = 0x42;
 	read_request[2] = 0x43;
@@ -208,6 +211,12 @@ void i2c_Proccess_Received_Buffer(I2C_Data i2cJob, uint8_t *i2c_buffer,uint8_t i
 				} // end if no errors
 
 			} //end if job done
+
+
+
+
 		}//end if read in progress
+
+
 
 }
