@@ -84,9 +84,21 @@ void thrInit (void *initData) {
 	thrFirstByteAfterReset = true;
 
 	//Enable Auto direction controll fo UART1
-	uint32_t uart_bit_mask = 1 << 4; // DCRTL at 4th bit position
-	LPC_UART1->RS485CTRL = ( ( LPC_UART1->RS485CTRL &~ uart_bit_mask)  |   (1<<4)        );
+	//uint32_t uart_bit_mask = 1 << 4; // DCRTL at 4th bit position
+	//LPC_UART1->RS485CTRL = ( ( LPC_UART1->RS485CTRL &~ uart_bit_mask)  |   (1<<4)        );
 	// NOTE - THIS HAD NO EFFECT ON RS485 Dirrection controll perfomance
+
+	// Enable dirrection controll
+	LPC_UART1->RS485CTRL |= UART_RS485CTRL_DCTRL_EN; // Enable Auto Direction Control
+
+	// If direction control is enabled (bit DCTRL = 1), pin DTR is used for direction control
+	LPC_UART1->RS485CTRL |= UART_RS485CTRL_SEL_DTR;
+
+	//This bit reverses the polarity of the direction control signal on the RTS (or DTR) pin. The direction control pin
+	 //will be driven to logic "1" when the transmitter has data to be sent
+	LPC_UART1->RS485CTRL |= UART_RS485CTRL_OINV_1;
+
+
 
 }
 
@@ -188,7 +200,7 @@ void thrProcessRxByte(uint8_t rxByte) {
 
 	if (thr_counter<= THR_BUFFERLEN){
 
-		thr_receiveBuffer[thr_counter]=(char*) rxByte;
+		thr_receiveBuffer[thr_counter]=(char) rxByte;
 
 
 		thr_counter++;
