@@ -35,13 +35,13 @@ int i2c_delayCounter = 0;
 void i2c_arduino_init (void *initData) {
 	i2c_arduino_InitData = (i2c_arduino_initdata_t*) initData;
 
-	// ENABLE A and B
+	// ENABLE A and B and C and D
 
 	Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_A_EN), PINNR_FROM_IDX(PINIDX_I2C_A_EN)); //ENABLE I2C on X+ side
 	Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_B_EN), PINNR_FROM_IDX(PINIDX_I2C_B_EN)); //ENABLE I2C on  Y- side
 
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_C_EN), PINNR_FROM_IDX(PINIDX_I2C_C_EN)); // ENABLE I2C on X- side
-	Chip_GPIO_SetPinOutLow(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_D_EN), PINNR_FROM_IDX(PINIDX_I2C_D_EN)); //ENABLE I2C on Y+ side
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_C_EN), PINNR_FROM_IDX(PINIDX_I2C_C_EN)); // ENABLE I2C on X- side
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_I2C_D_EN), PINNR_FROM_IDX(PINIDX_I2C_D_EN)); //ENABLE I2C on Y+ side
 
  /*
 	read2[0]= 1;
@@ -92,11 +92,7 @@ void i2c_arduino_init (void *initData) {
 	//i2cArduino_Read();
 
 
-	////////////////// FROM ADO LIB
-		 //Chip_I2C_Init(I2C2);
-	 	 //uint8_t *i2c_send_buff = "hello";
-	 	 //uint8_t i2c_buffLen = sizeof(i2c_send_buff)/sizeof(uint8_t);
-		//int i2c_test = Chip_I2C_MasterSend(I2C2, 4, &i2c_send_buff, i2c_buffLen);
+
 
 }
 
@@ -148,7 +144,7 @@ bool i2cArduino_SendReadRequest(uint8_t *read_request ) {  //when send i2c read 
 	///////////////////////////
 
 
-	readJob.device = LPC_I2C2;
+	readJob.device = LPC_I2C0;
 	//readJob.tx_size = sizeof(read_request)/sizeof(uint8_t); // number of entries in read request array
 	readJob.tx_size = 9; // number of entries in read request array
 	readJob.tx_data = read_request;
