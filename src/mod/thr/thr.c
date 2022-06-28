@@ -11,6 +11,7 @@
 // prototypes
 void thrUartIRQ(LPC_USART_T *pUART);
 void thrProcessRxByte(uint8_t rxByte);
+void thr_debugPrintBuffer(uint8_t *buffer,int bufferlen);
 
 // local/module variables
 static thr_initdata_t *thrInitData;
@@ -26,7 +27,7 @@ static bool				thrFirstByteAfterReset=true;
 
 /////////////////// MODULE LOCAL VARIABLES////////////
 
-#define THR_BUFFERLEN 8
+#define THR_BUFFERLEN 7
 int thr_counter = 0;
 char thr_receiveBuffer[THR_BUFFERLEN] ="";
 
@@ -80,7 +81,7 @@ void thrInit (void *initData) {
 
 
 	// Init UART
-	InitUart(thrInitData->pUart, 9600, thrUartIRQ);
+	InitUart(thrInitData->pUart, 115200, thrUartIRQ);
 	thrFirstByteAfterReset = true;
 
 	//Enable Auto direction controll fo UART1
@@ -201,6 +202,7 @@ void thrProcessRxByte(uint8_t rxByte) {
 	if (thr_counter<= THR_BUFFERLEN){
 
 		thr_receiveBuffer[thr_counter]=(char) rxByte;
+		Chip_UART_SendByte(LPC_UART2, rxByte); // print received byte
 
 
 		thr_counter++;
@@ -209,10 +211,27 @@ void thrProcessRxByte(uint8_t rxByte) {
 	else {
 		thr_counter =0;
 		//print whole receive buffer
-		SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, thr_receiveBuffer, strlen(thr_receiveBuffer));
+		//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, thr_receiveBuffer, strlen(thr_receiveBuffer));
+
+		//thr_debugPrintBuffer( (uint8_t*)thr_receiveBuffer,strlen(thr_receiveBuffer));
 
 	}
 
 
+
+}
+
+
+
+
+
+void thr_debugPrintBuffer(uint8_t *buffer,int bufferlen){
+
+	//LPC_UART2 is debug UART
+
+	for (int i=0;i<bufferlen;i++){
+		Chip_UART_SendByte(LPC_UART2, buffer[i]);
+
+	}
 
 }

@@ -534,7 +534,8 @@ void JevgeniDebugCmd(int argc, char *argv[]){
 void ThrSendVersionRequestCmd(int argc, char *argv[]){
 
 
-	uint8_t request[9];
+	uint8_t request[8];
+	/*
 	request[0]= 0x00;
 	request[1]= 0xFF;
 	request[2]= 0x03;
@@ -543,8 +544,16 @@ void ThrSendVersionRequestCmd(int argc, char *argv[]){
 	request[5]= 0x00;
 	request[6]= 0x00;
 	request[7]= 0x01;
-	request[8]= 0x3a;
+    */
 
+	request[0]= 0x00;
+	request[1]= 0xFF;
+	request[2]= 0x03;
+	request[3]= 0x14;
+	request[4]= 0x02;
+	request[5]= 0x00;
+	request[6]= 0x00;
+	request[7]= 0x01;
 
 	int len = sizeof(request);
 	thrSendBytes(request, len);

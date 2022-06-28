@@ -113,7 +113,7 @@ void deb_processLine(void) {
 		//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, deb_InputLine, strlen(deb_InputLine));
 		//char* debug_print = "debug print";
 		//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, debug_print, strlen(debug_print));
-		SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, deb_InputLine, strlen(deb_InputLine)); ///print if something received
+		//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, deb_InputLine, strlen(deb_InputLine)); ///print if something received
 	}
 }
 
