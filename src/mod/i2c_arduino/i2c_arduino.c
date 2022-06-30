@@ -107,7 +107,7 @@ void i2c_arduino_main() { // in main we check for active read jobs
 	i2c_delayCounter++;
 	if(i2c_delayCounter ==100000){
 		i2c_delayCounter=0;
-		i2cArduino_SendReadRequest(i2c_arduino_read_request);
+		//i2cArduino_SendReadRequest(i2c_arduino_read_request);
 		//i2cArduino_Read();
 
 	}// end if delay

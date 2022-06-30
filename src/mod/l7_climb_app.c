@@ -27,6 +27,9 @@
 #include "ai2c/obc_i2c_rb.h"
 #include "ai2c/obc_i2c_int.h"
 
+#include "crc/obc_checksums.h"
+#include "l4_thruster.h"
+
 
 typedef struct {
 	uint8_t	cmdId;
@@ -81,8 +84,10 @@ void SetUtcDateTimeCmd(int argc, char *argv[]);
 void GetFullTimeCmd(int argc, char *argv[]);
 void SendToGpsUartCmd(int argc, char *argv[]);
 
+
+void SetHeaterMode(int argc, char *argv[]);
+
 void JevgeniDebugCmd(int argc, char *argv[]); // STP JEVGENI
-void ThrSendVersionRequestCmd(int argc, char *argv[]); // STP JEVGENI : VERSION REQUEST SEND TO THRUSTER SIMULATOR HARDWARE
 void l7_Proccess_Received_I2CBuffer(I2C_Data i2cJob, uint8_t *i2c_buffer,uint8_t i2c_buffer_len);
 
 
@@ -109,7 +114,9 @@ static const app_command_t Commands[] = {
 		{ 'd' , TriggerWatchdogCmd },
 		{ 't' , SetUtcDateTimeCmd },
 		{ 'T' , GetFullTimeCmd },
-		{ 'g' , SendToGpsUartCmd }
+		{ 'g' , SendToGpsUartCmd },
+		{ 'H' , SetHeaterMode }, // FUNCTIONS THAT CONTROLL THRUSTER ARE DEFINED IN l4_thruster.c
+		{ '1' , ReadHeaterCurrent }
 
 };
 
@@ -531,37 +538,7 @@ void JevgeniDebugCmd(int argc, char *argv[]){
 
 
 
-void ThrSendVersionRequestCmd(int argc, char *argv[]){
 
-
-	uint8_t request[8];
-	/*
-	request[0]= 0x00;
-	request[1]= 0xFF;
-	request[2]= 0x03;
-	request[3]= 0x14;
-	request[4]= 0x02;
-	request[5]= 0x00;
-	request[6]= 0x00;
-	request[7]= 0x01;
-    */
-
-	request[0]= 0x00;
-	request[1]= 0xFF;
-	request[2]= 0x03;
-	request[3]= 0x14;
-	request[4]= 0x02;
-	request[5]= 0x00;
-	request[6]= 0x00;
-	request[7]= 0x01;
-
-	int len = sizeof(request);
-	thrSendBytes(request, len);
-
-
-
-
-}
 
 
 
@@ -588,7 +565,7 @@ void I2cSendCmd(int argc, char *argv[]){
 		i2c_message.tx_data=request; // assign "request" bytes into transmit data buffer
 		i2c_message.tx_size = sizeof(request)/sizeof(uint8_t);
 		i2c_message.adress = 57; // address of device to which we send data
-		i2c_message.device = LPC_I2C2;// which I2C on which side
+		i2c_message.device = LPC_I2C0;// which I2C on which side
 
 		i2c_message.rx_size = sizeof(l7_receive_buff)/sizeof(uint8_t);
 		i2c_message.rx_data = l7_receive_buff;
@@ -618,5 +595,9 @@ void l7_Proccess_Received_I2CBuffer(I2C_Data i2cJob, uint8_t *i2c_buffer,uint8_t
 		}//end if read in progress
 
 }
+
+
+
+
 
 

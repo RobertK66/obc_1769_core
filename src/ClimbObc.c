@@ -31,6 +31,8 @@
 
 #include "mod/i2c_arduino/i2c_arduino.h"
 
+#include "mod/l4_thruster.h"
+
 
 //typedef struct {
 //	uint8_t resetBits;
@@ -105,7 +107,8 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( gpsInit, gpsMain, &GpsInit),
 		MOD_INIT( thrInit, thrMain, &ThrInit), //// JEVGENI STP
 		MOD_INIT( app_init, app_main, NULL),
-		MOD_INIT( i2c_arduino_init, i2c_arduino_main, &i2cArduinoInitData)
+		MOD_INIT( i2c_arduino_init, i2c_arduino_main, &i2cArduinoInitData),
+		MOD_INIT( l4_thruster_init, l4_thruster_main, NULL)
 
 };
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))

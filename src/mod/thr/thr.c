@@ -8,6 +8,9 @@
 #include <ado_uart.h>
 #include "../l7_climb_app.h"
 #include "../l2_debug_com.h"
+#include "../l4_thruster.h" // with that we include variable  l4_thr_ExpectedReceiveBuffer  which defines expected RX buffer length
+
+
 // prototypes
 void thrUartIRQ(LPC_USART_T *pUART);
 void thrProcessRxByte(uint8_t rxByte);
@@ -27,9 +30,12 @@ static bool				thrFirstByteAfterReset=true;
 
 /////////////////// MODULE LOCAL VARIABLES////////////
 
-#define THR_BUFFERLEN 7
-int thr_counter = 0;
+#define THR_BUFFERLEN 70 // maximum buffer length
+//int thr_counter = 0; would be defined in l4_thruster
 char thr_receiveBuffer[THR_BUFFERLEN] ="";
+
+//l4_thr_counter = 0; // set received bytes counter to 0 initialy // defined in l4_thruster.c
+
 
 static bool inline thrTxBufferEmpty() {
 	if (thrTxBufferFull) {
@@ -199,17 +205,18 @@ void thrProcessRxByte(uint8_t rxByte) {
 	//Byte = (char*) rxByte;
 	//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, Byte, strlen(Byte));
 
-	if (thr_counter<= THR_BUFFERLEN){
+	//if (thr_counter<= THR_BUFFERLEN){
+	if (l4_thr_counter<= l4_thr_ExpectedReceiveBuffer){ // change it to expected buffer length SET by REQUEST functions
 
-		thr_receiveBuffer[thr_counter]=(char) rxByte;
+		thr_receiveBuffer[l4_thr_counter]=(char) rxByte;
 		Chip_UART_SendByte(LPC_UART2, rxByte); // print received byte
 
 
-		thr_counter++;
+		l4_thr_counter++;
 
 	}
 	else {
-		thr_counter =0;
+		l4_thr_counter =0;
 		//print whole receive buffer
 		//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, thr_receiveBuffer, strlen(thr_receiveBuffer));
 
