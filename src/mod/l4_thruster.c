@@ -302,8 +302,8 @@ void SetHeaterCurrent(int argc, char *argv[]){
 	// INPUT RANGE 0-3[A]  !!!!
 
 	// PARSE DOUBLE FROM ARGV
-	double input;
-	sscanf(argv[0], "%lf", &input);
+	double input =2.5;
+	//sscanf(argv[0], "%lf", &input);  // WARNING sscanf does not work with OBC !!!!!
 
 	//printf(" \n ARGV  =  %s \n",argv[0]);
 	//printf(" \n ORIGINAL INPUT  =  %f \n",input);
@@ -336,7 +336,10 @@ void SetHeaterCurrent(int argc, char *argv[]){
 
 
 	request[3] = CRC8(request,len);
-	l4_thr_ExpectedReceiveBuffer = 6;// change expected receive buffer accordingly
+
+
+	l4_thr_ExpectedReceiveBuffer = 7;
+	l4_thr_counter =0;
 
 	thrSendBytes(request, len);
 
@@ -371,6 +374,9 @@ void SetHeaterPower(int argc, char *argv[]){
 
 
 	request[3] = CRC8(request,len);
+
+	l4_thr_ExpectedReceiveBuffer = 7;
+	l4_thr_counter =0;
 
 	thrSendBytes(request, len);
 
@@ -441,6 +447,37 @@ void ThrSendVersionRequestCmd(int argc, char *argv[]){
 
 	// every request function should manually set expected RX buffer size and reset byte counter !!!!!!!!!!
 	l4_thr_ExpectedReceiveBuffer = 10;
+	l4_thr_counter =0;
+
+	thrSendBytes(request, len);
+
+
+
+
+}
+
+
+
+
+void ReadAllRegisters(int argc, char *argv[]){
+
+
+	uint8_t request[8];
+
+
+	request[0]= 0x00;
+	request[1]= 0xFF;
+	request[2]= 0x03;
+	request[3]= 0x69;
+	request[4]= 0x02;
+	request[5]= 0x00;
+	request[6]= 0x00;
+	request[7]= 0x7F;
+
+	int len = sizeof(request);
+
+	// every request function should manually set expected RX buffer size and reset byte counter !!!!!!!!!!
+	l4_thr_ExpectedReceiveBuffer = 50;
 	l4_thr_counter =0;
 
 	thrSendBytes(request, len);

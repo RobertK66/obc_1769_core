@@ -116,7 +116,12 @@ static const app_command_t Commands[] = {
 		{ 'T' , GetFullTimeCmd },
 		{ 'g' , SendToGpsUartCmd },
 		{ 'H' , SetHeaterMode }, // FUNCTIONS THAT CONTROLL THRUSTER ARE DEFINED IN l4_thruster.c
-		{ '1' , ReadHeaterCurrent }
+		{ '1' , ReadHeaterCurrent },
+		{ '2' , SetHeaterPower },
+		{ '3' , SetHeaterCurrent }, // WARNING sscanf does not work. Not possible to set float
+		{ '4' , SetHeaterVoltage },
+		{ '5' , ReadAllRegisters }
+
 
 };
 

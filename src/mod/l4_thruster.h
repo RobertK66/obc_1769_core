@@ -33,6 +33,13 @@ void SetHeaterMode(int argc, char *argv[]);
 void SetReservoirTemperature(int argc, char *argv[]);
 void ThrSendVersionRequestCmd(int argc, char *argv[]);
 void ReadHeaterCurrent(int argc, char *argv[]);
+void SetHeaterPower(int argc, char *argv[]);
+void SetHeaterCurrent(int argc, char *argv[]);
+
+void SetHeaterVoltage(int argc, char *argv[]);
+
+void ReadAllRegisters(int argc, char *argv[]);
+
 
 
 #endif /* MOD_L7_CLIMB_APP_H_ */
