@@ -83,6 +83,51 @@ const uint8_t REGISTER_VALUES[108] = {0,1,2,3,4,5,6,7,8,9,10,
 		101,102,103,104,105,106,107
 		};
 
+
+
+////////////////////NEW
+
+// REGISTER_DATA will store physical values after READ request
+double REGISTER_DATA[108];
+
+
+
+
+// CONVERSION MULTIPLIERS ARRAY. NOTE - VALUE CANNOT BE 0.  IF VALUE IS 0 in the array - meaning no information
+//about this register in EMPULSION doccumentation !!!
+const double CONVERSION_DOUBLE[108] = {1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0,
+		 0.0, 0.0, 0.0, 1.0, 1.0, 10000000.0, 0.0, 10000000.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1000.0, 0.0,
+		  1000.0, 0.0, 10000.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 10000000.0, 0.0, 10000000.0, 0.0, 1000.0,
+		   0.0, 1000.0, 0.0, 2.55, 2.55, 1.0, 1.0, 0.0, 1.0, 0.0, 100000000.0,
+		    0.0, 100000000.0, 0.0, 10000.0, 0.0, 10000.0, 0.0, 2.55, 2.55, 1.0,
+		     1000.0, 0.0, 1000.0, 0.0, 10000.0, 0.0, 10000.0, 0.0, 1000.0, 0.0, 1000.0, 0.0, 2.55,
+		      2.55, 1.0, 1.0, 1.0, 1.0, 1.0, 100.0, 0.0, 10000.0, 0.0, 10000.0, 0.0, 1000.0, 0.0,
+		       1000.0, 0.0, 2.55, 2.55, 10000000.0, 0.0, 10000000.0, 0.0, 1.0, 100.0,
+		        0.0, 100.0, 0.0, 100.0, 0.0, 100.0, 0.0, 1000.0, 0.0, 1.0};
+
+
+
+// REPRESENT LENGTH OF REGISTER ENTRY at corresponding register address
+// NOTE IMPORTANT - REGISTER LENGTH CANNOT BE 0.  0 in the array means that there are no information
+// avaliable about that register inside EMPULSION documentation !!!!!! 0 is missing info !!!!
+const uint8_t REGISTER_LENGTH[108] = {1, 1, 2, 0, 2, 0, 4, 0, 0, 0, 4, 0, 0, 0, 1, 1, 2, 0, 2,
+     0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0,
+      1, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2,
+       0, 1, 1, 1, 2, 0, 2, 0, 2, 0, 2, 0,
+        2, 0, 2, 0, 1, 1, 1, 2, 0, 2, 0, 2,
+         0, 2, 0, 2, 0, 2, 0, 1, 1, 1, 1, 1,
+          1, 1, 2, 0, 2, 0, 2, 0, 2, 0, 2,
+          0, 1, 1, 2, 0, 2, 0, 1, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2};
+
+
+
+
+
+
+///// NEW END
+
+
+
 const uint8_t SENDER_ADRESS = 0x00;
 const uint8_t DEVICE = 0xff;
 
@@ -486,3 +531,359 @@ void ReadAllRegisters(int argc, char *argv[]){
 
 
 }
+
+
+////////////////// NEW MODULES
+
+
+// received buffer of arbitrary size
+// len length of actual thruster reply
+void ParseReadRequest(uint8_t* received_buffer,int len){
+
+	uint8_t sender = received_buffer[0];
+	uint8_t receiver = received_buffer[1];
+	uint8_t message_type = received_buffer[2];
+	uint8_t received_checksum = received_buffer[3];
+	uint8_t payload_length_1 = received_buffer[4];
+	uint8_t payload_length_2 = received_buffer[5];
+
+	// combine payload length bytes into uint16_t
+
+	uint16_t uint16_payload_length = (payload_length_2 <<8 )| payload_length_1;
+
+	//printf("\n PAYLOAD LENGTH = %d \n", uint16_payload_length  ); // correct
+
+	/// after payload length is known - it is possible to parse remaining bytes into array
+
+	uint8_t received_data[uint16_payload_length];
+
+	for(int i=0;i<uint16_payload_length;i++){
+		//printf("\n i=%d",i);
+
+		received_data[i]=received_buffer[6+i]; //first 6 bytes of received buffer is header.
+		//7th byte of received buffer is first byte of received data
+
+
+
+	}
+
+	// Now as payload length is know. We can extract remaining bytes from received_buffer, and calculate checksum to verify the received message
+
+	// remember that when checksum is set - byte corresponding to checksum should be 0.
+	// need to set byte corresponding to checksum to 0 before calculating checksumm. Received checksum is already stored
+	received_buffer[3] = 0x00;
+	uint8_t calculated_checksum = CRC8(received_buffer, 6+uint16_payload_length); // length of an actual message is header (6) + payload length
+	//printf("\n Calculated checksum %00x ",calculated_checksum);
+
+	if (calculated_checksum == received_checksum){
+
+		// if calculated checksum is equal to received then message is considered validated.
+		// Set flag that represent that latest received message was validated
+		READ_REQUEST_OK_FLAG = 1;
+		//printf("\n CHECKSUMM OK \n");
+
+	}
+	else{
+		// incorrect checksumm - message should not be proccessed
+		READ_REQUEST_OK_FLAG = 0;
+
+		//printf("INCORRECT CHECKSUM \n");
+		return;
+
+	}
+
+
+
+	// Now we have an array of received data.Which would be either 1,2 or 4 bytes in case of request to single register
+
+
+	if(uint16_payload_length ==1){
+
+		// if payload length is only 1 byte
+		VALUE_UINT8 = received_data[0];
+		// then obviously return type is uint8. And array of received_data would be of a single element.
+		//printf("\n RECEIVED VALID MESSAGE VALUE_UINT8 = %d \n",VALUE_UINT8);
+
+
+		// Now after we received correct value. We need to apply conversion multuplier again and convert uint8/uint16 value into double.
+		//Store double in array representing REAL values of thruster registers
+
+		// LAST ACCESSED REGISTER should for READ or SET REQUEST should be set by the function which sended the request.
+		// It is implied that LAST_ACCESSED_REGISTER was defined correctly before executing ParseReadRequest
+		double multiplier = CONVERSION_DOUBLE[LATEST_ACCESSED_REGISTER];
+		ACTUAL_VALUE = (double)VALUE_UINT8 / multiplier;
+
+		//printf("\n After conversion multiplier ACTUAL VALUE = %f \n",ACTUAL_VALUE);
+
+		// Finally fill in the global array which will store ALL the register values
+		REGISTER_DATA[LATEST_ACCESSED_REGISTER]=ACTUAL_VALUE;
+
+	}
+
+	if(uint16_payload_length ==2){
+
+		//if payload length is 2 bytes, then return value should be stored as uint16_t
+		VALUE_UINT16 = (received_data[1] <<8 )| received_data[0];
+		//printf("\n RECEIVED VALID MESSAGE VALUE_UINT16 = %d \n ",VALUE_UINT16);
+
+		double multiplier = CONVERSION_DOUBLE[LATEST_ACCESSED_REGISTER];
+		ACTUAL_VALUE = (double)VALUE_UINT16 / multiplier;
+
+		//printf("\n After conversion multiplier ACTUAL VALUE = %f \n",ACTUAL_VALUE);
+		REGISTER_DATA[LATEST_ACCESSED_REGISTER]=ACTUAL_VALUE;
+
+
+	}
+
+	if(uint16_payload_length ==4){
+
+		//if payload length is 4 (fuses) then return value should be stored with uint32_t
+		//uint32_t i32 = v4[0] | (v4[1] << 8) | (v4[2] << 16) | (v4[3] << 24);
+
+	}
+
+
+	if(uint16_payload_length >5){
+
+		//if payload is more then 4 then we are reading multiple registers
+		//printf("READING MULTIPLE REGISTERS");
+
+		// Lets say that READ REQUEST TO ALL REGISTERS/ READ MORE THEN ONE REGISTER function will set last address to a value
+		// of a first address that is intended to be accessed
+		uint8_t next_register_index = LATEST_ACCESSED_REGISTER;
+		uint8_t length_of_next_register = REGISTER_LENGTH[next_register_index];
+		double multiplier = CONVERSION_DOUBLE[next_register_index];
+
+		for(int i=0;i<uint16_payload_length;i++){
+
+			//printf("\n i=%d",i);
+			if(length_of_next_register ==1){
+
+				//printf("\n-1------------------Next Register Index = %d",next_register_index);
+				VALUE_UINT8 = received_data[i];
+				multiplier = CONVERSION_DOUBLE[next_register_index];
+				ACTUAL_VALUE = (double)VALUE_UINT8 / multiplier;
+				REGISTER_DATA[next_register_index]=ACTUAL_VALUE;
+				next_register_index = next_register_index+1;
+				//printf("\nActual Value =%f \n",ACTUAL_VALUE);
+				//printf("\n multiplier =%f \n",multiplier);
+				//printf("\n INTEGER Value =0x%00x\n",VALUE_UINT8);
+
+			}
+
+			if(length_of_next_register==2){
+
+				//printf("\n 2------------Next Register Index = %d \n",next_register_index);
+				VALUE_UINT16 = (received_data[i+1] <<8 )| received_data[i];
+				double multiplier = CONVERSION_DOUBLE[next_register_index];
+				ACTUAL_VALUE = (double)VALUE_UINT16 / multiplier;
+				REGISTER_DATA[next_register_index]=ACTUAL_VALUE;
+				next_register_index = next_register_index+2;
+				//printf("\nActual Value =%f\n",REGISTER_DATA[next_register_index]);
+				//printf("\n multiplier =%f\n",multiplier);
+				//printf("\n INTEGER Value =0x%0000x\n",VALUE_UINT16);
+
+			}
+
+			if(length_of_next_register==4){
+				//printf("\n Next Register Index = %d",next_register_index);
+				next_register_index = next_register_index+4;
+
+			}
+			length_of_next_register = REGISTER_LENGTH[next_register_index];
+			multiplier = CONVERSION_DOUBLE[next_register_index];
+
+		}
+
+	}
+
+
+
+
+
+}
+
+
+
+
+
+
+void GeneralSetRequest(int argc, char *argv[]){
+
+
+
+	uint8_t len; // will cary total length of request array
+
+	// FIRST ARGUMENT SHOUD BE int VALUE OF REGISTER THAT WOULD BE READ FROM
+	uint8_t access_register = atoi(argv[0]);
+	TYPE_OF_LAST_REQUEST = 4;
+
+	uint8_t length_of_register = REGISTER_LENGTH[access_register];
+
+	//Check if valid/existing register is accessed
+
+	if(length_of_register ==0){
+		return; //as previously discussed - 0 entry in length array means no info
+				//therefore not proceed with that request
+	}
+
+
+	////  ------------ REQUEST ARRAY INITIALIZATION  ---------------
+	if(length_of_register ==1){
+		// if length of register is 1 byte then total length of request array is
+		len=8;
+
+
+		}
+
+	if(length_of_register ==2){
+		len=9;
+
+		}
+
+	if(length_of_register ==4){
+			len=11;
+
+			}
+
+	uint8_t request[len];
+
+	///////  ------------------ MESSAGE HEADER  ------------------------------------
+	request[0] = SENDER_ADRESS;
+	request[1] = DEVICE;
+	request[2] = MSGTYPE[3]; // WRITE -3
+	request[3] = 0x00; //checksumm
+
+
+	////// -------------------  PAYLOAD LENGTH --------------
+	if (length_of_register ==1){
+		// if register that is intended to be set is one byte
+		// then length of payload is register addres(1) + data(1)= 2 bytes
+		request[4] = 2; //
+	}
+
+	if (length_of_register ==2){
+		//if length of register is 2 bytes then
+		//length of payload is address(1)+data(2) = 3 bytes
+		request[4] =3;
+
+	}
+
+	if (length_of_register ==4){
+			/// 4 bytes only for FUSE REGISTERS
+			request[4] =5;
+
+		}
+
+	//For payload length uint16_t is used. However we represent uint16_t as two uint8_t bytes
+	//IMPORTANT NOTE : For request to set a SINGLE register - payload length would obviously
+	// never exceed 255.  Therefore second byte request[5] representing second part of uint16_t
+	// would always be 0x00
+	request[5] = 0x00;
+
+
+
+
+	/// -------------------    ----------------------
+
+	request[6]= REGISTER_VALUES[access_register]; // address of register that intended to be set
+
+
+	/// ----- PARSE ARGUMENTS  and input transformation -----------
+
+	if (length_of_register ==1){
+		// if register is only 1 byte
+
+		//parse input as uint8_t
+		uint8_t input_uint8 = atoi(argv[1]);
+
+		//transform input using conversion multipliers array.
+		// at all registers with only 1 byte data length conversion multiplier array
+		// will also be an integer value. Therefore typecast of conversion multiplier
+		//into uint8_t should also work
+		input_uint8 = input_uint8* (uint8_t) CONVERSION_DOUBLE[access_register];
+
+		request[7]= input_uint8;
+
+	}
+
+	if (length_of_register ==2){
+
+		// parse argument as double
+		double input = atof(argv[1]);
+		// in cases where data stored in register has length of 2 bytes. uint16_t would be used
+		// to store this data in register. For some registers input may be float
+		// example 3.3V  or 3.0 or 3
+		// Function should be able to handle both float and integer inputs from user
+
+
+		//APPLY CONVERSION MULTIPLIER
+		input = input* CONVERSION_DOUBLE[access_register];
+		// CONVERT INPUT INTO UINT16
+		uint16_t value = (uint16_t) input;
+
+
+		// represent uint16_t as two uint8_t bytes to fill the request array.
+		request[7]= value & 0xff;
+		request[8] = (value >> 8) & 0xff;
+
+	}
+
+
+
+
+	request[3] = CRC8(request,len); // calculate checksum after whole request array is sent
+	l4_thr_ExpectedReceiveBuffer = 6;// change expected receive buffer accordingly
+
+	thrSendBytes(request, len);
+    //printf("%s",request);
+
+
+}
+
+
+/////// GENERAL READ REQUEST TO ANY REGISTER
+void GeneralReadRequest(int argc, char *argv[]){
+
+		// FIRST ARGUMENT SHOUD BE int VALUE OF REGISTER THAT WOULD BE READ FROM
+		uint8_t access_register = atoi(argv[0]);
+
+		uint8_t length_of_register = REGISTER_LENGTH[access_register];
+
+		//Check if valid/existing register is accessed
+
+		if(length_of_register ==0){
+			return; //as previously discussed - 0 entry in length array means no info
+			//therefore not proceed with that request
+		}
+
+
+		uint8_t request[8];
+		request[0] = SENDER_ADRESS;
+		request[1] = DEVICE;
+		request[2] = MSGTYPE[2]; // READ -3
+		request[3] = 0x00; //checksumm
+		request[4] = 0x02; // LENGTH of payload REGISTER and length
+		request[5] = 0x00; //hardcoded because length of payload is defined with two bytes of uint16
+		request[6]= REGISTER_VALUES[access_register]; // Access register at address requested by used
+
+        //printf("\n register value is set to hex %02X  int %d\n",request[6],request[6]);
+		request[7]= length_of_register;
+
+		int len = sizeof(request);
+
+
+		request[3] = CRC8(request,len);
+
+		// we know that reply is n bytes long. Therefore we set global variable that should be used to process the RX buffer to coresponding length.
+		l4_thr_ExpectedReceiveBuffer = 6+REGISTER_LENGTH[access_register];
+		l4_thr_counter =0;
+
+		thrSendBytes(request, len);
+		TYPE_OF_LAST_REQUEST = 0x03;
+        //printf("%s",request);
+
+
+}
+
+
