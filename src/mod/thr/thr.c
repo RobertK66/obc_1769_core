@@ -221,7 +221,7 @@ void thrProcessRxByte(uint8_t rxByte) {
 		//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, thr_receiveBuffer, strlen(thr_receiveBuffer));
 
 		//thr_debugPrintBuffer( (uint8_t*)thr_receiveBuffer,strlen(thr_receiveBuffer));
-		//ParseReadRequest(thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer);
+		ParseReadRequest((uint8_t*)thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer);
 
 	}
 

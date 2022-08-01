@@ -90,7 +90,12 @@ const uint8_t REGISTER_VALUES[108] = {0,1,2,3,4,5,6,7,8,9,10,
 // REGISTER_DATA will store physical values after READ request
 double REGISTER_DATA[108];
 
-
+uint8_t VALUE_UINT8;
+uint16_t VALUE_UINT16;
+uint32_t VALUE_UINT32;
+uint8_t LATEST_ACCESSED_REGISTER ;
+double ACTUAL_VALUE;
+uint8_t READ_REQUEST_OK_FLAG;
 
 
 // CONVERSION MULTIPLIERS ARRAY. NOTE - VALUE CANNOT BE 0.  IF VALUE IS 0 in the array - meaning no information
