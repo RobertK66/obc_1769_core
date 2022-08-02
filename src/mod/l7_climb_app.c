@@ -120,7 +120,9 @@ static const app_command_t Commands[] = {
 		{ '2' , SetHeaterPower },
 		{ '3' , SetHeaterCurrent }, // WARNING sscanf does not work. Not possible to set float
 		{ '4' , SetHeaterVoltage },
-		{ '5' , ReadAllRegisters }
+		{ '5' , ReadAllRegisters },
+		{ '6' , GeneralReadRequest },
+		{ '7' , GeneralSetRequest }
 
 
 };

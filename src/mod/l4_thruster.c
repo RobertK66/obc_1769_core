@@ -13,6 +13,7 @@
 #include <stdlib.h>
 
 
+
 #include "l7_climb_app.h"
 #include "l4_thruster.h"
 
@@ -96,6 +97,7 @@ uint32_t VALUE_UINT32;
 uint8_t LATEST_ACCESSED_REGISTER ;
 double ACTUAL_VALUE;
 uint8_t READ_REQUEST_OK_FLAG;
+uint8_t TYPE_OF_LAST_REQUEST;
 
 
 // CONVERSION MULTIPLIERS ARRAY. NOTE - VALUE CANNOT BE 0.  IF VALUE IS 0 in the array - meaning no information
@@ -164,9 +166,12 @@ void l4_thruster_init (void *dummy) {
 
 	// test run of function
 
-	char *l4_args[2];
-	l4_args[0] = "45"; // temperature to which we set heater
+	//char *l4_args[2];
+	//l4_args[0] = "45"; // temperature to which we set heater
+	//l4_args[1] = "45.1"; // temperature to which we set heater
 	//SetReservoirTemperature(1, l4_args);
+	//GeneralSetRequest(1, l4_args); // HERE ERROR IN GENERAL SET REQUEST
+
 
 
 }
@@ -721,7 +726,7 @@ void GeneralSetRequest(int argc, char *argv[]){
 
 	// FIRST ARGUMENT SHOUD BE int VALUE OF REGISTER THAT WOULD BE READ FROM
 	uint8_t access_register = atoi(argv[0]);
-	TYPE_OF_LAST_REQUEST = 4;
+	//TYPE_OF_LAST_REQUEST = 4;
 
 	uint8_t length_of_register = REGISTER_LENGTH[access_register];
 
@@ -751,7 +756,9 @@ void GeneralSetRequest(int argc, char *argv[]){
 
 			}
 
+
 	uint8_t request[len];
+
 
 	///////  ------------------ MESSAGE HEADER  ------------------------------------
 	request[0] = SENDER_ADRESS;
@@ -794,6 +801,7 @@ void GeneralSetRequest(int argc, char *argv[]){
 	request[6]= REGISTER_VALUES[access_register]; // address of register that intended to be set
 
 
+
 	/// ----- PARSE ARGUMENTS  and input transformation -----------
 
 	if (length_of_register ==1){
@@ -812,10 +820,11 @@ void GeneralSetRequest(int argc, char *argv[]){
 
 	}
 
+	/////////////////////////////////////////here in this block error
 	if (length_of_register ==2){
 
 		// parse argument as double
-		double input = atof(argv[1]);
+		double input = atof((const char*)argv[1]); // WARNING :::: ATOF DOES NOT WORK
 		// in cases where data stored in register has length of 2 bytes. uint16_t would be used
 		// to store this data in register. For some registers input may be float
 		// example 3.3V  or 3.0 or 3
@@ -833,7 +842,7 @@ void GeneralSetRequest(int argc, char *argv[]){
 		request[8] = (value >> 8) & 0xff;
 
 	}
-
+	//////////////////////
 
 
 
@@ -842,6 +851,8 @@ void GeneralSetRequest(int argc, char *argv[]){
 
 	thrSendBytes(request, len);
     //printf("%s",request);
+
+
 
 
 }
