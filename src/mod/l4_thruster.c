@@ -725,7 +725,7 @@ void GeneralSetRequest(int argc, char *argv[]){
 	uint8_t len; // will cary total length of request array
 
 	// FIRST ARGUMENT SHOUD BE int VALUE OF REGISTER THAT WOULD BE READ FROM
-	uint8_t access_register = atoi(argv[0]);
+	uint8_t access_register = atoi(argv[1]);
 	//TYPE_OF_LAST_REQUEST = 4;
 
 	uint8_t length_of_register = REGISTER_LENGTH[access_register];
@@ -808,7 +808,7 @@ void GeneralSetRequest(int argc, char *argv[]){
 		// if register is only 1 byte
 
 		//parse input as uint8_t
-		uint8_t input_uint8 = atoi(argv[1]);
+		uint8_t input_uint8 = atoi(argv[2]);
 
 		//transform input using conversion multipliers array.
 		// at all registers with only 1 byte data length conversion multiplier array
@@ -824,7 +824,7 @@ void GeneralSetRequest(int argc, char *argv[]){
 	if (length_of_register ==2){
 
 		// parse argument as double
-		double input = atof((const char*)argv[1]); // WARNING :::: ATOF DOES NOT WORK
+		double input = atof((const char*)argv[2]); // WARNING :::: ATOF DOES NOT WORK
 		// in cases where data stored in register has length of 2 bytes. uint16_t would be used
 		// to store this data in register. For some registers input may be float
 		// example 3.3V  or 3.0 or 3
@@ -862,7 +862,7 @@ void GeneralSetRequest(int argc, char *argv[]){
 void GeneralReadRequest(int argc, char *argv[]){
 
 		// FIRST ARGUMENT SHOUD BE int VALUE OF REGISTER THAT WOULD BE READ FROM
-		uint8_t access_register = atoi(argv[0]);
+		uint8_t access_register = atoi(argv[1]);
 
 		uint8_t length_of_register = REGISTER_LENGTH[access_register];
 
