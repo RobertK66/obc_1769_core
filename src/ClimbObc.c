@@ -27,7 +27,7 @@
 #include "mod/mem/obc_memory.h"
 #include "mod/l7_climb_app.h"
 
-
+#include "mod/i2c_arduino/i2c_arduino.h"
 
 
 //typedef struct {
@@ -74,6 +74,13 @@ static gps_initdata_t GpsInit = {
 };
 
 
+//LPC_I2C0 - C/D      LPC_I2C2 - A/B
+static i2c_arduino_initdata_t i2cArduinoInitData = {
+		LPC_I2C0, //device
+		100 // frequency [kHz]
+
+};
+
 // List of (wire) busses to be initialized.
 static ado_wbus_config_t WBuses[] = {
 		{ADO_WBUS_SPI,    0, LPC_SPI  },
@@ -94,7 +101,8 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( sen_init, sen_main, NULL),
 		MOD_INIT( memInit, memMain, &MemoryInit),
 		MOD_INIT( gpsInit, gpsMain, &GpsInit),
-		MOD_INIT( app_init, app_main, NULL)
+		MOD_INIT( app_init, app_main, NULL),
+		MOD_INIT( i2c_arduino_init, i2c_arduino_main, &i2cArduinoInitData)
 
 };
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
