@@ -19,6 +19,10 @@
 #include "hw_check.h"
 #include "tim/climb_gps.h"
 
+#include "thr/thr.h"
+#include "crc/obc_checksums.h"
+#include "l4_thruster.h"
+
 typedef struct {
 	uint8_t	cmdId;
 	void 	(*command_function)(int argc, char *argv[]);
@@ -86,7 +90,10 @@ static const app_command_t Commands[] = {
 		{ 'd' , TriggerWatchdogCmd },
 		{ 't' , SetUtcDateTimeCmd },
 		{ 'T' , GetFullTimeCmd },
-		{ 'g' , SendToGpsUartCmd }
+		{ 'g' , SendToGpsUartCmd },
+		{ '5' , ReadAllRegisters },
+		{ '6' , GeneralReadRequest },
+		{ '7' , GeneralSetRequest }
 };
 
 
