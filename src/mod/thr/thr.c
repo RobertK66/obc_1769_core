@@ -217,11 +217,10 @@ void thrProcessRxByte(uint8_t rxByte) {
 	}
 	else {
 		l4_thr_counter =0;
-		//print whole receive buffer
-		//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, thr_receiveBuffer, strlen(thr_receiveBuffer));
-
-		//thr_debugPrintBuffer( (uint8_t*)thr_receiveBuffer,strlen(thr_receiveBuffer));
-		ParseReadRequest((uint8_t*)thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer);
+		// This was not yet tested on OBC ! But works on standaone .c
+		ParseReadRequest((uint8_t*)thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer); //
+		// TODO : TEST ParseReadRequest. Make request to read all registers.
+		// Parse reply with ParseReadRequest and verify that array of data values are stored correctly
 
 	}
 

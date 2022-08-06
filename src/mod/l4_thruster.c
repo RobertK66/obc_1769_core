@@ -4,14 +4,13 @@
  Author      : Jevgeni
  Created on	 : 30.06.2022
 
- Higher level logic layer to controll thruster
+ Higher level logic layer to control thruster
 ===============================================================================
 */
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 
 
 #include "l7_climb_app.h"
@@ -29,15 +28,6 @@
 #include "hw_check.h"
 #include "tim/climb_gps.h"
 #include "thr/thr.h"
-
-//#include "i2c_arduino/i2c_arduino.h"
-
-
-//#include "ai2c/obc_i2c.h"
-//#include "ai2c/obc_i2c_rb.h"
-//#include "ai2c/obc_i2c_int.h"
-
-
 #include "crc/obc_checksums.h"
 
 
@@ -69,25 +59,6 @@ const uint16_t CONVERSION[108] = {0,1,2,3,4,5,6,7,8,9,10,
 
 
 
-
-
-const uint8_t REGISTER_VALUES[108] = {0,1,2,3,4,5,6,7,8,9,10,
-		11,12,13,14,15,16,17,18,19,20,
-		21,22,23,24,25,26,27,28,29,30,
-		31,32,33,34,35,36,37,38,39,40,
-		41,42,43,44,45,46,48,48,49,50,
-		51,52,53,54,55,56,57,58,59,60,
-		61,62,63,64,65,66,67,68,69,70,
-		71,72,73,74,75,76,77,78,79,80,
-		81,82,83,84,85,86,87,88,89,90,
-		91,92,93,94,95,96,97,98,99,100,
-		101,102,103,104,105,106,107
-		};
-
-
-
-////////////////////NEW
-
 // REGISTER_DATA will store physical values after READ request
 double REGISTER_DATA[108];
 
@@ -101,7 +72,7 @@ uint8_t TYPE_OF_LAST_REQUEST;
 
 
 // CONVERSION MULTIPLIERS ARRAY. NOTE - VALUE CANNOT BE 0.  IF VALUE IS 0 in the array - meaning no information
-//about this register in EMPULSION doccumentation !!!
+//about this register in EMPULSION documentation !!!
 const double CONVERSION_DOUBLE[108] = {1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0,
 		 0.0, 0.0, 0.0, 1.0, 1.0, 10000000.0, 0.0, 10000000.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1000.0, 0.0,
 		  1000.0, 0.0, 10000.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 10000000.0, 0.0, 10000000.0, 0.0, 1000.0,
@@ -161,25 +132,15 @@ int l4_thr_counter = 0; // counter for received bytes
 void l4_thruster_init (void *dummy) {
 
 	char* testvar = "hello thruster";
-	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, testvar, strlen(testvar));//
-
-
-	// test run of function
-
-	//char *l4_args[2];
-	//l4_args[0] = "45"; // temperature to which we set heater
-	//l4_args[1] = "45.1"; // temperature to which we set heater
-	//SetReservoirTemperature(1, l4_args);
-	//GeneralSetRequest(1, l4_args); // HERE ERROR IN GENERAL SET REQUEST
-
-
+	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, testvar, strlen(testvar));
 
 }
 
 void l4_thruster_main (void) {
 
-
-
+	// TODO : I am not sure what to do here.
+	// Leaving it for now so that l4_thruster_module can be
+	// Initialised according as all other modules
 
 
 }
@@ -190,295 +151,23 @@ void l4_thruster_main (void) {
 
 
 void l4_debugPrintBuffer(uint8_t *buffer,int bufferlen){
-
 	//LPC_UART2 is debug UART
-
 	for (int i=0;i<bufferlen;i++){
 		Chip_UART_SendByte(LPC_UART2, buffer[i]);
-
 	}
 
 }
 
 
 
-/////  BELOW WOULD BE FUNCTIONS TO CONTROLL THRUSTER
-
-
-
-
-void SetReservoirTemperature(int argc, char *argv[]){
-
-
-	uint16_t reff_t = atoi(argv[0]);
-	//printf(" REF TEMP SET %d \n",reff_t);
-
-	// APPLY CONVERSION MULTIPLIER CONCEPT
-	//uint16_t conversion_mult = 100;
-	//reff_t = reff_t*conversion_mult;
-	reff_t = reff_t*CONVERSION[97];
-
-	//printf(" CONVERSION  =  %d \n",CONVERSION[97]);
-
-	uint8_t request[9];
-	request[0] = SENDER_ADRESS;
-	request[1] = DEVICE;
-	request[2] = MSGTYPE[3]; // WRITE -3
-	//checksumm
-	request[3] = 0x00;
-
-
-
-	// payload length two bytes 03 00 | two bytes for
-	// payload length = register map + value
-	request[4] = 0x03; // LENGTH of payload HARDCODED (3)
-	request[5] = 0x00; //hardcoded
-
-	request[6]= REGISTER_VALUES[97]; // RESEIRVOUR TEMPERATURE - index 97
-
-
-
-	// CONVERT uint16_t value into array of two uint8_t bytes
-	uint8_t conversionArray[2];
-	conversionArray[0] = reff_t & 0xff;
-	conversionArray[1] = (reff_t >> 8) & 0xff;
-
-	request[7]= conversionArray[0];
-	request[8] = conversionArray[1];
-
-
-
-
-	int len = sizeof(request);
-
-
-	request[3] = CRC8(request,len);
-
-	thrSendBytes(request, len);
-
-
-}
-
-
-
-
-void SetHeaterMode(int argc, char *argv[]){
-
-	//  HEATER MODE 1 or 0
-	uint16_t heater_mode = atoi(argv[0]);
-
-	if (heater_mode ==1 || heater_mode ==0){
-
-		// APPLY CONVERSION MULTIPLIER CONCEPT
-		//uint16_t conversion_mult = 1;
-		//heater_mode = heater_mode*conversion_mult;
-		heater_mode = heater_mode * CONVERSION[60];
-		//printf(" CONVERSION  =  %d \n",CONVERSION[60]);
-
-		uint8_t request[8];
-		request[0] = SENDER_ADRESS;
-		request[1] = DEVICE;
-		request[2] = MSGTYPE[3]; // WRITE -3
-		request[3] = 0x00; //byte for checksum initially set to 0
-		request[4] = 0x02; // LENGTH of payload HARDCODED (2)       || payload length = register map + value
-		request[5] = 0x00; //hardcoded
-		request[6]= REGISTER_VALUES[60]; // HEATER MODE - 60
-		request[7]= heater_mode;
-
-		int len = sizeof(request);
-		request[3] = CRC8(request,len); // after actual checksum is calculated = byte is filled
-
-		l4_thr_ExpectedReceiveBuffer = 10; // BEFORE SENDING BYTES - CHANGE EXPECTED RECEIVE BUFFER LENGTH
-		l4_thr_counter =0; //every request function should reset received bytes counter !!!!
-
-		thrSendBytes(request, len);
-
-	}
-	else {
-		//printf("HEATER MODE WRONG INPUT %d \n",heater_mode);
-
-		return;
-	}
-
-
-}
-
-
-
-
-
-
-void SetHeaterVoltage(int argc, char *argv[]){
-
-
-	uint16_t voltage = atoi(argv[0]);
-	//printf(" SET VOLTAGE  =  %d \n",voltage);
-	// APPLY CONVERSION MULTIPLIER CONCEPT
-	//uint16_t conversion_mult = 1000;
-	//voltage = voltage*conversion_mult;
-	voltage = voltage * CONVERSION[61];
-	//printf(" CONVERSION  =  %d \n",CONVERSION[61]);
-
-	uint8_t request[9];
-	request[0] = SENDER_ADRESS;
-	request[1] = DEVICE;
-	request[2] = MSGTYPE[3]; // WRITE -3
-	request[3] = 0x00; //checksumm
-	request[4] = 0x03; // LENGTH of payload HARDCODED (3)
-	request[5] = 0x00; //hardcoded
-	request[6]= REGISTER_VALUES[61]; // RESEIRVOUR TEMPERATURE - index 97
-
-
-
-	// CONVERT uint16_t value into array of two uint8_t bytes
-	//uint8_t conversionArray[2];
-	//conversionArray[0] = voltage & 0xff;
-	//conversionArray[1] = (voltage >> 8) & 0xff;
-
-	request[7]= voltage & 0xff;
-	request[8] = (voltage >> 8) & 0xff;
-
-	int len = sizeof(request);
-
-
-	request[3] = CRC8(request,len);
-
-	thrSendBytes(request, len);
-
-
-}
-
-
-
-
-
-
-void SetHeaterCurrent(int argc, char *argv[]){
-	// INPUT RANGE 0-3[A]  !!!!
-
-	// PARSE DOUBLE FROM ARGV
-	double input =2.5;
-	//sscanf(argv[0], "%lf", &input);  // WARNING sscanf does not work with OBC !!!!!
-
-	//printf(" \n ARGV  =  %s \n",argv[0]);
-	//printf(" \n ORIGINAL INPUT  =  %f \n",input);
-	//double conversion_factor = (double)CONVERSION[65];
-
-	//APPLY CONVERSION MULTIPLIER
-	input = input * (double)CONVERSION[65];
-	//input = input / 0.0001;
-	//printf(" \n CONVERTED INPUT  =  %f \n",input);
-	//printf(" \n MULTIPLIER  =  %f \n",(double)CONVERSION[65]);
-
-
-	// CONVERT INPUT INTO UINT16
-	uint16_t value = (uint16_t) input;
-	//printf("\n SET CURRENT  =  %d \n",value);
-
-
-	uint8_t request[9];
-	request[0] = SENDER_ADRESS;
-	request[1] = DEVICE;
-	request[2] = MSGTYPE[3]; // WRITE -3
-	request[3] = 0x00; //checksumm
-	request[4] = 0x03; // LENGTH of payload HARDCODED (3)
-	request[5] = 0x00; //hardcoded
-	request[6]= REGISTER_VALUES[65]; // RESEIRVOUR TEMPERATURE - index 65
-	request[7]= value & 0xff;
-	request[8] = (value >> 8) & 0xff;
-
-	int len = sizeof(request);
-
-
-	request[3] = CRC8(request,len);
-
-
-	l4_thr_ExpectedReceiveBuffer = 7;
-	l4_thr_counter =0;
-
-	thrSendBytes(request, len);
-
-
-}
-
-
-void SetHeaterPower(int argc, char *argv[]){
-
-
-	uint16_t value = atoi(argv[0]);
-	//printf(" SET POWER  =  %d \n",value);
-	// APPLY CONVERSION MULTIPLIER CONCEPT
-	//uint16_t conversion_mult = 1000;
-	//uint16_t conversion_mult = CONVERSION[69];
-	value = value * CONVERSION[69];
-
-	//printf(" CONVERSION  =  %d \n",CONVERSION[69]);
-
-	uint8_t request[9];
-	request[0] = SENDER_ADRESS;
-	request[1] = DEVICE;
-	request[2] = MSGTYPE[3]; // WRITE -3
-	request[3] = 0x00; //checksumm
-	request[4] = 0x03; // LENGTH of payload HARDCODED (3)
-	request[5] = 0x00; //hardcoded
-	request[6]= REGISTER_VALUES[69]; // RESEIRVOUR TEMPERATURE - index 69
-	request[7]= value & 0xff;
-	request[8] = (value >> 8) & 0xff;
-
-	int len = sizeof(request);
-
-
-	request[3] = CRC8(request,len);
-
-	l4_thr_ExpectedReceiveBuffer = 7;
-	l4_thr_counter =0;
-
-	thrSendBytes(request, len);
-
-
-}
-
-
-
-
-
-void ReadHeaterCurrent(int argc, char *argv[]){
-
-		uint8_t request[8];
-		request[0] = SENDER_ADRESS;
-		request[1] = DEVICE;
-		request[2] = MSGTYPE[2]; // READ -3
-		request[3] = 0x00; //checksumm
-		request[4] = 0x02; // LENGTH of payload REGISTER and length
-		request[5] = 0x00; //hardcoded
-		request[6]= REGISTER_VALUES[67]; // 67 - hex 0x43 corresponds to read heater current register
-		request[7]= 2;// number of bytes to read
-		//request[8] = (value >> 8) & 0xff;
-
-		int len = sizeof(request);
-
-
-		request[3] = CRC8(request,len);
-
-		// we know that reply is 7 bytes long. Therefore we set global variable that should be used to process the RX buffer to coresponding length.
-		l4_thr_ExpectedReceiveBuffer = 7;
-		l4_thr_counter =0;
-
-		thrSendBytes(request, len);
-
-
-
-}
-
-
+/////  Note for pull request - I deleted all manual functions Example: SetHeaterCurrent()
+// Because all of them can be implemented with functions for general requests
 
 
 
 void ThrSendVersionRequestCmd(int argc, char *argv[]){
 
-
 	uint8_t request[8];
-	/*
 	request[0]= 0x00;
 	request[1]= 0xFF;
 	request[2]= 0x03;
@@ -487,28 +176,12 @@ void ThrSendVersionRequestCmd(int argc, char *argv[]){
 	request[5]= 0x00;
 	request[6]= 0x00;
 	request[7]= 0x01;
-    */
-
-	request[0]= 0x00;
-	request[1]= 0xFF;
-	request[2]= 0x03;
-	request[3]= 0x14;
-	request[4]= 0x02;
-	request[5]= 0x00;
-	request[6]= 0x00;
-	request[7]= 0x01;
-
-	int len = sizeof(request);
+	uint8_t len = sizeof(request);
 
 	// every request function should manually set expected RX buffer size and reset byte counter !!!!!!!!!!
 	l4_thr_ExpectedReceiveBuffer = 10;
 	l4_thr_counter =0;
-
 	thrSendBytes(request, len);
-
-
-
-
 }
 
 
@@ -543,21 +216,21 @@ void ReadAllRegisters(int argc, char *argv[]){
 }
 
 
-////////////////// NEW MODULES
 
 
-// received buffer of arbitrary size
+
+// received_buffer of arbitrary size
 // len length of actual thruster reply
 void ParseReadRequest(uint8_t* received_buffer,int len){
 
-	uint8_t sender = received_buffer[0];
-	uint8_t receiver = received_buffer[1];
-	uint8_t message_type = received_buffer[2];
+	//uint8_t sender = received_buffer[0];
+	//uint8_t receiver = received_buffer[1];
+	//uint8_t message_type = received_buffer[2];
 	uint8_t received_checksum = received_buffer[3];
 	uint8_t payload_length_1 = received_buffer[4];
 	uint8_t payload_length_2 = received_buffer[5];
 
-	// combine payload length bytes into uint16_t
+	// Combine payload length bytes into uint16_t
 
 	uint16_t uint16_payload_length = (payload_length_2 <<8 )| payload_length_1;
 
@@ -722,52 +395,48 @@ void GeneralSetRequest(int argc, char *argv[]){
 
 
 
-	uint8_t len; // will cary total length of request array
+	uint8_t len; // will carry total length of request array
 
-	// FIRST ARGUMENT SHOUD BE int VALUE OF REGISTER THAT WOULD BE READ FROM
+	// First argument should ne uint8_t value of register that are attmepted to write to.
 	uint8_t access_register = atoi(argv[1]);
-	//TYPE_OF_LAST_REQUEST = 4;
-
+	//TYPE_OF_LAST_REQUEST = 4; // I have not yet decided how exactly to use type of last request.
 	uint8_t length_of_register = REGISTER_LENGTH[access_register];
 
 	//Check if valid/existing register is accessed
-
 	if(length_of_register ==0){
-		return; //as previously discussed - 0 entry in length array means no info
-				//therefore not proceed with that request
+		return;
+		// It means that SET request is attempted with mismatch to actual origin of data register
+		// Writing to wrong register position should be avoided.
+		// For now lets assume that user never attempts to set wrong register.
+		// TODO: Validate is register are allowed to be written/set to. (Based on enpulsion documentation)
 	}
 
-
-	////  ------------ REQUEST ARRAY INITIALIZATION  ---------------
+	//Request array initialisation
 	if(length_of_register ==1){
 		// if length of register is 1 byte then total length of request array is
 		len=8;
-
-
 		}
 
 	if(length_of_register ==2){
 		len=9;
-
 		}
 
 	if(length_of_register ==4){
-			len=11;
-
-			}
+		len=11;
+		}
 
 
 	uint8_t request[len];
 
 
-	///////  ------------------ MESSAGE HEADER  ------------------------------------
+	//Message header
 	request[0] = SENDER_ADRESS;
 	request[1] = DEVICE;
 	request[2] = MSGTYPE[3]; // WRITE -3
 	request[3] = 0x00; //checksumm
 
 
-	////// -------------------  PAYLOAD LENGTH --------------
+	//////Payload length
 	if (length_of_register ==1){
 		// if register that is intended to be set is one byte
 		// then length of payload is register addres(1) + data(1)= 2 bytes
@@ -792,22 +461,11 @@ void GeneralSetRequest(int argc, char *argv[]){
 	// never exceed 255.  Therefore second byte request[5] representing second part of uint16_t
 	// would always be 0x00
 	request[5] = 0x00;
+	request[6]= access_register; // address of register that intended to be set
 
 
-
-
-	/// -------------------    ----------------------
-
-	request[6]= REGISTER_VALUES[access_register]; // address of register that intended to be set
-
-
-
-	/// ----- PARSE ARGUMENTS  and input transformation -----------
-
+	// Parse arguments and input transformation using conversion multipliers array
 	if (length_of_register ==1){
-		// if register is only 1 byte
-
-		//parse input as uint8_t
 		uint8_t input_uint8 = atoi(argv[2]);
 
 		//transform input using conversion multipliers array.
@@ -815,91 +473,67 @@ void GeneralSetRequest(int argc, char *argv[]){
 		// will also be an integer value. Therefore typecast of conversion multiplier
 		//into uint8_t should also work
 		input_uint8 = input_uint8* (uint8_t) CONVERSION_DOUBLE[access_register];
-
 		request[7]= input_uint8;
 
 	}
 
-	/////////////////////////////////////////here in this block error
 	if (length_of_register ==2){
 
 		// parse argument as double
-		double input = atof((const char*)argv[2]); // WARNING :::: ATOF DOES NOT WORK
+		// WARNING : Set Project-Settings-Manager linker script - Redlib (nohost) to use atof()
+		double input = atof((const char*)argv[2]);
 		// in cases where data stored in register has length of 2 bytes. uint16_t would be used
 		// to store this data in register. For some registers input may be float
 		// example 3.3V  or 3.0 or 3
 		// Function should be able to handle both float and integer inputs from user
 
-
-		//APPLY CONVERSION MULTIPLIER
+		// Apply conversion multiplier
 		input = input* CONVERSION_DOUBLE[access_register];
-		// CONVERT INPUT INTO UINT16
+		// Convert input to uint16_t
 		uint16_t value = (uint16_t) input;
-
-
-		// represent uint16_t as two uint8_t bytes to fill the request array.
+		// Represent uint16_t as two uint8_t bytes to fill the request array.
 		request[7]= value & 0xff;
 		request[8] = (value >> 8) & 0xff;
-
 	}
-	//////////////////////
-
-
 
 	request[3] = CRC8(request,len); // calculate checksum after whole request array is sent
 	l4_thr_ExpectedReceiveBuffer = 6;// change expected receive buffer accordingly
-
 	thrSendBytes(request, len);
-    //printf("%s",request);
-
-
-
-
 }
 
 
-/////// GENERAL READ REQUEST TO ANY REGISTER
+//General read request to any register
 void GeneralReadRequest(int argc, char *argv[]){
 
 		// FIRST ARGUMENT SHOUD BE int VALUE OF REGISTER THAT WOULD BE READ FROM
 		uint8_t access_register = atoi(argv[1]);
-
 		uint8_t length_of_register = REGISTER_LENGTH[access_register];
 
-		//Check if valid/existing register is accessed
-
+		// TODO : Check if valid/existing register is accessed
 		if(length_of_register ==0){
-			return; //as previously discussed - 0 entry in length array means no info
-			//therefore not proceed with that request
+			return;
 		}
-
 
 		uint8_t request[8];
 		request[0] = SENDER_ADRESS;
 		request[1] = DEVICE;
 		request[2] = MSGTYPE[2]; // READ -3
-		request[3] = 0x00; //checksumm
+		request[3] = 0x00; // checksum
 		request[4] = 0x02; // LENGTH of payload REGISTER and length
-		request[5] = 0x00; //hardcoded because length of payload is defined with two bytes of uint16
-		request[6]= REGISTER_VALUES[access_register]; // Access register at address requested by used
-
-        //printf("\n register value is set to hex %02X  int %d\n",request[6],request[6]);
+		request[5] = 0x00; // Hardcoded because length of payload is defined with two bytes of uint16
+		request[6]= access_register; // Access register at address requested by used
 		request[7]= length_of_register;
 
-		int len = sizeof(request);
-
-
+		uint8_t len = sizeof(request);
 		request[3] = CRC8(request,len);
 
-		// we know that reply is n bytes long. Therefore we set global variable that should be used to process the RX buffer to coresponding length.
+		// Reply is n bytes long.
+		//Therefore we set global variable that should be used to process the RX buffer to corresponding length.
 		l4_thr_ExpectedReceiveBuffer = 6+REGISTER_LENGTH[access_register];
 		l4_thr_counter =0;
 
 		thrSendBytes(request, len);
 		TYPE_OF_LAST_REQUEST = 0x03;
-        //printf("%s",request);
-
-
 }
 
 
