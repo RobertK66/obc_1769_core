@@ -27,6 +27,7 @@
 #include "mod/mem/obc_memory.h"
 #include "mod/l7_climb_app.h"
 
+#include "radtest/radtest.h"
 
 
 
@@ -51,7 +52,7 @@ static const sdcard_init_array_t Cards = {
 	(sizeof(SdCards)/sizeof(sdcard_init_t)), SdCards
 };
 
-static const mram_chipinit_t Mrams[] = {
+static const mram_chipinit_t Mrams[] = {									// defines the Chip Select GPIOs used for the MRAM Chips
 		{ADO_SSP0, PTR_FROM_IDX(PINIDX_SSP0_MRAM_CS1) },
 		{ADO_SSP0, PTR_FROM_IDX(PINIDX_SSP0_MRAM_CS2) },
 		{ADO_SSP0, PTR_FROM_IDX(PINIDX_SSP0_MRAM_CS3) },
@@ -63,7 +64,7 @@ static const mram_chipinit_array_t Chips = {
 	(sizeof(Mrams)/sizeof(mram_chipinit_t)), Mrams
 };
 
-static const mem_init_t MemoryInit = { PTR_FROM_IDX(PINIDX_SD_VCC_EN) };
+static const mem_init_t MemoryInit = { PTR_FROM_IDX(PINIDX_SD_VCC_EN) };	// defines the GPIO pin which enables the Power Supply of the SD-Card
 
 static init_report_t InitReport;
 
@@ -73,17 +74,21 @@ static gps_initdata_t GpsInit = {
 		PTR_FROM_IDX(PINIDX_STACIE_C_IO1_P)
 };
 
-
 // List of (wire) busses to be initialized.
-static ado_wbus_config_t WBuses[] = {
-		{ADO_WBUS_SPI,    0, LPC_SPI  },
-		{ADO_WBUS_SSPDMA, 0, LPC_SSP0 },
-		{ADO_WBUS_SSPDMA, 0, LPC_SSP1 },
-		{ADO_WBUS_I2C, 	  0, LPC_I2C0 },
-		{ADO_WBUS_I2C,    0, LPC_I2C1 },
-		{ADO_WBUS_I2C,    0, LPC_I2C2 }
+//static ado_wbus_config_t WBuses[] = {
+//		{ADO_WBUS_SPI,    0, LPC_SPI  },
+//		{ADO_WBUS_SSPDMA, 0, LPC_SSP0 },
+//		{ADO_WBUS_SSPDMA, 0, LPC_SSP1 },
+//		{ADO_WBUS_I2C, 	  0, LPC_I2C0 },
+//		{ADO_WBUS_I2C,    0, LPC_I2C1 },
+//		{ADO_WBUS_I2C,    0, LPC_I2C2 }
+//};
+//#define WBUS_CNT (sizeof(WBuses)/sizeof(ado_wbus_config_t))
+
+// Lets use timer1 for our radiation tests.
+static rtst_initdata_t RadtestInit = {
+		LPC_TIMER1
 };
-#define WBUS_CNT (sizeof(WBuses)/sizeof(ado_wbus_config_t))
 
 static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( deb_init, deb_main, LPC_UART2),
@@ -94,8 +99,8 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( sen_init, sen_main, NULL),
 		MOD_INIT( memInit, memMain, &MemoryInit),
 		MOD_INIT( gpsInit, gpsMain, &GpsInit),
-		MOD_INIT( app_init, app_main, NULL)
-
+		MOD_INIT( app_init, app_main, NULL),
+		MOD_INIT( rtst_init, rtst_main, &RadtestInit)
 };
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
 
@@ -122,7 +127,7 @@ int main(void) {
 		InitReport.oddEven = true;
 	}
 
-	ADO_WBUS_Init(WBuses, WBUS_CNT);
+	//ADO_WBUS_Init(WBuses, WBUS_CNT);  not implemeted yet -> abstraction over I2C,SPI and SSPDMA buses
 
 
     // Layer 1 - Bus Inits

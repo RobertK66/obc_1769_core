@@ -9,7 +9,7 @@
 
 
 void ADO_WBUS_Init(ado_wbus_config_t* pWb, uint8_t busCount){
-
+	// Not implemeted yet -> abstraction over I2C,SPI and SSPDMA buses
 }
 
 
