@@ -30,12 +30,6 @@
 #include "radtest/radtest.h"
 
 
-
-//typedef struct {
-//	uint8_t resetBits;
-//} init_report_t;
-//
-
 #if BA_BOARD == BA_OM13085_EM2T
 // EM2T Test Hardware has 2 SD Cards connected to SSP0/SSP1
 static const sdcard_init_t SdCards[] = {
@@ -155,6 +149,7 @@ int main(void) {
     	for (int i=0; i < MODULE_CNT; i++) {
     		Modules[i].main();
     	}
+    	// Feed the watchdog
     	Chip_GPIO_SetPinToggle(LPC_GPIO, PORT_FROM_IDX(PINIDX_WATCHDOG_FEED), PINNR_FROM_IDX(PINIDX_WATCHDOG_FEED));
     }
     return 0;
