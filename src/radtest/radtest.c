@@ -51,7 +51,8 @@ void rtst_main (void){
 
 		if ((RtstTickCnt % RTST_HEARTBEAT_TICKS) == 0) {
 			// Make heartbeat every 10 sec.
-			SysEvent(RTST_MODNR, EVENT_WARNING, RTST_EVENTID_HEARTBEAT, "Supervision watchdog feed\n", 26);
+			//SysEvent(RTST_MODNR, EVENT_WARNING, RTST_EVENTID_HEARTBEAT, "Supervision watchdog feed\n", 26);
+			SysEvent_Debug("Supervision watchdog feed\n", 26)
 		}
 		if ((RtstTickCnt % RTST_MEMTST_TICKS) == 0) {
 			// Memory tests TODO

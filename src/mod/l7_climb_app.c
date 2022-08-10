@@ -123,6 +123,12 @@ void _SysEvent(event_t event) {
 	}
 }
 
+void _SysEvent_Debug(event_debug_t event) {
+	deb_sendEventFrame_Debug(event.data, event.byteCnt);
+
+}
+
+
 uint8_t  tempData[MRAM_MAX_WRITE_SIZE];
 
 void app_processCmd(int argc, char *argv[]) {
