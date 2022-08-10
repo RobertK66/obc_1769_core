@@ -9,6 +9,7 @@
 
 #include "../mod/ado_timers.h"
 #include <ado_modules.h>
+#include "../mod/l3_sensors.h"
 
 #define 			RTST_MODNR					0x55			// ('U')  Module number for rad tests only
 #define 			RTST_EVENTID_HEARTBEAT		0x55			// ('U')  Event ID for heartbeat event
@@ -16,7 +17,7 @@
 #define 			RTST_TICK_MS				1000			// IRQ every second.
 #define 			RTST_HEARTBEAT_TICKS		  10			// Heartbeat every 10 seconds
 #define				RTST_MEMTST_TICKS			  16			// Memorytest all 15 seconds
-
+#define				RTST_SENSOR_TICKS			  10		// Memorytest all 15 seconds
 
 static LPC_TIMER_T  *RtstTimerPtr = 0;
 static bool 		RtstTick = false;
@@ -55,6 +56,9 @@ void rtst_main (void){
 		if ((RtstTickCnt % RTST_MEMTST_TICKS) == 0) {
 			// Memory tests TODO
 		}
+		if ((RtstTickCnt % RTST_SENSOR_TICKS) == 0) {
+			SenReadAllValues();
+				}
 	}
 }
 
