@@ -104,7 +104,6 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( gpsInit, gpsMain, &GpsInit),
 		MOD_INIT( app_init, app_main, NULL),
 		MOD_INIT( thrInit, thrMain, &ThrInit),
-		MOD_INIT( app_init, app_main, NULL),
 		MOD_INIT( l4_thruster_init, l4_thruster_main, NULL)
 
 };
