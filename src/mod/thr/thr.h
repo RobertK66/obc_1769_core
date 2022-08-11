@@ -13,9 +13,12 @@
 
 // init data needed. Choose UARt and 2 GPIO Pins to be used
 typedef struct {
-	LPC_USART_T 	*pUart;			// default is 9600baud
-	const PINMUX_GRP_T2   *pEnablePin;	// Output LPC -> GPS enable internal Voltage regulator -> we disable because we use SP Power
-	const PINMUX_GRP_T2   *pPpsPin;		// Input  LPC <- GPS gives a 100ms pulse every second (if gps locked and synchronized only???).
+	LPC_USART_T 	*pUart;
+	// For thruster :
+	//LPC_UART1
+	// 115200
+	// Y+ sidepanel
+	//
 } thr_initdata_t;
 
 // API module functions
