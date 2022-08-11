@@ -54,15 +54,43 @@ void rtst_main (void){
 
 		if ((RtstTickCnt % RTST_HEARTBEAT_TICKS) == 0) {
 			// Make heartbeat every 10 sec.
-			//SysEvent(RTST_MODNR, EVENT_WARNING, RTST_EVENTID_HEARTBEAT, "Supervision watchdog feed\n", 26);
-			//SysEvent_Debug("Supervision watchdog feed\n", 26)
-			deb_sendEventFrame_Debug("hello", 5);
+			uint8_t request[27];
+			request[0]= 0x53;
+			request[1]= 0x75;
+			request[2]= 0x70;
+			request[3]= 0x65;
+			request[4]= 0x72;
+			request[5]= 0x76;
+			request[6]= 0x69;
+			request[7]= 0x73;
+			request[8]= 0x69;
+			request[9]= 0x69;
+			request[10]= 0x6f;
+			request[11]= 0x6e;
+			request[12]= 0x20;
+			request[13]= 0x77;
+			request[14]= 0x61;
+			request[15]= 0x74;
+			request[16]= 0x63;
+			request[17]= 0x68;
+			request[18]= 0x64;
+			request[19]= 0x6f;
+			request[20]= 0x67;
+			request[21]= 0x20;
+			request[22]= 0x66;
+			request[23]= 0x65;
+			request[24]= 0x65;
+			request[25]= 0x64;
+			request[26]= 0x0a;
+
+			uint8_t len = sizeof(request);
+			print_pure_debug(request, len);
 		}
 		if ((RtstTickCnt % RTST_MEMTST_TICKS) == 0) {
 			// Memory tests TODO
 		}
 		if ((RtstTickCnt % RTST_SENSOR_TICKS) == 0) {
-			//SenReadAllValues();
+			SenReadAllValues();
 			}
 
 		if ((RtstTickCnt % RTST_RS485_TICKS) == 0) {
