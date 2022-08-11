@@ -10,6 +10,7 @@
 #include "../mod/ado_timers.h"
 #include <ado_modules.h>
 #include "../mod/l3_sensors.h"
+#include "../mod/l2_debug_com.h"
 #include "../mod/thr/thr.h"
 
 #define 			RTST_MODNR					0x55			// ('U')  Module number for rad tests only
@@ -54,13 +55,14 @@ void rtst_main (void){
 		if ((RtstTickCnt % RTST_HEARTBEAT_TICKS) == 0) {
 			// Make heartbeat every 10 sec.
 			//SysEvent(RTST_MODNR, EVENT_WARNING, RTST_EVENTID_HEARTBEAT, "Supervision watchdog feed\n", 26);
-			SysEvent_Debug("Supervision watchdog feed\n", 26)
+			//SysEvent_Debug("Supervision watchdog feed\n", 26)
+			deb_sendEventFrame_Debug("hello", 5);
 		}
 		if ((RtstTickCnt % RTST_MEMTST_TICKS) == 0) {
 			// Memory tests TODO
 		}
 		if ((RtstTickCnt % RTST_SENSOR_TICKS) == 0) {
-			SenReadAllValues();
+			//SenReadAllValues();
 			}
 
 		if ((RtstTickCnt % RTST_RS485_TICKS) == 0) {
