@@ -84,14 +84,14 @@ void thrInit (void *initData) {
 	thrFirstByteAfterReset = true;
 
 	// Enable dirrection controll
-	LPC_UART1->RS485CTRL |= UART_RS485CTRL_DCTRL_EN; // Enable Auto Direction Control
+	thrInitData->pUart->RS485CTRL |= UART_RS485CTRL_DCTRL_EN; // Enable Auto Direction Control
 
 	// If direction control is enabled (bit DCTRL = 1), pin DTR is used for direction control
-	LPC_UART1->RS485CTRL |= UART_RS485CTRL_SEL_DTR;
+	thrInitData->pUart->RS485CTRL |= UART_RS485CTRL_SEL_DTR;
 
 	//This bit reverses the polarity of the direction control signal on the RTS (or DTR) pin. The direction control pin
 	 //will be driven to logic "1" when the transmitter has data to be sent
-	LPC_UART1->RS485CTRL |= UART_RS485CTRL_OINV_1;
+	thrInitData->pUart->RS485CTRL |= UART_RS485CTRL_OINV_1;
 
 
 
