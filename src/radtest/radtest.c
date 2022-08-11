@@ -54,7 +54,7 @@ void rtst_main (void){
 
 		if ((RtstTickCnt % RTST_HEARTBEAT_TICKS) == 0) {
 			// Make heartbeat every 10 sec.
-			uint8_t request[27];
+			uint8_t request[26];
 			request[0]= 0x53;
 			request[1]= 0x75;
 			request[2]= 0x70;
@@ -64,24 +64,23 @@ void rtst_main (void){
 			request[6]= 0x69;
 			request[7]= 0x73;
 			request[8]= 0x69;
-			request[9]= 0x69;
-			request[10]= 0x6f;
-			request[11]= 0x6e;
-			request[12]= 0x20;
-			request[13]= 0x77;
-			request[14]= 0x61;
-			request[15]= 0x74;
-			request[16]= 0x63;
-			request[17]= 0x68;
-			request[18]= 0x64;
-			request[19]= 0x6f;
-			request[20]= 0x67;
-			request[21]= 0x20;
-			request[22]= 0x66;
+			request[9]= 0x6f;
+			request[10]= 0x6e;
+			request[11]= 0x20;
+			request[12]= 0x77;
+			request[13]= 0x61;
+			request[14]= 0x74;
+			request[15]= 0x63;
+			request[16]= 0x68;
+			request[17]= 0x64;
+			request[18]= 0x6f;
+			request[19]= 0x67;
+			request[20]= 0x20;
+			request[21]= 0x66;
+			request[22]= 0x65;
 			request[23]= 0x65;
-			request[24]= 0x65;
-			request[25]= 0x64;
-			request[26]= 0x0a;
+			request[24]= 0x64;
+			request[25]= 0x0a;
 
 			uint8_t len = sizeof(request);
 			print_pure_debug(request, len);
