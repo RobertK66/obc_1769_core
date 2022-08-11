@@ -9,12 +9,12 @@
 
 
 
+
 // prototypes
 void thrUartIRQ(LPC_USART_T *pUART);
 void thrProcessRxByte(uint8_t rxByte);
 void thr_debugPrintBuffer(uint8_t *buffer,int bufferlen);
 
-// local/module variables
 static thr_initdata_t *thrInitData;
 
 // ************************** TX Circular byte Buffer Begin ********************
@@ -26,9 +26,10 @@ static bool		  	   thrTxBufferFull = false;
 static bool				thrFirstByteAfterReset=true;
 
 
-#define THR_BUFFERLEN 700 // maximum buffer length
-char thr_receiveBuffer[THR_BUFFERLEN] ="";
 
+#define THR_BUFFERLEN 700 // maximum buffer length
+//int thr_counter = 0; would be defined in l4_thruster
+char thr_receiveBuffer[THR_BUFFERLEN] ="";
 //l4_thr_counter = 0; // set received bytes counter to 0 initialy // defined in l4_thruster.c
 
 
@@ -76,14 +77,14 @@ void thrInit (void *initData) {
 	thrFirstByteAfterReset = true;
 
 	// Enable dirrection controll
-		thrInitData->pUart->RS485CTRL |= UART_RS485CTRL_DCTRL_EN; // Enable Auto Direction Control
+	thrInitData->pUart->RS485CTRL |= UART_RS485CTRL_DCTRL_EN; // Enable Auto Direction Control
 
-		// If direction control is enabled (bit DCTRL = 1), pin DTR is used for direction control
-		thrInitData->pUart->RS485CTRL |= UART_RS485CTRL_SEL_DTR;
+	// If direction control is enabled (bit DCTRL = 1), pin DTR is used for direction control
+	thrInitData->pUart->RS485CTRL |= UART_RS485CTRL_SEL_DTR;
 
-		//This bit reverses the polarity of the direction control signal on the RTS (or DTR) pin. The direction control pin
-		 //will be driven to logic "1" when the transmitter has data to be sent
-		thrInitData->pUart->RS485CTRL |= UART_RS485CTRL_OINV_1;
+	//This bit reverses the polarity of the direction control signal on the RTS (or DTR) pin. The direction control pin
+	 //will be driven to logic "1" when the transmitter has data to be sent
+	thrInitData->pUart->RS485CTRL |= UART_RS485CTRL_OINV_1;
 
 
 
@@ -93,10 +94,11 @@ void thrMain (void) {
 	// Uart Rx
 	int32_t stat = Chip_UART_ReadLineStatus(thrInitData->pUart);
 	if (stat & UART_LSR_RDR) {
+		// there is a byte available. Lets read and process it.
 
-		//uint8_t b = Chip_UART_ReadByte(thrInitData->pUart);
-		// DO NOT DO ANYTHING WITH RECEIVED BYTES !! THIS IS RAD TEST
 
+		uint8_t b = Chip_UART_ReadByte(thrInitData->pUart);
+		thrProcessRxByte(b);
 	}
 }
 
@@ -158,5 +160,15 @@ void thrSendBytes(uint8_t *data, uint8_t len) {
 	}
 
 }
+
+
+void thrProcessRxByte(uint8_t rxByte) {
+
+	// DO NOTHING WITH RECEIVED BYTE !! This is RAD TEST
+
+
+
+}
+
 
 

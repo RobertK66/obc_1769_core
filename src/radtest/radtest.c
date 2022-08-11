@@ -67,7 +67,7 @@ void rtst_main (void){
 
 				// Send bytes over RS485
 
-				uint8_t request[11];
+				uint8_t request[10];
 				request[0]= 0x74;
 				request[1]= 0x68;
 				request[2]= 0x72;
@@ -78,7 +78,6 @@ void rtst_main (void){
 				request[7]= 0x6c;
 				request[8]= 0x6f;
 				request[9]= 0x0a; // New line. This should be present
-				request[10]= 0x0a; // New line. This should be present
 
 				uint8_t len = sizeof(request);
 				thrSendBytes(request, len);
