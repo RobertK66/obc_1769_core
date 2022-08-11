@@ -20,7 +20,7 @@
 #include "tim/climb_gps.h"
 
 #include "thr/thr.h"
-#include "crc/obc_checksums.h"
+//#include "crc/obc_checksums.h"
 #include "l4_thruster.h"
 
 typedef struct {

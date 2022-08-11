@@ -13,6 +13,10 @@
 #include <stdlib.h>
 
 
+#include <ado_crc.h>
+
+
+
 #include "l7_climb_app.h"
 #include "l4_thruster.h"
 
@@ -28,7 +32,6 @@
 #include "hw_check.h"
 #include "tim/climb_gps.h"
 #include "thr/thr.h"
-#include "crc/obc_checksums.h"
 
 
 
@@ -102,7 +105,6 @@ const uint8_t REGISTER_LENGTH[108] = {1, 1, 2, 0, 2, 0, 4, 0, 0, 0, 4, 0, 0, 0, 
 
 
 
-///// NEW END
 
 
 
@@ -255,7 +257,7 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 	// remember that when checksum is set - byte corresponding to checksum should be 0.
 	// need to set byte corresponding to checksum to 0 before calculating checksumm. Received checksum is already stored
 	received_buffer[3] = 0x00;
-	uint8_t calculated_checksum = CRC8(received_buffer, 6+uint16_payload_length); // length of an actual message is header (6) + payload length
+	uint8_t calculated_checksum = CRC8_thruster(received_buffer, 6+uint16_payload_length); // length of an actual message is header (6) + payload length
 	//printf("\n Calculated checksum %00x ",calculated_checksum);
 
 	if (calculated_checksum == received_checksum){
@@ -496,7 +498,7 @@ void GeneralSetRequest(int argc, char *argv[]){
 		request[8] = (value >> 8) & 0xff;
 	}
 
-	request[3] = CRC8(request,len); // calculate checksum after whole request array is sent
+	request[3] = CRC8_thruster(request, len); // calculate checksum after whole request array is sent
 	l4_thr_ExpectedReceiveBuffer = 6;// change expected receive buffer accordingly
 	thrSendBytes(request, len);
 }
@@ -525,7 +527,8 @@ void GeneralReadRequest(int argc, char *argv[]){
 		request[7]= length_of_register;
 
 		uint8_t len = sizeof(request);
-		request[3] = CRC8(request,len);
+		//request[3] = CRC8_thruster(request,len);
+		request[3] = CRC8_thruster(request, len);
 
 		// Reply is n bytes long.
 		//Therefore we set global variable that should be used to process the RX buffer to corresponding length.
