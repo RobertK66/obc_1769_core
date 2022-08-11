@@ -10,6 +10,7 @@
 #include "../mod/ado_timers.h"
 #include <ado_modules.h>
 #include "../mod/l3_sensors.h"
+#include "../mod/thr/thr.h"
 
 #define 			RTST_MODNR					0x55			// ('U')  Module number for rad tests only
 #define 			RTST_EVENTID_HEARTBEAT		0x55			// ('U')  Event ID for heartbeat event
@@ -17,7 +18,8 @@
 #define 			RTST_TICK_MS				1000			// IRQ every second.
 #define 			RTST_HEARTBEAT_TICKS		  10			// Heartbeat every 10 seconds
 #define				RTST_MEMTST_TICKS			  16			// Memorytest all 15 seconds
-#define				RTST_SENSOR_TICKS			  10		// Memorytest all 15 seconds
+#define				RTST_SENSOR_TICKS			  10		// I2C internal sensor ticks every 10 sec
+#define				RTST_RS485_TICKS			  15		// I2C internal sensor ticks every 10 sec
 
 static LPC_TIMER_T  *RtstTimerPtr = 0;
 static bool 		RtstTick = false;
@@ -59,7 +61,30 @@ void rtst_main (void){
 		}
 		if ((RtstTickCnt % RTST_SENSOR_TICKS) == 0) {
 			SenReadAllValues();
-				}
+			}
+
+		if ((RtstTickCnt % RTST_RS485_TICKS) == 0) {
+
+				// Send bytes over RS485
+
+				uint8_t request[11];
+				request[0]= 0x74;
+				request[1]= 0x68;
+				request[2]= 0x72;
+				request[3]= 0x5f;
+				request[4]= 0x68;
+				request[5]= 0x65;
+				request[6]= 0x6c;
+				request[7]= 0x6c;
+				request[8]= 0x6f;
+				request[9]= 0x0a; // New line. This should be present
+				request[10]= 0x0a; // New line. This should be present
+
+				uint8_t len = sizeof(request);
+				thrSendBytes(request, len);
+
+
+		}
 	}
 }
 
