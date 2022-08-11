@@ -15,7 +15,7 @@
 #include "ado_modules.h"
 
 // RX definitions
-#define DEB_L2_MAX_CHARPERLINE		10
+#define DEB_L2_MAX_CHARPERLINE		100
 #define DEB_L2_MAX_PARAMS			 10
 typedef struct {
 	char	cmdLine[DEB_L2_MAX_CHARPERLINE];
