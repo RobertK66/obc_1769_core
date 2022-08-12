@@ -27,6 +27,8 @@
 #include "mod/mem/obc_memory.h"
 #include "mod/l7_climb_app.h"
 
+#include "mod/thr/thr.h"
+#include "mod/l4_thruster.h"
 
 
 
@@ -73,6 +75,11 @@ static gps_initdata_t GpsInit = {
 		PTR_FROM_IDX(PINIDX_STACIE_C_IO1_P)
 };
 
+static thr_initdata_t ThrInit = {
+		LPC_UART1, ///Y+ sidepanel
+
+};
+
 
 // List of (wire) busses to be initialized.
 static ado_wbus_config_t WBuses[] = {
@@ -94,7 +101,9 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( sen_init, sen_main, NULL),
 		MOD_INIT( memInit, memMain, &MemoryInit),
 		MOD_INIT( gpsInit, gpsMain, &GpsInit),
-		MOD_INIT( app_init, app_main, NULL)
+		MOD_INIT( app_init, app_main, NULL),
+		MOD_INIT( thrInit, thrMain, &ThrInit),
+		MOD_INIT( l4_thruster_init, l4_thruster_main, NULL)
 
 };
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
