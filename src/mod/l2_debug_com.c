@@ -168,44 +168,8 @@ void deb_CopyAndEscapeData(uint8_t *data, uint16_t len) {
 	}
 }
 
-/*
-void deb_CopyAndEscapeData_Debug(uint8_t *data, uint16_t len) {
-	int i = 0;
-	bool inEscape = false;
-	while (deb_txFrames.headTxByteIdx != deb_txFrames.currentTxByteIdx) {
-		if (! inEscape) {
-			if (    (data[i] == DEB_L2_TX_FRAMESTARTSTOP)
-				 || (data[i] == DEB_L2_TX_FRAMEESCAPE) )	{
-				inEscape = true;
-				//deb_txFrames.txData[deb_txFrames.headTxByteIdx] = DEB_L2_TX_FRAMEESCAPE;
-			} else {
-				deb_txFrames.txData[deb_txFrames.headTxByteIdx] = data[i];
-				i++;
-			}
-		} else {
-			inEscape = false;
-			deb_txFrames.txData[deb_txFrames.headTxByteIdx] = data[i] ^ 0x20;
-			i++;
-		}
-		IncHeadTxIdx();
-		if (i>=len) {
-			break;
-		}
-	}
-}
-*/
-void deb_CopyAndEscapeData_Debug(uint8_t *data, uint16_t len) {
-	int i = 0;
-	while (deb_txFrames.headTxByteIdx != deb_txFrames.currentTxByteIdx) {
-		if (i>=len) {
-					break;
-				}
-		deb_txFrames.txData[deb_txFrames.headTxByteIdx] = data[i];
-		i++;
-		IncHeadTxIdx();
 
-	}
-}
+
 
 
 bool deb_sendEventFrame(event_id_t eventId, uint8_t *data, uint16_t len) {
