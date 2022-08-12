@@ -27,7 +27,6 @@ static bool		  	   thrTxBufferFull = false;
 static bool				thrFirstByteAfterReset=true;
 
 
-
 #define THR_BUFFERLEN 700 // maximum buffer length
 //int thr_counter = 0; would be defined in l4_thruster
 char thr_receiveBuffer[THR_BUFFERLEN] ="";
@@ -172,16 +171,20 @@ void thrSendBytes(uint8_t *data, uint8_t len) {
 void thrProcessRxByte(uint8_t rxByte) {
 	// do your processing of RX here....
 
-	if (l4_thr_counter<= l4_thr_ExpectedReceiveBuffer){ // change it to expected buffer length SET by REQUEST functions
+	if (l4_thr_counter< l4_thr_ExpectedReceiveBuffer){ // change it to expected buffer length SET by REQUEST functions
 
 		thr_receiveBuffer[l4_thr_counter]=(char) rxByte;
-		Chip_UART_SendByte(LPC_UART2, rxByte); // print received byte
+		//Chip_UART_SendByte(LPC_UART2, rxByte); // print received byte
 		l4_thr_counter++;
 	}
-	else {
+	if (l4_thr_counter== l4_thr_ExpectedReceiveBuffer) {
+
+		thr_receiveBuffer[l4_thr_counter]=(char) rxByte;
+		//Chip_UART_SendByte(LPC_UART2, rxByte); // print received byte
+
 		l4_thr_counter =0;
-		// This was not yet tested on OBC ! But works on standaone .c
-		ParseReadRequest((uint8_t*)thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer); //
+		print_pure_debug((uint8_t*)thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer);
+
 		// TODO : TEST ParseReadRequest. Make request to read all registers.
 		// Parse reply with ParseReadRequest and verify that array of data values are stored correctly
 
@@ -193,12 +196,3 @@ void thrProcessRxByte(uint8_t rxByte) {
 
 
 
-void thr_debugPrintBuffer(uint8_t *buffer,int bufferlen){
-
-	//LPC_UART2 is debug UART
-	for (int i=0;i<bufferlen;i++){
-		Chip_UART_SendByte(LPC_UART2, buffer[i]);
-
-	}
-
-}
