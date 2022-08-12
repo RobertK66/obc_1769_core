@@ -56,6 +56,9 @@ where
 | ---     | ---                       | ---                                                                                                              |
 | 'h'     | \<pinIdx\> \<mode\>       | sets an GPIO pin to mode (0: initVal, 1: high, 2: low, 3: slow blink, 4: fast osz.)                              |
 | 'm'     | \<pinIdxIn\> [\<pinIdxOut\>] | mirrors the GPI input pin to the GPIO output pin 															 |
+| '5'     |  | Thruster all register read request.															                                             |
+| '6'     | \<register index\>  | Read request to single thruster register.														                         |
+| '7'     | \<register index\> [\<value\>] | Set request for a single thruster register. 															 |
 
 Valid pinIdx for command 'h' and 'm' can be found in the hardware abstraction include file in source code..... 
 

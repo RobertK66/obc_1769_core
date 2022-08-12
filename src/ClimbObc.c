@@ -29,7 +29,8 @@
 
 #include "radtest/radtest.h"
 #include "mod/thr/thr.h"
-
+#include "mod/thr/thr.h"
+#include "mod/l4_thruster.h"
 
 
 #if BA_BOARD == BA_OM13085_EM2T
@@ -103,6 +104,8 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( app_init, app_main, NULL),
 		MOD_INIT( rtst_init, rtst_main, &RadtestInit),
 		MOD_INIT( thrInit, thrMain, &ThrInit),
+		MOD_INIT( l4_thruster_init, l4_thruster_main, NULL)
+
 };
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
 

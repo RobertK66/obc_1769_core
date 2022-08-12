@@ -170,8 +170,6 @@ void deb_CopyAndEscapeData(uint8_t *data, uint16_t len) {
 
 
 
-
-
 bool deb_sendEventFrame(event_id_t eventId, uint8_t *data, uint16_t len) {
 	bool ok;
 	// block irq while handling buffers
