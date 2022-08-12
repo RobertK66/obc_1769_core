@@ -183,7 +183,8 @@ void thrProcessRxByte(uint8_t rxByte) {
 		//Chip_UART_SendByte(LPC_UART2, rxByte); // print received byte
 
 		l4_thr_counter =0;
-		print_pure_debug((uint8_t*)thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer);
+		ParseReadRequest((uint8_t*)&thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer);
+		print_pure_debug((uint8_t*)&thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer);
 
 		// TODO : TEST ParseReadRequest. Make request to read all registers.
 		// Parse reply with ParseReadRequest and verify that array of data values are stored correctly

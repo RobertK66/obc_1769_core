@@ -207,7 +207,7 @@ void ReadAllRegisters(int argc, char *argv[]){
 	int len = sizeof(request);
 
 	// every request function should manually set expected RX buffer size and reset byte counter !!!!!!!!!!
-	l4_thr_ExpectedReceiveBuffer = 50;
+	l4_thr_ExpectedReceiveBuffer = 127;
 	l4_thr_counter =0;
 
 	thrSendBytes(request, len);
@@ -537,6 +537,7 @@ void GeneralReadRequest(int argc, char *argv[]){
 
 		thrSendBytes(request, len);
 		TYPE_OF_LAST_REQUEST = 0x03;
+		LATEST_ACCESSED_REGISTER = access_register;
 }
 
 
