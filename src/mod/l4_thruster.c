@@ -35,7 +35,7 @@
 
 
 
-
+uint8_t CRC8_thruster(uint8_t* str, size_t length);
 
 
 // Conversion multipliers are factors used to transform input variable to an uint16_t value needed to be stored/read in/from THRUSTER REGISTER MAP.
@@ -540,3 +540,27 @@ void GeneralReadRequest(int argc, char *argv[]){
 }
 
 
+
+// This will be moved to ado lib later. see https://github.com/RobertK66/ado-chip-175x-6x/issues/25
+/* Update CRC8 Checksum */
+void c_CRC8(char data, uint8_t *checksum)
+{
+    uint8_t i;
+    *checksum ^= data;
+
+    for (i = 0; i < 8; ++i)
+    {
+        *checksum = (*checksum << 1) ^ ((*checksum & 0x80) ? 0x07 : 0x00);
+    }
+}
+
+/* Compute CRC8 (binary String) */
+uint8_t CRC8_thruster(uint8_t* str, size_t length)
+{
+    uint8_t checksum = 0;
+
+    for (; length--; c_CRC8(*str++, &checksum))
+        ;
+
+    return checksum;
+}
