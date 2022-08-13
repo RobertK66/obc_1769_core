@@ -130,7 +130,7 @@ void _SysEvent(event_t event) {
 	}
 }
 
-void _SysEvent_Debug(event_debug_t event) {
+void _SysEvent_Debug(event_t event) {
 	deb_sendEventFrame_Debug(event.data, event.byteCnt);
 
 }
