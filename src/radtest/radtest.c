@@ -46,7 +46,8 @@ void rtst_init (void *initData) {
 	InitTimer(RtstTimerPtr, RTST_TICK_MS, rtst_timer_IRQHandler);
 }
 
-#define CTUT_3	// CTUT_1 CTUT_2  CTUT_3
+#define CTUT_2	// CTUT_1 CTUT_2  CTUT_3 replace as you wish to check different code options ;-)....
+				// Robert: I would prefer CTUT_2 but this is up to taste (only the unreadable CTUT_1 version , I would object)
 
 void rtst_main (void){
 	if (RtstTick) {
@@ -112,7 +113,7 @@ void rtst_main (void){
 
 			// now how to we get length !?
 			// it would be possible with:
-			uint8_t len = strlen(request);		// This 'calculates the char from pointer (base) up to the \0
+			uint8_t len = strlen(request);		// This 'calculates' the char from pointer (base) up to the \0
 												// I am pretty sure this is evaluated at compile time and not a call at runtime (but this is not 100% sure....)
 
 			// In order to avoid the compiler warning here we have to explicitly cast the request variable beeing a (char *) to (uint8_t *)
@@ -123,14 +124,12 @@ void rtst_main (void){
 
 #ifdef CTUT_3
 			// If you want to avoid the strlen you could also use sizeof like this:
-
-#define MY_OUTPUT_STRING "Supervision watchdog feed\n"		// We need the string literal 2 times now so use #define  to make it unique and usable as often we want...
+#define MY_OUTPUT_STRING "Supervision watchdog feed\n"		// We need the string literal 2 times now so use #define
+			                                                // to make it unique and usable as often we want...
 
 			const char *request =  MY_OUTPUT_STRING;
 			uint8_t len = sizeof(MY_OUTPUT_STRING);
 			print_pure_debug((uint8_t *)request, len);
-
-
 #endif
 			
 			
