@@ -7,8 +7,10 @@
 
 #include "radtest.h"
 
-#include "../mod/ado_timers.h"
+#include <stdio.h>
 #include <ado_modules.h>
+
+#include "../mod/ado_timers.h"
 #include "../mod/l3_sensors.h"
 #include "../mod/l2_debug_com.h"
 #include "../mod/thr/thr.h"
@@ -19,8 +21,8 @@
 #define 			RTST_TICK_MS				1000			// IRQ every second.
 #define 			RTST_HEARTBEAT_TICKS		  10			// Heartbeat every 10 seconds
 #define				RTST_MEMTST_TICKS			  16			// Memorytest all 15 seconds
-#define				RTST_SENSOR_TICKS			  100		// I2C internal sensor ticks every 10 sec
-#define				RTST_RS485_TICKS			  150		// I2C internal sensor ticks every 10 sec
+#define				RTST_SENSOR_TICKS			  13			// I2C internal sensor ticks every 10 sec
+#define				RTST_RS485_TICKS			  150			// ...
 
 static LPC_TIMER_T  *RtstTimerPtr = 0;
 static bool 		RtstTick = false;
@@ -44,7 +46,31 @@ void rtst_timer_IRQHandler(void) {
 void rtst_init (void *initData) {
 	RtstTimerPtr = ((rtst_initdata_t*)initData)->RadTestTimerPtr;
 	InitTimer(RtstTimerPtr, RTST_TICK_MS, rtst_timer_IRQHandler);
+
+	// Output the headers of all data records used later;
+	const char *header = "Sensor; temp1; temp2; voltage;";
+	uint8_t len = strlen(header);
+	deb_print_pure_debug((uint8_t *)header, len);
 }
+
+void rtst_eventoutput(event_t event) {
+	// let's only send pure strings to debug UART and filter only wanted events....
+	// In order to get sprintf to work with floats you have to omit the CR_INTEGER_PRINTF option in the setup
+	// Later on we should consider to reintroduce it -> no floating points to string is needed for flight version and
+	// this reduces memory (flash) footprint.
+	char msg[100];
+
+	if (event.id.moduleId == MODULE_ID_SENSORS) {
+		if (event.id.eventId == EID_SEN_MEASSUREMENT) {
+			// Convert Sensor Measurements to pure string result
+			sensor_values_t *sensval = (sensor_values_t *)event.data;
+			int len = snprintf(msg, 100, "Sensor; %.2f; %.2f; %.3f \n", sensval->TempSHT30, sensval->Temperature, sensval->SupplyVoltage);
+			deb_print_pure_debug((uint8_t *)msg, len);
+		}
+	}
+
+}
+
 
 #define CTUT_2	// CTUT_1 CTUT_2  CTUT_3 replace as you wish to check different code options ;-)....
 				// Robert: I would prefer CTUT_2 but this is up to taste (only the unreadable CTUT_1 version , I would object)
@@ -99,7 +125,7 @@ void rtst_main (void){
 			request[24]= 0x64;
 			request[25]= 0x0a;
 			uint8_t len = sizeof(request);		// This sizeof() is calculated by the compiler to be exactly the 26 you wrote in line 61. Nothing done at runtime here.
-			print_pure_debug(request, len);
+			   deb_print_pure_debug(request, len);
 #endif
 			
 #ifdef CTUT_2
@@ -118,7 +144,7 @@ void rtst_main (void){
 
 			// In order to avoid the compiler warning here we have to explicitly cast the request variable beeing a (char *) to (uint8_t *)
 			// This does nothing in code or at runtime. It only tells the compiler that he should shut up with his warning. We know what we do here ;-)!
-			print_pure_debug((uint8_t *)request, len);
+			deb_print_pure_debug((uint8_t *)request, len);
 #endif
 
 
@@ -129,7 +155,7 @@ void rtst_main (void){
 
 			const char *request =  MY_OUTPUT_STRING;
 			uint8_t len = sizeof(MY_OUTPUT_STRING);
-			print_pure_debug((uint8_t *)request, len);
+			   deb_print_pure_debug((uint8_t *)request, len);
 #endif
 			
 			

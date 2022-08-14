@@ -184,7 +184,7 @@ void thrProcessRxByte(uint8_t rxByte) {
 
 		l4_thr_counter =0;
 		ParseReadRequest((uint8_t*)&thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer);
-		print_pure_debug((uint8_t*)&thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer);
+		   deb_print_pure_debug((uint8_t*)&thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer);
 
 		// TODO : TEST ParseReadRequest. Make request to read all registers.
 		// Parse reply with ParseReadRequest and verify that array of data values are stored correctly

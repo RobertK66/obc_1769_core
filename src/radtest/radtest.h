@@ -9,6 +9,7 @@
 #define RADTEST_RADTEST_H_
 
 #include <chip.h>
+#include <ado_modules.h>
 
 typedef struct {
 	LPC_TIMER_T*	RadTestTimerPtr;
@@ -17,4 +18,6 @@ typedef struct {
 void rtst_init (void *initData);
 void rtst_main (void);
 
+
+void rtst_eventoutput(event_t event);
 #endif /* RADTEST_RADTEST_H_ */

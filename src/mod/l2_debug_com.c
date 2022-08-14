@@ -210,7 +210,7 @@ bool deb_sendEventFrame(event_id_t eventId, uint8_t *data, uint16_t len) {
 }
 
 
-bool print_pure_debug(uint8_t *data, uint16_t len) {
+bool    deb_print_pure_debug(uint8_t *data, uint16_t len) {
 	bool ok;
 	// block irq while handling buffers
 	Chip_UART_IntDisable(deb_Uart, UART_IER_THREINT);
