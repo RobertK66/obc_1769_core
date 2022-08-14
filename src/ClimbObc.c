@@ -29,7 +29,6 @@
 
 #include "radtest/radtest.h"
 #include "mod/thr/thr.h"
-#include "mod/thr/thr.h"
 #include "mod/l4_thruster.h"
 
 
