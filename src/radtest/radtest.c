@@ -19,8 +19,8 @@
 #define 			RTST_TICK_MS				1000			// IRQ every second.
 #define 			RTST_HEARTBEAT_TICKS		  10			// Heartbeat every 10 seconds
 #define				RTST_MEMTST_TICKS			  16			// Memorytest all 15 seconds
-#define				RTST_SENSOR_TICKS			  10		// I2C internal sensor ticks every 10 sec
-#define				RTST_RS485_TICKS			  15		// I2C internal sensor ticks every 10 sec
+#define				RTST_SENSOR_TICKS			  100		// I2C internal sensor ticks every 10 sec
+#define				RTST_RS485_TICKS			  150		// I2C internal sensor ticks every 10 sec
 
 static LPC_TIMER_T  *RtstTimerPtr = 0;
 static bool 		RtstTick = false;

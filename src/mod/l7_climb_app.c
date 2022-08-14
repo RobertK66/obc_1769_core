@@ -121,19 +121,29 @@ void app_main (void) {
 
 }
 
+// Defining this function here (or somewhere) is overwriting the week (and empty!) implementation from ado_modules.h(!)
+// _SysEvent is the global event handler where all events raised by all modules (SYS_EVENT(...)) will arrive.
+// The only thing available is the eventId and the raw data. To interpret the contents you have to know (by knowing the hopefully
+// unique ID) who created this event and what structure it has.
 
+// Because we are in Application layer(L7) here, it would be possible to include any module<xy>.h files and cast the event back to its original
+// structure. At this moment we do not do this here. Instead we do send all events out to the debug UART.
+
+// In order to be able to transmit any data structures (which could potentially contain any data bytes 0x00 ... 0xFF) to the debug UART there has to be
+// a 'Layer3' protocol to handle this (At this moment there is a simple protocol used which has a Start-EndFrame (0x7E) token and escapes any occurences of
+// 0x7E and 0x7D in the data by using 0x7D as Escape token).
 void _SysEvent(event_t event) {
-	deb_sendEventFrame(event.id, event.data, event.byteCnt);
+	//deb_sendEventFrame(event.id, event.data, event.byteCnt);
 
 	if ( (event.id.severity == EVENT_ERROR) || (event.id.severity == EVENT_FATAL)) {
 		climbErrorCounter++;
 	}
 }
 
-void _SysEvent_Debug(event_t event) {
-	deb_sendEventFrame_Debug(event.data, event.byteCnt);
-
-}
+//void _SysEvent_Debug(event_t event) {
+//	deb_sendEventFrame_Debug(event.data, event.byteCnt);
+//
+//}
 
 
 uint8_t  tempData[MRAM_MAX_WRITE_SIZE];

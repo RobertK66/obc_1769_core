@@ -217,21 +217,20 @@ bool print_pure_debug(uint8_t *data, uint16_t len) {
 	uint16_t oldHead = deb_txFrames.headTxByteIdx;
 
 	//deb_txFrames.txData[deb_txFrames.headTxByteIdx] = DEB_L2_TX_FRAMESTARTSTOP;
-	IncHeadTxIdx();
+	//IncHeadTxIdx();	// No need to skip a byte here -> stays 0x00 if skipped.
 
 	//deb_CopyAndEscapeData((uint8_t *)&eventId, sizeof(event_id_t));
 	//deb_CopyAndEscapeData_Debug(data, len);
 	int i = 0;
-		while (deb_txFrames.headTxByteIdx != deb_txFrames.currentTxByteIdx) {
+		do {
 			if (i>=len) {
 						break;
 					}
 			deb_txFrames.txData[deb_txFrames.headTxByteIdx] = data[i];
 			i++;
 			IncHeadTxIdx();
-
-
-		}
+		} while (deb_txFrames.headTxByteIdx != deb_txFrames.currentTxByteIdx);	// This condition checks for 'buffer full', so it can only be used after the firt byte
+		                                                                        // was already put in buffer and  headTxByteIdx was incremented at least one time.
 
 	// Check if end Token fits into buffer
 	ok = (deb_txFrames.headTxByteIdx != deb_txFrames.currentTxByteIdx);
@@ -245,7 +244,7 @@ bool print_pure_debug(uint8_t *data, uint16_t len) {
 		if (deb_txState == DEB_IDLE) {
 			// Start TX and let IRQ do the rest
 			deb_txState = DEB_TX;
-			//Chip_UART_SendByte(deb_Uart, deb_txFrames.txData[deb_txFrames.currentTxByteIdx]); // DONT SEND THIS 0x00  byte !!!
+			Chip_UART_SendByte(deb_Uart, deb_txFrames.txData[deb_txFrames.currentTxByteIdx]); // This is needed to get the UART IRQ started (only the first time after Hard Reset !!!!)
 		}
 	} else {
 		// Reset buffer to previous state - frame discarded!
