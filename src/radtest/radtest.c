@@ -16,14 +16,15 @@
 #include "../mod/thr/thr.h"
 #include "../mod/l7_climb_app.h"
 
-#define 			RTST_MODNR					0x55			// ('U')  Module number for rad tests only
-#define 			RTST_EVENTID_HEARTBEAT		0x55			// ('U')  Event ID for heartbeat event
+#include "mramtest.h"
+
 
 #define 			RTST_TICK_MS				1000			// IRQ every second.
 #define 			RTST_HEARTBEAT_TICKS		  10			// Heartbeat every 10 seconds
 #define				RTST_MEMTST_TICKS			  16			// Memorytest all 15 seconds
 #define				RTST_SENSOR_TICKS			  13			// I2C internal sensor ticks every 10 sec
 #define				RTST_RS485_TICKS			  150			// ...
+
 
 static LPC_TIMER_T  *RtstTimerPtr = 0;
 static bool 		RtstTick = false;
@@ -170,7 +171,7 @@ void rtst_main (void){
 			
 		}
 		if ((RtstTickCnt % RTST_MEMTST_TICKS) == 0) {
-			// Memory tests TODO
+			rtst_mramtick();
 		}
 		if ((RtstTickCnt % RTST_SENSOR_TICKS) == 0) {
 			SenReadAllValues();
