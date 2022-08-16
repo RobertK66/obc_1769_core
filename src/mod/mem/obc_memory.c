@@ -292,7 +292,7 @@ void memMain(void) {
 			memSendEventOperational();
 		}
 	}
-r 0 1	if (page0NeedsUpdate != 0x00) {
+	if (page0NeedsUpdate != 0x00) {
 		uint8_t mask=0x01;
 		for (int chipIdx=0;chipIdx<6;chipIdx++) {
 			// Only (re-initiate) Write if not already busy with it!
