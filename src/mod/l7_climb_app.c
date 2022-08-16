@@ -81,7 +81,7 @@ static const app_command_t Commands[] = {
 		{ 'h' , HwcSetOutputCmd },
 		{ 'm' , HwcMirrorInputCmd },
 		{ 'r' , ReadMramCmd },
-		{ 'w' , WriteMramCmd }, // do not write !!
+		{ 'w' , WriteMramCmd }, // do not write at 0 .. 100 "Page0" is controlled by memory module !!!
 		{ 'R' , ReadSdcardCmd },
 		{ 'C' , CardPowerOnCmd },
 		{ 'c' , CardPowerOffCmd },
@@ -124,7 +124,7 @@ void app_main (void) {
 
 }
 
-//#define RADTEST_STRINGSONLY
+#define RADTEST_STRINGSONLY
 
 // Defining this function here (or somewhere) is overwriting the week (and empty!) implementation from ado_modules.h(!)
 // _SysEvent is the global event handler where all events raised by all modules (SYS_EVENT(...)) will arrive.
