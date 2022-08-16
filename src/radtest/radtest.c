@@ -14,6 +14,7 @@
 #include "../mod/l3_sensors.h"
 #include "../mod/l2_debug_com.h"
 #include "../mod/thr/thr.h"
+#include "../mod/l7_climb_app.h"
 
 #define 			RTST_MODNR					0x55			// ('U')  Module number for rad tests only
 #define 			RTST_EVENTID_HEARTBEAT		0x55			// ('U')  Event ID for heartbeat event
@@ -48,9 +49,12 @@ void rtst_init (void *initData) {
 	InitTimer(RtstTimerPtr, RTST_TICK_MS, rtst_timer_IRQHandler);
 
 	// Output the headers of all data records used later;
-	const char *header = "Sensor; temp1; temp2; voltage;";
+	const char *header = "\nSensor; temp1; temp2; voltage; current; \n";
 	uint8_t len = strlen(header);
 	deb_print_pure_debug((uint8_t *)header, len);
+//	header = "Init; resetCount; \n";
+//	len = strlen(header);
+//	deb_print_pure_debug((uint8_t *)header, len);
 }
 
 void rtst_eventoutput(event_t event) {
@@ -64,8 +68,13 @@ void rtst_eventoutput(event_t event) {
 		if (event.id.eventId == EID_SEN_MEASSUREMENT) {
 			// Convert Sensor Measurements to pure string result
 			sensor_values_t *sensval = (sensor_values_t *)event.data;
-			int len = snprintf(msg, 100, "Sensor; %.2f; %.2f; %.3f \n", sensval->TempSHT30, sensval->Temperature, sensval->SupplyVoltage);
+			int len = snprintf(msg, 100, "Sensor; %.2f; %.2f; %.3f; %.3f; \n", sensval->TempSHT30, sensval->Temperature, sensval->SupplyVoltage, sensval->SupplyCurrentBoard);
 			deb_print_pure_debug((uint8_t *)msg, len);
+		}
+	}
+	if (event.id.moduleId == MODULE_ID_CLIMBAPP) {
+		if (event.id.eventId == EID_APP_STRING) {
+			deb_print_pure_debug((uint8_t *)event.data, event.byteCnt);
 		}
 	}
 
