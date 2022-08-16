@@ -17,6 +17,6 @@
 extern uint8_t expectedPagePatternsSeq[2 * RADTST_EXPECTED_PATTERN_CNT];
 extern uint8_t prgFlash2Target[RADTST_PRGFLASH2_TARGET_PAGES][RADTST_PRGFLASH2_TARGET_PAGESIZE];
 
-void rtst_mramtick(void);
+void rtst_memtesttick(void);
 
 #endif /* RADTEST_MRAMTEST_H_ */

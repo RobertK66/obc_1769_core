@@ -6,7 +6,7 @@
 #include <Chip.h>
 #include <cr_section_macros.h>
 
-#include "mramtest.h"
+#include "memtest.h"
 
 __attribute__ ((section(".text_Flash2")))							// This must be extra flash section defined under: Project-Properties - C/C++ build - MCU Settings - Memory Details !!!!
 uint8_t expectedPagePatternsSeq[8] = {0x00, 0x55, 0xFF, 0xAA, 0x00,  0x55, 0xFF, 0xAA };		// Define the fillbytes used for different page patterns (based on PageNr %4 + offset 0...3)

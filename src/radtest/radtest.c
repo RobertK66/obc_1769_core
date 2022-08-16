@@ -16,12 +16,12 @@
 #include "../mod/thr/thr.h"
 #include "../mod/l7_climb_app.h"
 
-#include "mramtest.h"
+#include "memtest.h"
 
 
 #define 			RTST_TICK_MS				1000			// IRQ every second.
-#define 			RTST_HEARTBEAT_TICKS		  10			// Heartbeat every 10 seconds
-#define				RTST_MEMTST_TICKS			  16			// Memorytest all 15 seconds
+#define 			RTST_HEARTBEAT_TICKS		  60			// Heartbeat (aka Logbery watchdog) timing as in radtest1 60 sec.
+#define				RTST_MEMTST_TICKS			  1				// different tick timers are handled in memtest.c -> tick every second here.
 #define				RTST_SENSOR_TICKS			  13			// I2C internal sensor ticks every 10 sec
 #define				RTST_RS485_TICKS			  150			// ...
 
@@ -171,7 +171,7 @@ void rtst_main (void){
 			
 		}
 		if ((RtstTickCnt % RTST_MEMTST_TICKS) == 0) {
-			rtst_mramtick();
+			rtst_memtesttick();
 		}
 		if ((RtstTickCnt % RTST_SENSOR_TICKS) == 0) {
 			SenReadAllValues();
