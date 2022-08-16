@@ -13,12 +13,7 @@
 
 // init data needed. Choose UARt and 2 GPIO Pins to be used
 typedef struct {
-	LPC_USART_T 	*pUart;
-	// For thruster :
-	//LPC_UART1
-	// 115200
-	// Y+ sidepanel
-	//
+	LPC_USART_T 	*pUart;			// default is 9600baud
 } thr_initdata_t;
 
 // API module functions
