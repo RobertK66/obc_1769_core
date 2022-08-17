@@ -133,8 +133,8 @@ int l4_thr_counter = 0; // counter for received bytes
 
 void l4_thruster_init (void *dummy) {
 
-	char* testvar = "hello thruster";
-	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, testvar, strlen(testvar));
+//	char* testvar = "hello thruster";
+//	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, testvar, strlen(testvar));
 
 }
 
