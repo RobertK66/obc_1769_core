@@ -40,6 +40,7 @@ typedef struct radtst_counter_s {				// only add uint32_t values (its printed as
 //	uint32_t ram2PageWriteError;
 	uint32_t mramPageReadError[MRAM_CHIP_CNT];
 	uint32_t mramPageWriteError[MRAM_CHIP_CNT];
+	uint32_t mramPageReadBitError[MRAM_CHIP_CNT];
 //	uint32_t i2cmemPageReadError;
 //	uint32_t i2cmemPageWriteError;
 
