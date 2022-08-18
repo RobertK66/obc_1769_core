@@ -3,7 +3,7 @@
  *
  *  Created on: 10.01.2020
  */
-#include <Chip.h>
+#include <chip.h>
 #include <cr_section_macros.h>
 
 #include "memtest.h"
