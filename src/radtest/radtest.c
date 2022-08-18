@@ -9,21 +9,25 @@
 
 #include <stdio.h>
 #include <ado_modules.h>
+#include <mod/ado_sdcard.h>
 
 #include "../mod/ado_timers.h"
 #include "../mod/l3_sensors.h"
 #include "../mod/l2_debug_com.h"
 #include "../mod/thr/thr.h"
 #include "../mod/l7_climb_app.h"
+#include "../mod/tim/obc_time.h"
+#include "../mod/mem/obc_memory.h"
 
-#define 			RTST_MODNR					0x55			// ('U')  Module number for rad tests only
-#define 			RTST_EVENTID_HEARTBEAT		0x55			// ('U')  Event ID for heartbeat event
+#include "memtest.h"
+
 
 #define 			RTST_TICK_MS				1000			// IRQ every second.
-#define 			RTST_HEARTBEAT_TICKS		  10			// Heartbeat every 10 seconds
-#define				RTST_MEMTST_TICKS			  16			// Memorytest all 15 seconds
-#define				RTST_SENSOR_TICKS			  13			// I2C internal sensor ticks every 10 sec
-#define				RTST_RS485_TICKS			  150			// ...
+#define 			RTST_HEARTBEAT_TICKS		  6 			// Heartbeat (aka Logbery watchdog) timing as in radtest1 60 sec.
+#define				RTST_MEMTST_TICKS			  1				// different tick timers are handled in memtest.c -> tick every second here.
+#define				RTST_SENSOR_TICKS			  7	  		    // I2C internal sensor ticks every 10 sec
+#define				RTST_RS485_TICKS			  9			    // ...
+
 
 static LPC_TIMER_T  *RtstTimerPtr = 0;
 static bool 		RtstTick = false;
@@ -33,6 +37,7 @@ static uint16_t 	RtstTickCnt  = 0;
 // This is a temporary module to implement radiation test code for 2022-08-20 Tests.
 // Will be removed again later.
 
+static char msg[100];
 // Timer IRQ is called once every second.
 void rtst_timer_IRQHandler(void) {
 	uint32_t ir = RtstTimerPtr->IR;
@@ -52,9 +57,14 @@ void rtst_init (void *initData) {
 	const char *header = "\nSensor; temp1; temp2; voltage; current; \n";
 	uint8_t len = strlen(header);
 	deb_print_pure_debug((uint8_t *)header, len);
+
+	len = snprintf(msg, 100, "Reset; resetCount; DelayMs; resetBits;\n");
+	deb_print_pure_debug((uint8_t *)msg, len);
 //	header = "Init; resetCount; \n";
 //	len = strlen(header);
 //	deb_print_pure_debug((uint8_t *)header, len);
+
+	rtst_memtestinit();
 }
 
 void rtst_eventoutput(event_t event) {
@@ -62,7 +72,7 @@ void rtst_eventoutput(event_t event) {
 	// In order to get sprintf to work with floats you have to omit the CR_INTEGER_PRINTF option in the setup
 	// Later on we should consider to reintroduce it -> no floating points to string is needed for flight version and
 	// this reduces memory (flash) footprint.
-	char msg[100];
+	//char msg[100];
 
 	if (event.id.moduleId == MODULE_ID_SENSORS) {
 		if (event.id.eventId == EID_SEN_MEASSUREMENT) {
@@ -70,14 +80,34 @@ void rtst_eventoutput(event_t event) {
 			sensor_values_t *sensval = (sensor_values_t *)event.data;
 			int len = snprintf(msg, 100, "Sensor; %.2f; %.2f; %.3f; %.3f; \n", sensval->TempSHT30, sensval->Temperature, sensval->SupplyVoltage, sensval->SupplyCurrentBoard);
 			deb_print_pure_debug((uint8_t *)msg, len);
+			return;
 		}
-	}
-	if (event.id.moduleId == MODULE_ID_CLIMBAPP) {
+	} else if (event.id.moduleId == MODULE_ID_CLIMBAPP) {
 		if (event.id.eventId == EID_APP_STRING) {
 			deb_print_pure_debug((uint8_t *)event.data, event.byteCnt);
+			return;
+		} else if (event.id.eventId == EID_APP_INIT) {
+			init_report_t *initReport = (init_report_t *)event.data;
+			int len = snprintf(msg, 100, "Reset; %d; %d; %04x ; \n", initReport->gprResetCount, initReport->rtcOscDelayMs, initReport->resetBits );
+			deb_print_pure_debug((uint8_t *)msg, len);
+			return;
 		}
+	} else if (event.id.moduleId == MODULE_ID_SDCARD) {
+		// ignore sd card events
+		return;
+	} else if (event.id.moduleId == MODULE_ID_MEMORY) {
+		// ignore (high level) memory events
+		return;
 	}
 
+	// Evrything else we print as hex
+	for (int i = 0; i < event.byteCnt; i++)  {
+		if (i*3 > 96) {
+			break;
+		}
+		sprintf(&msg[i*3],"%02x-", event.data[i]);
+	}
+	deb_print_pure_debug((uint8_t *)msg, event.byteCnt*3);
 }
 
 
@@ -170,7 +200,7 @@ void rtst_main (void){
 			
 		}
 		if ((RtstTickCnt % RTST_MEMTST_TICKS) == 0) {
-			// Memory tests TODO
+			rtst_memtesttick();
 		}
 		if ((RtstTickCnt % RTST_SENSOR_TICKS) == 0) {
 			SenReadAllValues();

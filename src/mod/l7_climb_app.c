@@ -90,7 +90,7 @@ static const app_command_t Commands[] = {
 		{ 'O' , SetObcNameCmd },
 		{ 'N' , SetSdCardNameCmd },
 		{ 'i' , GetSystemInfoCmd },
-		{ 'd' , TriggerWatchdogCmd },
+		//{ 'd' , TriggerWatchdogCmd },
 		{ 't' , SetUtcDateTimeCmd },
 		{ 'T' , GetFullTimeCmd },
 		{ 'g' , SendToGpsUartCmd },
