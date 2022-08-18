@@ -5,5 +5,5 @@
 
 ![](pic/obc.jpg)
 
-##	Special Release for Radiation Tests on 2022-08-18
+##	Special Release for Radiation Tests on 2022-08-19
  
