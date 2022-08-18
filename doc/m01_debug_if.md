@@ -69,9 +69,9 @@ For checking the memory tests the 'r' and 'w' commands are working.
 Events
 ------
 
-~~Events are sent by using a frame start/end Character of **0x7e.** If a databyte
+<del>Events are sent by using a frame start/end Character of **0x7e.** If a databyte
 of 0x7e (or 0x7d) has to be transmitted this byte is escaped by using the escape
-char: **0x7d.** ~~
+char: **0x7d.** </del>
 
 Some events are translated to textual Output on the UART. The tests are autostarted after reset and the outputs are done with a fixed timimng schedule.
 
