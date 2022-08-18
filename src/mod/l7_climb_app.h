@@ -13,6 +13,7 @@
 
 void app_init (void *dummy);
 void app_main (void);
+//void _SysEvent_Debug(event_debug_t event);
 
 #define MODULE_ID_CLIMBAPP		0x00
 //#define EID_APP_SENSORVALUES	1

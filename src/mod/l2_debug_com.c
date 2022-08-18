@@ -24,7 +24,7 @@ The escaped data is Xored by 0x20.
 
 #define DEB_L2_TX_FRAMESTARTSTOP	0x7E
 #define DEB_L2_TX_FRAMEESCAPE		0x7D
-#define DEB_L2_TX_BUFFER_SIZE		 600
+#define DEB_L2_TX_BUFFER_SIZE		1600
 
 #define DEB_EOL_CHAR				0x0a
 
@@ -209,6 +209,56 @@ bool deb_sendEventFrame(event_id_t eventId, uint8_t *data, uint16_t len) {
 
 }
 
+
+bool    deb_print_pure_debug(uint8_t *data, uint16_t len) {
+	bool ok;
+	// block irq while handling buffers
+	Chip_UART_IntDisable(deb_Uart, UART_IER_THREINT);
+	uint16_t oldHead = deb_txFrames.headTxByteIdx;
+
+	//deb_txFrames.txData[deb_txFrames.headTxByteIdx] = DEB_L2_TX_FRAMESTARTSTOP;
+	//IncHeadTxIdx();	// No need to skip a byte here -> stays 0x00 if skipped.
+
+	//deb_CopyAndEscapeData((uint8_t *)&eventId, sizeof(event_id_t));
+	//deb_CopyAndEscapeData_Debug(data, len);
+	int i = 0;
+		do {
+			if (i>=len) {
+						break;
+					}
+			deb_txFrames.txData[deb_txFrames.headTxByteIdx] = data[i];
+			i++;
+			IncHeadTxIdx();
+		} while (deb_txFrames.headTxByteIdx != deb_txFrames.currentTxByteIdx);	// This condition checks for 'buffer full', so it can only be used after the firt byte
+		                                                                        // was already put in buffer and  headTxByteIdx was incremented at least one time.
+
+	// Check if end Token fits into buffer
+	ok = (deb_txFrames.headTxByteIdx != deb_txFrames.currentTxByteIdx);
+	if (ok) {
+		//deb_txFrames.txData[deb_txFrames.headTxByteIdx] = DEB_L2_TX_FRAMESTARTSTOP;
+		//IncHeadTxIdx();		// Could be filled up now. But if so thats ok here!
+		// NOOO Do nothing here
+	}
+
+	if (ok) {
+		if (deb_txState == DEB_IDLE) {
+			// Start TX and let IRQ do the rest
+			deb_txState = DEB_TX;
+			Chip_UART_SendByte(deb_Uart, deb_txFrames.txData[deb_txFrames.currentTxByteIdx]); // This is needed to get the UART IRQ started (only the first time after Hard Reset !!!!)
+		}
+	} else {
+		// Reset buffer to previous state - frame discarded!
+		deb_txFrames.headTxByteIdx = oldHead;
+		// TODO: Signal frame buffer error
+	}
+
+	// (Re-)Enable IRQ if needed
+	if (deb_txState != DEB_IDLE) {
+		Chip_UART_IntEnable(deb_Uart, UART_IER_THREINT);
+	}
+	return ok;
+
+}
 
 
 //bool deb_sendFrame(uint8_t *data, uint16_t len) {

@@ -36,6 +36,7 @@ void deb_main(void);
 bool	deb_getCommandIfAvailable(DEB_L2_CMD_T *pCmd);
 //bool    deb_sendFrame(uint8_t *data, uint16_t len);
 bool	deb_sendEventFrame(event_id_t eventId, uint8_t *data, uint16_t len);
+bool    deb_print_pure_debug(uint8_t *data, uint16_t len);
 
 // API defines
 #define deb_sendString(s) {deb_sendFrame((uint8_t*)(s), strlen(s));}

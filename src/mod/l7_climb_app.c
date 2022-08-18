@@ -9,6 +9,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "l2_debug_com.h"
 #include <mod/ado_mram.h>
 #include <mod/ado_sdcard.h>
@@ -18,6 +19,12 @@
 #include "l3_sensors.h"
 #include "hw_check.h"
 #include "tim/climb_gps.h"
+
+#include "thr/thr.h"
+//#include "crc/obc_checksums.h"
+#include "l4_thruster.h"
+
+#include "../radtest/radtest.h"
 
 typedef struct {
 	uint8_t	cmdId;
@@ -74,7 +81,7 @@ static const app_command_t Commands[] = {
 		{ 'h' , HwcSetOutputCmd },
 		{ 'm' , HwcMirrorInputCmd },
 		{ 'r' , ReadMramCmd },
-		{ 'w' , WriteMramCmd },
+		{ 'w' , WriteMramCmd }, // do not write at 0 .. 100 "Page0" is controlled by memory module !!!
 		{ 'R' , ReadSdcardCmd },
 		{ 'C' , CardPowerOnCmd },
 		{ 'c' , CardPowerOffCmd },
@@ -83,10 +90,13 @@ static const app_command_t Commands[] = {
 		{ 'O' , SetObcNameCmd },
 		{ 'N' , SetSdCardNameCmd },
 		{ 'i' , GetSystemInfoCmd },
-		{ 'd' , TriggerWatchdogCmd },
+		//{ 'd' , TriggerWatchdogCmd },
 		{ 't' , SetUtcDateTimeCmd },
 		{ 'T' , GetFullTimeCmd },
-		{ 'g' , SendToGpsUartCmd }
+		{ 'g' , SendToGpsUartCmd },
+		{ '5' , ReadAllRegisters },
+		{ '6' , GeneralReadRequest },
+		{ '7' , GeneralSetRequest }
 };
 
 
@@ -98,7 +108,7 @@ static const app_command_t Commands[] = {
 
 void app_init (void *dummy) {
 	//SdcCardinitialize(0);
-	char ver[32] = "SW-Version: ";
+	char ver[32] = "MYSW-Version: ";
 	ver[31] = 0;
 	strncpy(&ver[12], BUILD_SWVERSION, 18);
 	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, ver, 12 + strlen(BUILD_SWVERSION));
@@ -114,14 +124,38 @@ void app_main (void) {
 
 }
 
+#define RADTEST_STRINGSONLY
 
+// Defining this function here (or somewhere) is overwriting the week (and empty!) implementation from ado_modules.h(!)
+// _SysEvent is the global event handler where all events raised by all modules (SYS_EVENT(...)) will arrive.
+// The only thing available is the eventId and the raw data. To interpret the contents you have to know (by knowing the hopefully
+// unique ID) who created this event and what structure it has.
+
+// Because we are in Application layer(L7) here, it would be possible to include any module<xy>.h files and cast the event back to its original
+// structure. At this moment we do not do this here. Instead we do send all events out to the debug UART.
+
+// In order to be able to transmit any data structures (which could potentially contain any data bytes 0x00 ... 0xFF) to the debug UART there has to be
+// a 'Layer3' protocol to handle this (At this moment there is a simple protocol used which has a Start-EndFrame (0x7E) token and escapes any occurrences of
+// 0x7E and 0x7D in the data by using 0x7D as Escape token).
 void _SysEvent(event_t event) {
+#ifdef RADTEST_STRINGSONLY
+	// For the radtest lets the radtest decide which event should be treated how....
+	rtst_eventoutput(event);
+#else
+	// send all events to umbilical UART as debug frames
 	deb_sendEventFrame(event.id, event.data, event.byteCnt);
+#endif
 
 	if ( (event.id.severity == EVENT_ERROR) || (event.id.severity == EVENT_FATAL)) {
 		climbErrorCounter++;
 	}
 }
+
+//void _SysEvent_Debug(event_t event) {
+//	deb_sendEventFrame_Debug(event.data, event.byteCnt);
+//
+//}
+
 
 uint8_t  tempData[MRAM_MAX_WRITE_SIZE];
 

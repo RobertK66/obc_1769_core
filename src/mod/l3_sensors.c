@@ -100,15 +100,8 @@ void sen_main() {
 bool ReadSHT30Async();
 
 void SenReadAllValues() {
-//	sensor_values_t values;
-//	values.SupplyCurrentBoard = AdcReadChannelResult(0);
-//	values.SupplyCurrentSidepanels = AdcReadChannelResult(1);
-//	values.Temperature = AdcReadChannelResult(2);
-//	values.SupplyVoltage =  AdcReadChannelResult(3);
 	ReadSHT30Async();
 }
-
-
 
 bool ReadSHT30Async() {
 	if (readInProgress) {

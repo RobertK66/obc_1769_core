@@ -185,7 +185,9 @@ static uint8_t		tempRxTxData[6][C_MAX_MRAMRECORD_SIZE];	// Data Area available p
 static uint8_t		tempChipFinishedOk;
 static uint8_t		tempChipFinishedError;
 static uint8_t		page0NeedsUpdate = 0;
+static uint8_t		page0BusyWrite = 0;
 static int8_t		page0ValidCount = 0;
+//static uint8_t		curPage0ChipIdx = 0;
 
 
 #define MEM_WRITE_PAGE0(mask) { \
@@ -293,9 +295,15 @@ void memMain(void) {
 	if (page0NeedsUpdate != 0x00) {
 		uint8_t mask=0x01;
 		for (int chipIdx=0;chipIdx<6;chipIdx++) {
-			if (page0NeedsUpdate & mask) {
+			// Only (re-initiate) Write if not already busy with it!
+			if ((page0NeedsUpdate & mask) && !(page0BusyWrite & mask)) {
+				page0BusyWrite |= mask;
 				MramWriteAsync(chipIdx, 0, (uint8_t*)&page0, sizeof(mem_page0_t), memPage0Updated);
 			}
+			mask <<= 1;
+			// TODO Check timeout if busyWrite does not go away....
+			// Bug: Currently after reset chip 0-2 do not get the memPage0Updated callback correctly
+			//
 		}
 	}
 	if (block0NeedsUpdate) {
@@ -304,6 +312,7 @@ void memMain(void) {
 	}
 	if (tempChipFinishedOk == 0x3F) {
 		tempChipFinishedOk = 0x00;
+		memWaitLoops = 1000;
 		channelStatus.ChannelAvailble |= 0x03F;
 		// all MRAM page0 reads where successful now
 		if (page0ValidCount >= 1) {
@@ -340,7 +349,13 @@ void memMain(void) {
 		uint32_t epochRtc = timGetResetNumber();
 		if (epochRtc > page0.resetCount) {
 			page0.resetCount = epochRtc;
-			MEM_WRITE_PAGE0(0x3F);
+			MEM_WRITE_PAGE0(0x07);		// TODO: write oage0 to all 6 chips at once makes DMA error
+			                            // Write is executed but IRQ for finishing is only detected for SSP1
+			                            // SSP0 stays in idle and SSP buffer gets stuck
+
+										// Workaround: when only one SSP is used here to write the reset counter. Next reset detects 6
+			                            // valid blocks but only the 3 with higher rest count survive -> 3 others are corrected -> so both SSP
+			                            // stay alive with this WORKAROUND.
 		} else {
 			// If rtc had lower or no epoch number we use the one we got from mram now.
 			timSetResetNumber(page0.resetCount);
@@ -353,6 +368,7 @@ void memPage0Updated(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *
 
 	if (result == MRAM_RES_SUCCESS) {
 		page0NeedsUpdate &= chipMask;
+		page0BusyWrite |= (0x01 << chipIdx);
 	} else {
 		// TODO:?? retry counter / timeouts ....
 	}
