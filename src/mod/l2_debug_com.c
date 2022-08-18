@@ -24,7 +24,7 @@ The escaped data is Xored by 0x20.
 
 #define DEB_L2_TX_FRAMESTARTSTOP	0x7E
 #define DEB_L2_TX_FRAMEESCAPE		0x7D
-#define DEB_L2_TX_BUFFER_SIZE		 600
+#define DEB_L2_TX_BUFFER_SIZE		1600
 
 #define DEB_EOL_CHAR				0x0a
 

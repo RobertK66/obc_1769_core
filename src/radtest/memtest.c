@@ -8,12 +8,12 @@
 #ifndef RADTEST_MRAMTESTS_C_
 #define RADTEST_MRAMTESTS_C_
 
-#define RADTST_SEQ_READCHECKS_SECONDS				 15			// Initiate all read checks every n seconds
+#define RADTST_SEQ_READCHECKS_SECONDS				 8			// Initiate all read checks every n seconds
 #define RADTST_SEQ_WRITECHECKS_SECONDS				 60			// Initiate all write checks every n seconds
-#define RADTST_SEQ_COUNTERPRINT_SECONDS				120			// Initiate printout of current counters/errors
+#define RADTST_SEQ_COUNTERPRINT_SECONDS				 20			// Initiate printout of current counters/errors
 
 #define RADTST_MRAM_TARGET_PAGESIZE		MRAM_MAX_WRITE_SIZE			// 1k pages ->
-#define RADTST_MRAM_TARGET_PAGES		3 							//(128 * 1024) / MRAM_MAX_WRITE_SIZE		// 128k available
+#define RADTST_MRAM_TARGET_PAGES		127							//(128 * 1024) / MRAM_MAX_WRITE_SIZE		// 128k available
 #define RADTST_MRAM_TARGET_OFFSET		100                         // Start of target memory with offset 100 to keep page 0 untouched
 
 
@@ -94,7 +94,8 @@ static int      chipsToFinishWrite = 0;
 static int      currentReadChip = -1;
 static int      chipsToFinishRead = 0;
 static uint8_t 	curPage[MRAM_CHIP_CNT];
-static uint8_t	pageBuffer[MRAM_CHIP_CNT][RADTST_MRAM_TARGET_PAGESIZE + 4];
+static uint8_t	pageWriteBuffer[MRAM_CHIP_CNT][RADTST_MRAM_TARGET_PAGESIZE + 4];
+static uint8_t	pageReadBuffer[MRAM_CHIP_CNT][RADTST_MRAM_TARGET_PAGESIZE + 4];
 
 static char     message[100];
 
@@ -129,6 +130,7 @@ void rtst_memtesttick(void) {
 			expectedPagePatternsPtr = &expectedPagePatternsSeq[0];
 		}
 		readEnabled.mram = false;			// Disable all read checks until wirites are done
+		currentReadChip = -1;
 		readEnabled.prgFlash = false;
 		readEnabled.ram2 = false;
 		readEnabled.rtcGpr = false;
@@ -145,9 +147,9 @@ void rtst_memtesttick(void) {
 		// Write current test page chip at position offset + pagenr*pagesize
 		uint8_t expByte = expectedPagePatternsPtr[curPage[currentWriteChip] % RADTST_EXPECTED_PATTERN_CNT];
 		for (int x =0; x < RADTST_MRAM_TARGET_PAGESIZE; x++) {
-			pageBuffer[currentWriteChip][x] = expByte;
+			pageWriteBuffer[currentWriteChip][x] = expByte;
 		}
-		MramWriteAsync(currentWriteChip,RADTST_MRAM_TARGET_OFFSET + curPage[currentWriteChip] * RADTST_MRAM_TARGET_PAGESIZE, pageBuffer[currentWriteChip], RADTST_MRAM_TARGET_PAGESIZE, RadWriteMramFinished);
+		MramWriteAsync(currentWriteChip,RADTST_MRAM_TARGET_OFFSET + curPage[currentWriteChip] * RADTST_MRAM_TARGET_PAGESIZE, pageWriteBuffer[currentWriteChip], RADTST_MRAM_TARGET_PAGESIZE, RadWriteMramFinished);
 		currentWriteChip++;	// Wait one tick for next chip.
 		if (currentWriteChip >= MRAM_CHIP_CNT) {
 			currentWriteChip = -1;
@@ -160,13 +162,13 @@ void rtst_memtesttick(void) {
 			}
 			currentReadChip = 0;
 			chipsToFinishRead = 6;
-//			uint8_t len = snprintf(message, 100, "Init MRAM Write.\n");
-//			deb_print_pure_debug((uint8_t *)message, len);
+			uint8_t len = snprintf(message, 100, "Init MRAM Read.\n");
+			deb_print_pure_debug((uint8_t *)message, len);
 		}
 	}
-	if (currentReadChip >=0) {
+	if ((currentReadChip >=0) && readEnabled.mram)  {
 		// Read the first page for this chip
-		MramReadAsync(currentReadChip,RADTST_MRAM_TARGET_OFFSET + curPage[currentReadChip] * RADTST_MRAM_TARGET_PAGESIZE, pageBuffer[currentReadChip], RADTST_MRAM_TARGET_PAGESIZE, RadReadMramFinished);
+		MramReadAsync(currentReadChip,RADTST_MRAM_TARGET_OFFSET + curPage[currentReadChip] * RADTST_MRAM_TARGET_PAGESIZE, pageReadBuffer[currentReadChip], RADTST_MRAM_TARGET_PAGESIZE, RadReadMramFinished);
 		currentReadChip++;	// Wait one tick for next chip.
 		if (currentReadChip >= MRAM_CHIP_CNT) {
 			currentReadChip = -1;
@@ -197,9 +199,9 @@ void RadWriteMramFinished(uint8_t chipIdx,mram_res_t result, uint32_t adr, uint8
 	if (curPage[chipIdx] < RADTST_MRAM_TARGET_PAGES) {
 		uint8_t expByte = expectedPagePatternsPtr[curPage[chipIdx] % RADTST_EXPECTED_PATTERN_CNT];
 		for (int x =0; x < RADTST_MRAM_TARGET_PAGESIZE; x++) {
-			pageBuffer[chipIdx][x] = expByte;
+			pageWriteBuffer[chipIdx][x] = expByte;
 		}
-		MramWriteAsync(chipIdx, RADTST_MRAM_TARGET_OFFSET + (curPage[chipIdx] * RADTST_MRAM_TARGET_PAGESIZE), pageBuffer[chipIdx], RADTST_MRAM_TARGET_PAGESIZE, RadWriteMramFinished );
+		MramWriteAsync(chipIdx, RADTST_MRAM_TARGET_OFFSET + (curPage[chipIdx] * RADTST_MRAM_TARGET_PAGESIZE), pageWriteBuffer[chipIdx], RADTST_MRAM_TARGET_PAGESIZE, RadWriteMramFinished );
 	} else {
 		// All pages written restart. Wait until all chips are finished and then ...
 		chipsToFinishWrite--;
@@ -213,13 +215,19 @@ void RadWriteMramFinished(uint8_t chipIdx,mram_res_t result, uint32_t adr, uint8
 }
 
 void CheckPageContent(uint8_t chipIdx, uint8_t *data, uint32_t len, uint8_t expByte, uint32_t *errorCnt) {
+	int logCnt = 0;
 	for (int x =0; x < len; x++) {
 		if (data[x] != expByte) {
 			(*errorCnt)++;		// TODO count really the bits here !?
 
-			// The following can be very verbose. Shall we really do it!?
-			uint8_t len = snprintf(message, 100, "Bit Error; %d; %d; %d; \n", chipIdx, curPage[chipIdx], x);
-			deb_print_pure_debug((uint8_t *)message, len);
+			logCnt++;
+			if (logCnt<5) {
+				// The following can be very verbose. Shall we really do it!?
+				uint8_t len = snprintf(message, 100, "Bit Error; %d; %d; %d; \n", chipIdx, curPage[chipIdx], x);
+				deb_print_pure_debug((uint8_t *)message, len);
+			} else if (logCnt<200 ) {
+				deb_print_pure_debug((uint8_t *)".", 1);
+			}
 		}
 	}
 }
@@ -232,24 +240,28 @@ void RadReadMramFinished(uint8_t chipIdx,mram_res_t result, uint32_t adr, uint8_
 		radtstCounter.mramPageReadError[chipIdx]++;
 	}
 
-	uint8_t expByte = expectedPagePatternsPtr[curPage[chipIdx] % RADTST_EXPECTED_PATTERN_CNT];
-	// Check read result for bit errors
-	CheckPageContent(chipIdx, data, len, expByte, &radtstCounter.mramPageReadBitError[chipIdx]);
+	if (readEnabled.mram) {
+		uint8_t expByte = expectedPagePatternsPtr[curPage[chipIdx] % RADTST_EXPECTED_PATTERN_CNT];
+		// Check read result for bit errors
+		CheckPageContent(chipIdx, data, len, expByte, &radtstCounter.mramPageReadBitError[chipIdx]);
 
-
-
-	// read next page for this chip
-	curPage[chipIdx]++;
-	if (curPage[chipIdx] < RADTST_MRAM_TARGET_PAGES) {
-		MramReadAsync(chipIdx,RADTST_MRAM_TARGET_OFFSET + curPage[chipIdx] * RADTST_MRAM_TARGET_PAGESIZE, pageBuffer[chipIdx], RADTST_MRAM_TARGET_PAGESIZE, RadReadMramFinished);
-	} else {
-		// This chip has read all pages
-		chipsToFinishRead--;
-		if (chipsToFinishRead == 0) {
-			uint8_t len = snprintf(message, 100, "MRAM read done.\n");
-			deb_print_pure_debug((uint8_t *)message, len);
+		// read next page for this chip
+		curPage[chipIdx]++;
+		if (curPage[chipIdx] < RADTST_MRAM_TARGET_PAGES) {
+			MramReadAsync(chipIdx,RADTST_MRAM_TARGET_OFFSET + curPage[chipIdx] * RADTST_MRAM_TARGET_PAGESIZE, pageReadBuffer[chipIdx], RADTST_MRAM_TARGET_PAGESIZE, RadReadMramFinished);
+		} else {
+			// This chip has read all pages
+			chipsToFinishRead--;
+			if (chipsToFinishRead == 0) {
+				uint8_t len = snprintf(message, 100, "MRAM read done.\n");
+				deb_print_pure_debug((uint8_t *)message, len);
+			}
 		}
-	}
+    } else {
+    	chipsToFinishRead = 0;
+    	uint8_t len = snprintf(message, 100, "MRAM read interrupted.\n");
+    	deb_print_pure_debug((uint8_t *)message, len);
+    }
 }
 
 #endif /* RADTEST_MRAMTESTS_C_ */

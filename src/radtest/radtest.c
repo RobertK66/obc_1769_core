@@ -23,10 +23,10 @@
 
 
 #define 			RTST_TICK_MS				1000			// IRQ every second.
-#define 			RTST_HEARTBEAT_TICKS		  60			// Heartbeat (aka Logbery watchdog) timing as in radtest1 60 sec.
+#define 			RTST_HEARTBEAT_TICKS		  6 			// Heartbeat (aka Logbery watchdog) timing as in radtest1 60 sec.
 #define				RTST_MEMTST_TICKS			  1				// different tick timers are handled in memtest.c -> tick every second here.
-#define				RTST_SENSOR_TICKS			  30			// I2C internal sensor ticks every 10 sec
-#define				RTST_RS485_TICKS			  150			// ...
+#define				RTST_SENSOR_TICKS			  7	  		    // I2C internal sensor ticks every 10 sec
+#define				RTST_RS485_TICKS			  9			    // ...
 
 
 static LPC_TIMER_T  *RtstTimerPtr = 0;
