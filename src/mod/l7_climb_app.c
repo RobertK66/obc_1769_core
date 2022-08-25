@@ -13,6 +13,7 @@
 #include "l2_debug_com.h"
 #include <mod/ado_mram.h>
 #include <mod/ado_sdcard.h>
+#include <ado_crc.h>
 
 #include "mem/obc_memory.h"
 #include "tim/obc_time.h"
@@ -124,8 +125,6 @@ void app_main (void) {
 
 }
 
-#define RADTEST_STRINGSONLY
-
 // Defining this function here (or somewhere) is overwriting the week (and empty!) implementation from ado_modules.h(!)
 // _SysEvent is the global event handler where all events raised by all modules (SYS_EVENT(...)) will arrive.
 // The only thing available is the eventId and the raw data. To interpret the contents you have to know (by knowing the hopefully
@@ -138,13 +137,8 @@ void app_main (void) {
 // a 'Layer3' protocol to handle this (At this moment there is a simple protocol used which has a Start-EndFrame (0x7E) token and escapes any occurrences of
 // 0x7E and 0x7D in the data by using 0x7D as Escape token).
 void _SysEvent(event_t event) {
-#ifdef RADTEST_STRINGSONLY
-	// For the radtest lets the radtest decide which event should be treated how....
-	rtst_eventoutput(event);
-#else
 	// send all events to umbilical UART as debug frames
 	deb_sendEventFrame(event.id, event.data, event.byteCnt);
-#endif
 
 	if ( (event.id.severity == EVENT_ERROR) || (event.id.severity == EVENT_FATAL)) {
 		climbErrorCounter++;
@@ -441,4 +435,5 @@ void GetFullTimeCmd(int argc, char *argv[]) {
 	obc_utc_fulltime_t ft = timGetUTCTime();
 	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_FULLTIMEINFO, &ft, sizeof(ft));
 }
+
 

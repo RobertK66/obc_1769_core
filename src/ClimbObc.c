@@ -27,7 +27,7 @@
 #include "mod/mem/obc_memory.h"
 #include "mod/l7_climb_app.h"
 
-#include "radtest/radtest.h"
+//#include "radtest/radtest.h"
 #include "mod/thr/thr.h"
 #include "mod/l4_thruster.h"
 
@@ -87,9 +87,9 @@ static thr_initdata_t ThrInit = {
 //#define WBUS_CNT (sizeof(WBuses)/sizeof(ado_wbus_config_t))
 
 // Lets use timer1 for our radiation tests.
-static rtst_initdata_t RadtestInit = {
-		LPC_TIMER1
-};
+//static rtst_initdata_t RadtestInit = {
+//		LPC_TIMER1
+//};
 
 static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( deb_init, deb_main, LPC_UART2),
@@ -101,7 +101,7 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( memInit, memMain, &MemoryInit),
 		MOD_INIT( gpsInit, gpsMain, &GpsInit),
 		MOD_INIT( app_init, app_main, NULL),
-		MOD_INIT( rtst_init, rtst_main, &RadtestInit),
+		// MOD_INIT( rtst_init, rtst_main, &RadtestInit),
 		MOD_INIT( thrInit, thrMain, &ThrInit),
 		MOD_INIT( l4_thruster_init, l4_thruster_main, NULL)
 

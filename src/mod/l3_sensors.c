@@ -82,12 +82,12 @@ void sen_main() {
 
 			if (readJob.error == I2C_ERROR_NO_ERROR) {
 				uint16_t value = ((uint16_t)readRx[0] << 8) + (uint16_t)readRx[1];
-				uint8_t  crc = CRC8(readRx, 2);
+				uint8_t  crc = CRC8_NRSC5(readRx, 2);
 				if (crc == readRx[2]) {
 					senValues.TempSHT30 = convertTemperatureSHT30(value);
 				}
 				value = ((uint16_t)readRx[3] << 8) + (uint16_t)readRx[4];
-				crc = CRC8(&readRx[3], 2);
+				crc = CRC8_NRSC5(&readRx[3], 2);
 				if (crc == readRx[5]) {
 					senValues.HumidityPercent = convertHumidity(value);
 				}

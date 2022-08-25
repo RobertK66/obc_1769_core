@@ -35,7 +35,7 @@
 
 
 
-uint8_t CRC8_thruster(uint8_t* str, size_t length);
+// uint8_t CRC8_thruster(uint8_t* str, size_t length);
 
 
 // Conversion multipliers are factors used to transform input variable to an uint16_t value needed to be stored/read in/from THRUSTER REGISTER MAP.
@@ -258,7 +258,7 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 	// remember that when checksum is set - byte corresponding to checksum should be 0.
 	// need to set byte corresponding to checksum to 0 before calculating checksumm. Received checksum is already stored
 	received_buffer[3] = 0x00;
-	uint8_t calculated_checksum = CRC8_thruster(received_buffer, 6+uint16_payload_length); // length of an actual message is header (6) + payload length
+	uint8_t calculated_checksum = CRC8(received_buffer, 6+uint16_payload_length); // length of an actual message is header (6) + payload length
 	//printf("\n Calculated checksum %00x ",calculated_checksum);
 
 	if (calculated_checksum == received_checksum){
@@ -499,7 +499,7 @@ void GeneralSetRequest(int argc, char *argv[]){
 		request[8] = (value >> 8) & 0xff;
 	}
 
-	request[3] = CRC8_thruster(request, len); // calculate checksum after whole request array is sent
+	request[3] = CRC8(request, len); // calculate checksum after whole request array is sent
 	l4_thr_ExpectedReceiveBuffer = 6;// change expected receive buffer accordingly
 	thrSendBytes(request, len);
 }
@@ -528,8 +528,7 @@ void GeneralReadRequest(int argc, char *argv[]){
 		request[7]= length_of_register;
 
 		uint8_t len = sizeof(request);
-		//request[3] = CRC8_thruster(request,len);
-		request[3] = CRC8_thruster(request, len);
+		request[3] = CRC8(request, len);
 
 		// Reply is n bytes long.
 		//Therefore we set global variable that should be used to process the RX buffer to corresponding length.
@@ -542,27 +541,27 @@ void GeneralReadRequest(int argc, char *argv[]){
 }
 
 
-
-// This will be moved to ado lib later. see https://github.com/RobertK66/ado-chip-175x-6x/issues/25
-/* Update CRC8 Checksum */
-void c_CRC8(char data, uint8_t *checksum)
-{
-    uint8_t i;
-    *checksum ^= data;
-
-    for (i = 0; i < 8; ++i)
-    {
-        *checksum = (*checksum << 1) ^ ((*checksum & 0x80) ? 0x07 : 0x00);
-    }
-}
-
-/* Compute CRC8 (binary String) */
-uint8_t CRC8_thruster(uint8_t* str, size_t length)
-{
-    uint8_t checksum = 0;
-
-    for (; length--; c_CRC8(*str++, &checksum))
-        ;
-
-    return checksum;
-}
+//
+//// This will be moved to ado lib later. see https://github.com/RobertK66/ado-chip-175x-6x/issues/25
+///* Update CRC8 Checksum */
+//void c_CRC8(char data, uint8_t *checksum)
+//{
+//    uint8_t i;
+//    *checksum ^= data;
+//
+//    for (i = 0; i < 8; ++i)
+//    {
+//        *checksum = (*checksum << 1) ^ ((*checksum & 0x80) ? 0x07 : 0x00);
+//    }
+//}
+//
+///* Compute CRC8 (binary String) */
+//uint8_t CRC8_thruster(uint8_t* str, size_t length)
+//{
+//    uint8_t checksum = 0;
+//
+//    for (; length--; c_CRC8(*str++, &checksum))
+//        ;
+//
+//    return checksum;
+//}
