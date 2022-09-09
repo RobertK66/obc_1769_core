@@ -35,7 +35,10 @@
 
 #include "tim/obc_time.h"
 
+void ThrusterFire(int argc, char *argv[]);
 
+uint32_t THRUSTER_FIRE_BEGGIN_TIME; // global variable to indicate beginning of thruster fire
+bool THRUSTER_FIRING_STATUS;
 
 // uint8_t CRC8_thruster(uint8_t* str, size_t length);
 
@@ -138,6 +141,9 @@ void l4_thruster_init (void *dummy) {
 //	char* testvar = "hello thruster";
 //	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, testvar, strlen(testvar));
 
+
+	THRUSTER_FIRING_STATUS = false;
+
 }
 
 void l4_thruster_main (void) {
@@ -153,6 +159,10 @@ void l4_thruster_main (void) {
 	//sprintf(print_str, "t = %d \n", timestamp);
 	//uint8_t len = strlen(print_str);
 	//deb_print_pure_debug((uint8_t *)print_str, len);
+
+	char *arrgc[1];
+	arrgc[0]= "5000";
+	//ThrusterFire(1, arrgc);
 
 
 }
@@ -555,6 +565,54 @@ void GeneralReadRequest(int argc, char *argv[]){
 		LATEST_ACCESSED_REGISTER = access_register;
 }
 
+
+void ThrusterFire(int argc, char *argv[]){
+	// thruster fire sequence
+
+	uint32_t fire_duration = atoi(argv[1]); //fire duration in ms
+	uint32_t now_timestamp = (uint32_t)timGetSystime();
+	uint32_t fire_start_timestamp;
+
+	char print_str[20];
+	uint8_t len;
+
+	if (!THRUSTER_FIRING_STATUS){
+		fire_start_timestamp = (uint32_t)timGetSystime();
+		THRUSTER_FIRING_STATUS = true;
+
+		//TODO change registers to firing state
+
+
+	}
+
+	if(THRUSTER_FIRING_STATUS){
+
+		if ( (now_timestamp - fire_start_timestamp) <= fire_duration ){
+
+			//do nothing // or implement monitoring proccedure
+			sprintf(print_str, "FIRE t = %d \n", now_timestamp);
+			len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, len);
+
+		}
+
+		else{
+			// TODO Implement stop fire requence
+			sprintf(print_str, "STOP FIRE SEQUENCE \n");
+			len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, len);
+
+			THRUSTER_FIRING_STATUS = false;
+		}
+
+	}
+
+
+
+
+
+
+}
 
 //
 //// This will be moved to ado lib later. see https://github.com/RobertK66/ado-chip-175x-6x/issues/25
