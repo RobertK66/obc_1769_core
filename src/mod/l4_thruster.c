@@ -35,10 +35,12 @@
 
 #include "tim/obc_time.h"
 
-void ThrusterFire(int argc, char *argv[]);
 
-uint32_t THRUSTER_FIRE_BEGGIN_TIME; // global variable to indicate beginning of thruster fire
+
+//uint32_t THRUSTER_FIRE_BEGGIN_TIME; // global variable to indicate beginning of thruster fire
 bool THRUSTER_FIRING_STATUS;
+uint32_t THR_FIRE_DURATION;
+uint32_t THR_FIRE_START_TIMESTAMP;
 
 // uint8_t CRC8_thruster(uint8_t* str, size_t length);
 
@@ -143,6 +145,8 @@ void l4_thruster_init (void *dummy) {
 
 
 	THRUSTER_FIRING_STATUS = false;
+	THR_FIRE_DURATION= 0;
+	THR_FIRE_START_TIMESTAMP =0;
 
 }
 
@@ -160,9 +164,11 @@ void l4_thruster_main (void) {
 	//uint8_t len = strlen(print_str);
 	//deb_print_pure_debug((uint8_t *)print_str, len);
 
-	char *arrgc[1];
-	arrgc[0]= "5000";
-	//ThrusterFire(1, arrgc);
+	if (THRUSTER_FIRING_STATUS){
+		thr_fire_exe();
+
+	}
+
 
 
 }
@@ -566,16 +572,18 @@ void GeneralReadRequest(int argc, char *argv[]){
 }
 
 
-void ThrusterFire(int argc, char *argv[]){
+void thr_fire_exe(){
 	// thruster fire sequence
-
-	uint32_t fire_duration = atoi(argv[1]); //fire duration in ms
 	uint32_t now_timestamp = (uint32_t)timGetSystime();
-	uint32_t fire_start_timestamp;
+	//uint32_t fire_start_timestamp;
 
 	char print_str[20];
 	uint8_t len;
 
+	//sprintf(print_str, "DEBUG BEGIN FIRE t = %d \n", now_timestamp);
+	//len = strlen(print_str);
+	//deb_print_pure_debug((uint8_t *)print_str, len);
+	/*
 	if (!THRUSTER_FIRING_STATUS){
 		fire_start_timestamp = (uint32_t)timGetSystime();
 		THRUSTER_FIRING_STATUS = true;
@@ -584,25 +592,27 @@ void ThrusterFire(int argc, char *argv[]){
 
 
 	}
+	*/
 
 	if(THRUSTER_FIRING_STATUS){
 
-		if ( (now_timestamp - fire_start_timestamp) <= fire_duration ){
+		if ( (now_timestamp - THR_FIRE_START_TIMESTAMP) <= THR_FIRE_DURATION ){
 
 			//do nothing // or implement monitoring proccedure
-			sprintf(print_str, "FIRE t = %d \n", now_timestamp);
-			len = strlen(print_str);
-			deb_print_pure_debug((uint8_t *)print_str, len);
+			//sprintf(print_str, "FIRE t = %d \n", now_timestamp);
+			//len = strlen(print_str);
+			//deb_print_pure_debug((uint8_t *)print_str, len);
 
 		}
 
 		else{
 			// TODO Implement stop fire requence
-			sprintf(print_str, "STOP FIRE SEQUENCE \n");
+			sprintf(print_str, "STOP t = %d\n", now_timestamp);
 			len = strlen(print_str);
 			deb_print_pure_debug((uint8_t *)print_str, len);
 
 			THRUSTER_FIRING_STATUS = false;
+			//THR_FIRE_DURATION = 0;
 		}
 
 	}
@@ -614,27 +624,18 @@ void ThrusterFire(int argc, char *argv[]){
 
 }
 
-//
-//// This will be moved to ado lib later. see https://github.com/RobertK66/ado-chip-175x-6x/issues/25
-///* Update CRC8 Checksum */
-//void c_CRC8(char data, uint8_t *checksum)
-//{
-//    uint8_t i;
-//    *checksum ^= data;
-//
-//    for (i = 0; i < 8; ++i)
-//    {
-//        *checksum = (*checksum << 1) ^ ((*checksum & 0x80) ? 0x07 : 0x00);
-//    }
-//}
-//
-///* Compute CRC8 (binary String) */
-//uint8_t CRC8_thruster(uint8_t* str, size_t length)
-//{
-//    uint8_t checksum = 0;
-//
-//    for (; length--; c_CRC8(*str++, &checksum))
-//        ;
-//
-//    return checksum;
-//}
+
+void thr_fire_cmd(int argc, char *argv[]){
+
+
+	THRUSTER_FIRING_STATUS = true;
+	THR_FIRE_DURATION = atoi(argv[1]);
+	THR_FIRE_START_TIMESTAMP = (uint32_t)timGetSystime();
+
+	char print_str[20];
+	uint8_t len;
+	sprintf(print_str, "FIRE BEGIN  t = %d \n", THR_FIRE_START_TIMESTAMP);
+	len = strlen(print_str);
+	deb_print_pure_debug((uint8_t *)print_str, len);
+
+}

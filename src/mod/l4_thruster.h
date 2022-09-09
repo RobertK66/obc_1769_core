@@ -52,6 +52,16 @@ void GeneralSetRequest(int argc, char *argv[]);
 void GeneralReadRequest(int argc, char *argv[]);
 void ParseReadRequest(uint8_t* received_buffer,int len);
 
+//Thruster sequences
+void thr_fire_cmd(int argc, char *argv[]);
+void thr_fire_exe();
+
+// Thruster operational registors
+extern bool THRUSTER_FIRING_STATUS;
+extern uint32_t THR_FIRE_DURATION;
+extern uint32_t THR_FIRE_START_TIMESTAMP;
+
+
 typedef struct thr_variables_t{
 
 	// Structure is declared if we ever intend to store register values as a user friendly name
