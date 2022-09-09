@@ -33,6 +33,8 @@
 #include "tim/climb_gps.h"
 #include "thr/thr.h"
 
+#include "tim/obc_time.h"
+
 
 
 // uint8_t CRC8_thruster(uint8_t* str, size_t length);
@@ -143,6 +145,14 @@ void l4_thruster_main (void) {
 	// TODO : I am not sure what to do here.
 	// Leaving it for now so that l4_thruster_module can be
 	// Initialised according as all other modules
+
+
+	// this way we obtain time ms time ticks
+	//obc_systime32_t timestamp= 	timGetSystime();
+	//char print_str[20];
+	//sprintf(print_str, "t = %d \n", timestamp);
+	//uint8_t len = strlen(print_str);
+	//deb_print_pure_debug((uint8_t *)print_str, len);
 
 
 }
@@ -343,6 +353,11 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 		for(int i=0;i<uint16_payload_length;i++){
 
 			//printf("\n i=%d",i);
+			char print_str[10];
+			sprintf(print_str, "i = %d \n", i);
+			uint8_t len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, len);
+
 			if(length_of_next_register ==1){
 
 				//printf("\n-1------------------Next Register Index = %d",next_register_index);
