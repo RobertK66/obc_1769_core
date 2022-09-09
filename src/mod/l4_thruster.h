@@ -60,6 +60,7 @@ void thr_fire_exe();
 extern bool THRUSTER_FIRING_STATUS;
 extern uint32_t THR_FIRE_DURATION;
 extern uint32_t THR_FIRE_START_TIMESTAMP;
+extern bool THRUSTER_FIRE_FIRST_TIME;
 
 
 typedef struct thr_variables_t{

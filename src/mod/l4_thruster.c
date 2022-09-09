@@ -37,10 +37,11 @@
 
 
 
-//uint32_t THRUSTER_FIRE_BEGGIN_TIME; // global variable to indicate beginning of thruster fire
+// THRUSTER FIRING SEQUENCE OPERATION REGISTORS
 bool THRUSTER_FIRING_STATUS;
 uint32_t THR_FIRE_DURATION;
 uint32_t THR_FIRE_START_TIMESTAMP;
+bool THRUSTER_FIRE_FIRST_TIME;
 
 // uint8_t CRC8_thruster(uint8_t* str, size_t length);
 
@@ -144,9 +145,11 @@ void l4_thruster_init (void *dummy) {
 //	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, testvar, strlen(testvar));
 
 
+	// Initialize Thruster Firing sequence operational registers
 	THRUSTER_FIRING_STATUS = false;
 	THR_FIRE_DURATION= 0;
 	THR_FIRE_START_TIMESTAMP =0;
+	THRUSTER_FIRE_FIRST_TIME = true;
 
 }
 
@@ -580,33 +583,26 @@ void thr_fire_exe(){
 	char print_str[20];
 	uint8_t len;
 
-	//sprintf(print_str, "DEBUG BEGIN FIRE t = %d \n", now_timestamp);
-	//len = strlen(print_str);
-	//deb_print_pure_debug((uint8_t *)print_str, len);
-	/*
-	if (!THRUSTER_FIRING_STATUS){
-		fire_start_timestamp = (uint32_t)timGetSystime();
-		THRUSTER_FIRING_STATUS = true;
 
-		//TODO change registers to firing state
+	if(THRUSTER_FIRE_FIRST_TIME){
+		// TODO implement start fire procedure
+		sprintf(print_str, "FIRE BEGIN  t = %d \n", THR_FIRE_START_TIMESTAMP);
+		len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len);
 
-
+		THRUSTER_FIRE_FIRST_TIME = false;
 	}
-	*/
 
 	if(THRUSTER_FIRING_STATUS){
 
 		if ( (now_timestamp - THR_FIRE_START_TIMESTAMP) <= THR_FIRE_DURATION ){
 
-			//do nothing // or implement monitoring proccedure
-			//sprintf(print_str, "FIRE t = %d \n", now_timestamp);
-			//len = strlen(print_str);
-			//deb_print_pure_debug((uint8_t *)print_str, len);
+			//do nothing // or implement monitoring procedure
 
 		}
 
 		else{
-			// TODO Implement stop fire requence
+			// TODO Implement stop fire procedure
 			sprintf(print_str, "STOP t = %d\n", now_timestamp);
 			len = strlen(print_str);
 			deb_print_pure_debug((uint8_t *)print_str, len);
@@ -626,16 +622,17 @@ void thr_fire_exe(){
 
 
 void thr_fire_cmd(int argc, char *argv[]){
+	// This function will triger execution of thr_fire_exe()
+	// inside l4_main()
+	// until stopping condition is reached.
+	// Stopping condition is defined in thr_fire_exe()
 
+	// THIS FUNCTION IS MENT TO BE JUST A TRIGGER THAT LAUNCHES EXECUTION FUNCTION
 
 	THRUSTER_FIRING_STATUS = true;
+	THRUSTER_FIRE_FIRST_TIME = true;
 	THR_FIRE_DURATION = atoi(argv[1]);
 	THR_FIRE_START_TIMESTAMP = (uint32_t)timGetSystime();
 
-	char print_str[20];
-	uint8_t len;
-	sprintf(print_str, "FIRE BEGIN  t = %d \n", THR_FIRE_START_TIMESTAMP);
-	len = strlen(print_str);
-	deb_print_pure_debug((uint8_t *)print_str, len);
 
 }
