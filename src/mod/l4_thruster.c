@@ -51,6 +51,7 @@ uint16_t THR_EXECUTION_INDEX;
 uint32_t THR_SEQUENCE_EXECUTION_BEGIN;
 uint32_t THR_SEQUENCE_EXECUTION_STAGE;
 uint16_t THR_SEQUENCE_LENGTH;
+uint8_t THR_PROCEDURE_ID;
 
 void thr_wait(int argc, char *argv[]);
 void GeneralSetRequest_sequence(int argc, char *argv[]);
@@ -70,6 +71,7 @@ thr_sequences_t THR_SEQUENCES[MAX_EXECUTION_SEQUENCE_DEPTH]; // array of argv fo
 
 typedef struct {
 	thr_sequences_t *sequences;
+	uint8_t length;
 
 }thr_hardcoded_sequences_t;
 thr_hardcoded_sequences_t THR_HARDCODED_SEQUENCES[5];
@@ -201,7 +203,6 @@ void l4_thruster_init (void *dummy) {
 	//THR_EXECUTION_SEQUENCE[11] = thr_wait; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
 	//THR_EXECUTION_SEQUENCE[12] = thr_void; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
 
-	THR_SEQUENCE_LENGTH = 12; // MANUALLY DEFINE LENGTH OF SEQUENCE // NOTE : SEQUENCE LENGTH IS MAXIMUM INDEX OF THR_EXECUTION_SEQUENCE ARRAY
 
 
 	char *wait_between_stages_str ="10000";
@@ -264,13 +265,13 @@ void l4_thruster_init (void *dummy) {
 	THR_SEQUENCES[8].thr_argv[2]= "2250";
 
 	//10 wait
-	THR_SEQUENCES[9].function = GeneralSetRequest_sequence;
+	THR_SEQUENCES[9].function = thr_wait;
 	THR_SEQUENCES[9].thr_argv[0]= wait_between_stages_str;
 	THR_SEQUENCES[9].thr_argv[1]= "0";
 	THR_SEQUENCES[9].thr_argv[2]= "0";
 
 	//11 READ
-	THR_SEQUENCES[10].function = GeneralSetRequest_sequence;
+	THR_SEQUENCES[10].function = GeneralReadRequest_sequence;
 	THR_SEQUENCES[10].thr_argv[0]= "6";
 	THR_SEQUENCES[10].thr_argv[1]= "20";
 	THR_SEQUENCES[10].thr_argv[2]= "0";
@@ -283,13 +284,14 @@ void l4_thruster_init (void *dummy) {
 
 	//12 void
 	THR_SEQUENCES[12].function = thr_void;
-	THR_SEQUENCES[12].thr_argv[0]= "5000";
-	THR_SEQUENCES[12].thr_argv[1]= "20";
+	THR_SEQUENCES[12].thr_argv[0]= "0";
+	THR_SEQUENCES[12].thr_argv[1]= "0";
 	THR_SEQUENCES[12].thr_argv[2]= "0";
 
 	THR_SEQUENCE_LENGTH = 12; // MANUALLY DEFINE LENGTH OF SEQUENCE // NOTE : SEQUENCE LENGTH IS MAXIMUM INDEX OF THR_EXECUTION_SEQUENCE ARRAY
 
 	THR_HARDCODED_SEQUENCES[0].sequences = THR_SEQUENCES; // save sequence
+	THR_HARDCODED_SEQUENCES[0].length = 12; // MANUALLY DEFINE LENGTH OF SEQUENCE //
 
 
 
@@ -811,6 +813,9 @@ void thr_execute_sequence_cmd(int argc, char *argv[]){
 
 	*/
 
+	uint8_t sequence_index = atoi(argv[1]);
+	THR_PROCEDURE_ID = sequence_index;
+
 
 	THR_SEQUENCE_TRIGGER = true;
 	THR_SEQUENCE_EXECUTION_BEGIN = (uint32_t)timGetSystime();
@@ -833,7 +838,7 @@ void thr_execute_sequence(){
 	 * THR_SEQUENCES array of argv to be input into THR_EXECUTION_SEQUENCE
 	 */
 
-	if (THR_EXECUTION_INDEX == THR_SEQUENCE_LENGTH){
+	if (THR_EXECUTION_INDEX == THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].length){
 		char print_str[200];
 		sprintf(print_str, "\nSequence complete\n");
 		int len = strlen(print_str);
@@ -847,8 +852,8 @@ void thr_execute_sequence(){
 
 		//f = THR_SEQUENCES[THR_EXECUTION_INDEX].function;
 		//f(3,THR_SEQUENCES[THR_EXECUTION_INDEX].thr_argv);
-		f = THR_HARDCODED_SEQUENCES[0].sequences[THR_EXECUTION_INDEX].function;
-		f(3,THR_HARDCODED_SEQUENCES[0].sequences[THR_EXECUTION_INDEX].thr_argv);
+		f = THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].sequences[THR_EXECUTION_INDEX].function;
+		f(3,THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].sequences[THR_EXECUTION_INDEX].thr_argv);
 	}
 
 
