@@ -53,18 +53,18 @@ void GeneralReadRequest(int argc, char *argv[]);
 void ParseReadRequest(uint8_t* received_buffer,int len);
 
 //Thruster sequences
-void thr_fire_cmd(int argc, char *argv[]);
-void thr_fire_exe();
+//void thr_fire_cmd(int argc, char *argv[]);
+//void thr_fire_exe();
 
 void thr_execute_sequence_cmd(int argc, char *argv[]);
 
 // Thruster operational registors
-extern bool THRUSTER_FIRING_STATUS;
-extern uint32_t THR_FIRE_DURATION;
-extern uint32_t THR_FIRE_START_TIMESTAMP;
-extern bool THRUSTER_FIRE_FIRST_TIME;
-extern uint16_t THR_FIRE_SI;
-extern uint16_t THR_FIRE_THRUST;
+//extern bool THRUSTER_FIRING_STATUS;
+//extern uint32_t THR_FIRE_DURATION;
+//extern uint32_t THR_FIRE_START_TIMESTAMP;
+//extern bool THRUSTER_FIRE_FIRST_TIME;
+//extern uint16_t THR_FIRE_SI;
+//extern uint16_t THR_FIRE_THRUST;
 
 
 typedef struct thr_variables_t{

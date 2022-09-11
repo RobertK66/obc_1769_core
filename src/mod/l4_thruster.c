@@ -38,13 +38,13 @@
 
 
 // THRUSTER FIRING SEQUENCE OPERATION REGISTORS
-bool THRUSTER_FIRING_STATUS;
-uint32_t THR_FIRE_DURATION;
-uint32_t THR_FIRE_START_TIMESTAMP;
-uint16_t THR_FIRE_SI;
-uint16_t THR_FIRE_THRUST;
-bool THRUSTER_FIRE_FIRST_TIME;
-uint32_t THR_EXECUTION_TIMESTAMP;
+//bool THRUSTER_FIRING_STATUS;
+//uint32_t THR_FIRE_DURATION;
+//uint32_t THR_FIRE_START_TIMESTAMP;
+//uint16_t THR_FIRE_SI;
+//uint16_t THR_FIRE_THRUST;
+//bool THRUSTER_FIRE_FIRST_TIME;
+//uint32_t THR_EXECUTION_TIMESTAMP;
 
 bool THR_SEQUENCE_TRIGGER;
 uint16_t THR_EXECUTION_INDEX;
@@ -54,6 +54,7 @@ uint16_t THR_SEQUENCE_LENGTH;
 
 void thr_wait(int argc, char *argv[]);
 void GeneralSetRequest_sequence(int argc, char *argv[]);
+void GeneralReadRequest_sequence(int argc, char *argv[]);
 void thr_execute_sequence();
 void thr_void(int argc, char *argv[]);
 //void thr_execute_sequence_cmd(int argc, char *argv[]);
@@ -167,11 +168,11 @@ void l4_thruster_init (void *dummy) {
 
 
 	// Initialize Thruster Firing sequence operational registers
-	THRUSTER_FIRING_STATUS = false;
-	THR_FIRE_DURATION= 0;
-	THR_FIRE_START_TIMESTAMP =0;
-	THRUSTER_FIRE_FIRST_TIME = true;
-	THR_EXECUTION_INDEX=0;
+	//THRUSTER_FIRING_STATUS = false;
+	//THR_FIRE_DURATION= 0;
+	//THR_FIRE_START_TIMESTAMP =0;
+	//THRUSTER_FIRE_FIRST_TIME = true;
+	//THR_EXECUTION_INDEX=0;
 
 
 
@@ -180,31 +181,93 @@ void l4_thruster_init (void *dummy) {
 
 	THR_EXECUTION_SEQUENCE[0] = GeneralSetRequest_sequence;
 	THR_EXECUTION_SEQUENCE[1] = thr_wait;
-	THR_EXECUTION_SEQUENCE[2] = GeneralSetRequest_sequence;
-	THR_EXECUTION_SEQUENCE[3] = thr_void; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
+	THR_EXECUTION_SEQUENCE[2] = GeneralReadRequest_sequence;
+	THR_EXECUTION_SEQUENCE[3] = thr_wait; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
+	THR_EXECUTION_SEQUENCE[4] = GeneralSetRequest_sequence; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
+	THR_EXECUTION_SEQUENCE[5] = thr_wait; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
+	THR_EXECUTION_SEQUENCE[6] = GeneralReadRequest_sequence; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
+	THR_EXECUTION_SEQUENCE[7] = thr_wait; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
+	THR_EXECUTION_SEQUENCE[8] = GeneralSetRequest_sequence; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
+	THR_EXECUTION_SEQUENCE[9] = thr_wait; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
+	THR_EXECUTION_SEQUENCE[10] = GeneralReadRequest_sequence; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
+	THR_EXECUTION_SEQUENCE[11] = thr_wait; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
+	THR_EXECUTION_SEQUENCE[12] = thr_void; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
 
-	THR_SEQUENCE_LENGTH = 3; // MANUALLY DEFINE LENGTH OF SEQUENCE // NOTE : SEQUENCE LENGTH IS MAXIMUM INDEX OF THR_EXECUTION_SEQUENCE ARRAY
+
+	THR_SEQUENCE_LENGTH = 12; // MANUALLY DEFINE LENGTH OF SEQUENCE // NOTE : SEQUENCE LENGTH IS MAXIMUM INDEX OF THR_EXECUTION_SEQUENCE ARRAY
 
 
-
+	char *wait_between_stages_str ="5000";
 
 
 	//Build argv array for execution sequence
-	// Wait 500 ms
+	//1 SET SI
 	THR_ARGV_SEQUENCE[0].thr_argv[0]= "7";
 	THR_ARGV_SEQUENCE[0].thr_argv[1]= "20";
 	THR_ARGV_SEQUENCE[0].thr_argv[2]= "1500";
 
 
-	// wait
-	THR_ARGV_SEQUENCE[1].thr_argv[0]= "1000";
+	//2 wait
+	THR_ARGV_SEQUENCE[1].thr_argv[0]= wait_between_stages_str;
 	THR_ARGV_SEQUENCE[1].thr_argv[1]= "0";
 	THR_ARGV_SEQUENCE[1].thr_argv[2]= "0";
 
-	// wait
-	THR_ARGV_SEQUENCE[2].thr_argv[0]= "7";
+	//3 READ SI
+	THR_ARGV_SEQUENCE[2].thr_argv[0]= "6";
 	THR_ARGV_SEQUENCE[2].thr_argv[1]= "20";
-	THR_ARGV_SEQUENCE[2].thr_argv[2]= "1500";
+	THR_ARGV_SEQUENCE[2].thr_argv[2]= "0";
+
+	//4 wait
+	THR_ARGV_SEQUENCE[3].thr_argv[0]= wait_between_stages_str;
+	THR_ARGV_SEQUENCE[3].thr_argv[1]= "0";
+	THR_ARGV_SEQUENCE[3].thr_argv[2]= "0";
+
+	//5 SET
+	THR_ARGV_SEQUENCE[4].thr_argv[0]= "7";
+	THR_ARGV_SEQUENCE[4].thr_argv[1]= "20";
+	THR_ARGV_SEQUENCE[4].thr_argv[2]= "1750";
+
+	//6 wait
+	THR_ARGV_SEQUENCE[5].thr_argv[0]= wait_between_stages_str;
+	THR_ARGV_SEQUENCE[5].thr_argv[1]= "0";
+	THR_ARGV_SEQUENCE[5].thr_argv[2]= "0";
+
+	//7 READ
+	THR_ARGV_SEQUENCE[6].thr_argv[0]= "6";
+	THR_ARGV_SEQUENCE[6].thr_argv[1]= "20";
+	THR_ARGV_SEQUENCE[6].thr_argv[2]= "0";
+
+	//8 wait
+	THR_ARGV_SEQUENCE[7].thr_argv[0]= wait_between_stages_str;
+	THR_ARGV_SEQUENCE[7].thr_argv[1]= "0";
+	THR_ARGV_SEQUENCE[7].thr_argv[2]= "0";
+
+	//9 SET
+	THR_ARGV_SEQUENCE[8].thr_argv[0]= "7";
+	THR_ARGV_SEQUENCE[8].thr_argv[1]= "20";
+	THR_ARGV_SEQUENCE[8].thr_argv[2]= "2250";
+
+	//10 wait
+	THR_ARGV_SEQUENCE[9].thr_argv[0]= wait_between_stages_str;
+	THR_ARGV_SEQUENCE[9].thr_argv[1]= "0";
+	THR_ARGV_SEQUENCE[9].thr_argv[2]= "0";
+
+	//11 READ
+	THR_ARGV_SEQUENCE[10].thr_argv[0]= "6";
+	THR_ARGV_SEQUENCE[10].thr_argv[1]= "20";
+	THR_ARGV_SEQUENCE[10].thr_argv[2]= "0";
+
+	//11 wait
+	THR_ARGV_SEQUENCE[11].thr_argv[0]= "5000";
+	THR_ARGV_SEQUENCE[11].thr_argv[1]= "20";
+	THR_ARGV_SEQUENCE[11].thr_argv[2]= "0";
+
+	//12 void
+	THR_ARGV_SEQUENCE[11].thr_argv[0]= "5000";
+	THR_ARGV_SEQUENCE[11].thr_argv[1]= "20";
+	THR_ARGV_SEQUENCE[11].thr_argv[2]= "0";
+
+
 
 
 
@@ -224,10 +287,7 @@ void l4_thruster_main (void) {
 	//uint8_t len = strlen(print_str);
 	//deb_print_pure_debug((uint8_t *)print_str, len);
 
-	if (THRUSTER_FIRING_STATUS){
-		thr_fire_exe();
 
-	}
 
 	if (THR_SEQUENCE_TRIGGER){
 		thr_execute_sequence();
@@ -621,6 +681,20 @@ void GeneralSetRequest(int argc, char *argv[]){
 }
 
 
+void GeneralReadRequest_sequence(int argc, char *argv[]){
+	GeneralReadRequest(3,argv);
+
+	char print_str[200];
+	sprintf(print_str, "\nStage index= %d completed\n",THR_EXECUTION_INDEX);
+	int len = strlen(print_str);
+
+	deb_print_pure_debug((uint8_t *)print_str, len);
+	THR_EXECUTION_INDEX++;
+	THR_SEQUENCE_EXECUTION_STAGE = (uint32_t)timGetSystime(); // Save timestamp at which sequence stage finished
+
+}
+
+
 //General read request to any register
 void GeneralReadRequest(int argc, char *argv[]){
 
@@ -657,128 +731,7 @@ void GeneralReadRequest(int argc, char *argv[]){
 }
 
 
-void thr_fire_exe(){
-	// thruster fire sequence
-	uint32_t now_timestamp = (uint32_t)timGetSystime();
 
-	// for debug prints
-	char print_str[200];
-	uint8_t len;
-
-	// for thruster requests
-	char *requests_argv[3];
-
-	// for function internal variables
-	double reservoir_temp;
-
-
-	if(THRUSTER_FIRE_FIRST_TIME){
-
-		THR_EXECUTION_TIMESTAMP = (uint32_t)timGetSystime(); // First time now_timestamp = execution timestamp
-
-		// TODO implement start fire procedure
-		sprintf(print_str, "\nFIRE BEGIN  t = %d\n", THR_FIRE_START_TIMESTAMP);
-		len = strlen(print_str);
-		deb_print_pure_debug((uint8_t *)print_str, len);
-
-
-
-		// TODO : 1) Check if THRUSTER MODE = 1 ( temp reached above 179K)
-		requests_argv[0] ="6"; // read cmd //not neccesary
-		requests_argv[1]="99"; // reservoir temperature register
-		GeneralReadRequest(2, requests_argv); // Request sent
-		// TODO WAIT UNTILL REQUEST BYTES ARE SENT, WAIT UNTILL REPLY RECEIVED
-		// TODO CHECK IF REPLY IS MOST RECENT
-		reservoir_temp = REGISTER_DATA[99];
-		sprintf(print_str, "\nReservoir  T = %fK\n", reservoir_temp);
-		len = strlen(print_str);
-		deb_print_pure_debug((uint8_t *)print_str, len);
-
-		if(reservoir_temp < 160){
-			// Do not continue with thrust ! Not yet hot enough reservoir
-			//THRUSTER_FIRING_STATUS = false; // this will prevent further execution
-			sprintf(print_str, "\nRESERVOIR NOT YET READY\n", reservoir_temp);
-			len = strlen(print_str);
-			//deb_print_pure_debug((uint8_t *)print_str, len);
-		}
-
-		/*
-		if ( (THR_EXECUTION_TIMESTAMP - now_timestamp) <= 10 ){
-			THR_EXECUTION_TIMESTAMP = (uint32_t)timGetSystime();
-			return;
-		}
-		*/
-
-		//Set extractor mode 0
-		requests_argv[0]="7";
-		requests_argv[1]="45";
-		requests_argv[2]="0";
-		//GeneralSetRequest(3, requests_argv);
-
-		//Set emitter mode 0
-		requests_argv[0]="7";
-		requests_argv[1]="30";
-		requests_argv[2]="0";
-		//GeneralSetRequest(3, requests_argv);
-
-		//Set extractor mode 0
-		requests_argv[0]="7";
-		requests_argv[1]="75";
-		requests_argv[2]="0";
-		//GeneralSetRequest(3, requests_argv);
-
-
-		THRUSTER_FIRE_FIRST_TIME = false; // set to false to prevent further execution of initialization block
-	}
-
-	if(THRUSTER_FIRING_STATUS){
-
-		if ( (now_timestamp - THR_FIRE_START_TIMESTAMP) <= THR_FIRE_DURATION ){
-
-			//do nothing // or implement monitoring procedure
-
-		}
-
-		else{
-			// TODO Implement stop fire procedure
-			sprintf(print_str, "\nSTOP t = %d\n", now_timestamp);
-			len = strlen(print_str);
-			deb_print_pure_debug((uint8_t *)print_str, len);
-
-			THRUSTER_FIRING_STATUS = false;
-			//THR_FIRE_DURATION = 0;
-		}
-
-	}
-
-
-
-
-
-
-}
-
-
-void thr_fire_cmd(int argc, char *argv[]){
-	// This function will triger execution of thr_fire_exe()
-	// inside l4_main()
-	// until stopping condition is reached.
-	// Stopping condition is defined in thr_fire_exe()
-
-	// THIS FUNCTION IS MENT TO BE JUST A TRIGGER THAT LAUNCHES EXECUTION FUNCTION
-
-	THRUSTER_FIRING_STATUS = true;
-	THRUSTER_FIRE_FIRST_TIME = true;
-	THR_FIRE_DURATION = atoi(argv[1]);
-	THR_FIRE_SI = atoi(argv[2]); // SI [s]
-	THR_FIRE_THRUST = atoi(argv[2]); // thrust [microN]
-	THR_FIRE_START_TIMESTAMP = (uint32_t)timGetSystime();
-
-	THR_SEQUENCE_EXECUTION_BEGIN = (uint32_t)timGetSystime();
-	THR_SEQUENCE_EXECUTION_STAGE = (uint32_t)timGetSystime();
-
-
-}
 
 //////
 void thr_wait(int argc, char *argv[]){
