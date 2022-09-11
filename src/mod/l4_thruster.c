@@ -46,7 +46,25 @@ uint16_t THR_FIRE_THRUST;
 bool THRUSTER_FIRE_FIRST_TIME;
 uint32_t THR_EXECUTION_TIMESTAMP;
 
-// uint8_t CRC8_thruster(uint8_t* str, size_t length);
+uint16_t THR_EXECUTION_INDEX;
+uint32_t THR_SEQUENCE_EXECUTION_BEGIN;
+uint32_t THR_SEQUENCE_EXECUTION_STAGE;
+
+void thr_wait(int argc, char *argv[]);
+void GeneralSetRequest_sequence(int argc, char *argv[]);
+void thr_execute_sequence();
+
+typedef struct {
+	char *thr_argv[3];
+} thr_argv_array_t;
+
+
+// Array of function pointers
+void (*THR_EXECUTION_SEQUENCE[50])(int argc, char *argv[]); // declaration of function pointers array
+//char*** THR_ARGV_SEQUENCE;
+//char *tmp_argv[3];
+
+thr_argv_array_t THR_ARGV_SEQUENCE[50];
 
 
 // Conversion multipliers are factors used to transform input variable to an uint16_t value needed to be stored/read in/from THRUSTER REGISTER MAP.
@@ -153,6 +171,42 @@ void l4_thruster_init (void *dummy) {
 	THR_FIRE_DURATION= 0;
 	THR_FIRE_START_TIMESTAMP =0;
 	THRUSTER_FIRE_FIRST_TIME = true;
+	THR_EXECUTION_INDEX=0;
+
+
+
+
+	// TEST SEQUENCE declaration
+	//THR_EXECUTION_SEQUENCE[0] = thr_wait;
+	//THR_EXECUTION_SEQUENCE[1] = GeneralSetRequest_sequence;
+	//THR_EXECUTION_SEQUENCE[2] = thr_wait;
+
+	THR_EXECUTION_SEQUENCE[0] = thr_wait;
+	THR_EXECUTION_SEQUENCE[1] = thr_wait;
+	THR_EXECUTION_SEQUENCE[2] = thr_wait;
+
+
+
+
+
+	//Build argv array for execution sequence
+	// Wait 500 ms
+	THR_ARGV_SEQUENCE[0].thr_argv[0]= "500";
+	THR_ARGV_SEQUENCE[0].thr_argv[1]= "20";
+	THR_ARGV_SEQUENCE[0].thr_argv[2]= "3000";
+
+
+	// general set request
+	THR_ARGV_SEQUENCE[1].thr_argv[0]= "500";
+	THR_ARGV_SEQUENCE[1].thr_argv[1]= "0";
+	THR_ARGV_SEQUENCE[1].thr_argv[2]= "0";
+
+	// wait
+	THR_ARGV_SEQUENCE[2].thr_argv[0]= "500";
+	THR_ARGV_SEQUENCE[2].thr_argv[1]= "0";
+	THR_ARGV_SEQUENCE[2].thr_argv[2]= "0";
+
+
 
 }
 
@@ -171,7 +225,8 @@ void l4_thruster_main (void) {
 	//deb_print_pure_debug((uint8_t *)print_str, len);
 
 	if (THRUSTER_FIRING_STATUS){
-		thr_fire_exe();
+		//thr_fire_exe();
+		thr_execute_sequence();
 
 	}
 
@@ -428,7 +483,12 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 
 
+void GeneralSetRequest_sequence(int argc, char *argv[]){
+	GeneralSetRequest(argc,argv);
+	THR_EXECUTION_INDEX++;
+	THR_SEQUENCE_EXECUTION_STAGE = (uint32_t)timGetSystime(); // Save timestamp at which sequence stage finished
 
+}
 
 
 void GeneralSetRequest(int argc, char *argv[]){
@@ -694,6 +754,54 @@ void thr_fire_cmd(int argc, char *argv[]){
 	THR_FIRE_SI = atoi(argv[2]); // SI [s]
 	THR_FIRE_THRUST = atoi(argv[2]); // thrust [microN]
 	THR_FIRE_START_TIMESTAMP = (uint32_t)timGetSystime();
+
+	THR_SEQUENCE_EXECUTION_BEGIN = (uint32_t)timGetSystime();
+	THR_SEQUENCE_EXECUTION_STAGE = (uint32_t)timGetSystime();
+
+
+}
+
+//////
+void thr_wait(int argc, char *argv[]){
+	//uint32_t previous_timestamp = atoi(argv[0]);
+	uint32_t duration = atoi(argv[0]);
+	uint32_t now_timestamp = (uint32_t)timGetSystime();
+
+	char print_str[200];
+	int len;
+
+	if ( (now_timestamp - THR_SEQUENCE_EXECUTION_STAGE) <= duration ){
+		// do nothing
+	}
+	else{
+		THR_EXECUTION_INDEX++; // increase sequence execution index so that after wait - next module to be executed
+		THR_SEQUENCE_EXECUTION_STAGE = (uint32_t)timGetSystime(); //save execution finish time of wait stage
+		sprintf(print_str, "\nWait END t = %d\n", now_timestamp);
+		len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len);
+	}
+
+}
+
+
+void thr_execute_sequence(){
+
+	if (THR_EXECUTION_INDEX ==2){
+		char print_str[200];
+		sprintf(print_str, "\nSequence complete\n");
+		int len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len);
+		THRUSTER_FIRING_STATUS = false;
+		THR_EXECUTION_INDEX =0;
+		return;
+	}
+
+	void (*f)(int argc, char *argv[]);
+	f = THR_EXECUTION_SEQUENCE[THR_EXECUTION_INDEX];
+	f(3,THR_ARGV_SEQUENCE[THR_EXECUTION_INDEX].thr_argv);
+
+
+
 
 
 }
