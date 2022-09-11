@@ -56,17 +56,16 @@ void GeneralSetRequest_sequence(int argc, char *argv[]);
 void thr_execute_sequence();
 //void thr_execute_sequence_cmd(int argc, char *argv[]);
 
+#define MAX_EXECUTION_SEQUENCE_DEPTH 50 // Maximum size of execution sequence stack
+
 typedef struct {
 	char *thr_argv[3];
 } thr_argv_array_t;
-
+thr_argv_array_t THR_ARGV_SEQUENCE[MAX_EXECUTION_SEQUENCE_DEPTH]; // array of argv for sequence execution stack
 
 // Array of function pointers
-void (*THR_EXECUTION_SEQUENCE[50])(int argc, char *argv[]); // declaration of function pointers array
-//char*** THR_ARGV_SEQUENCE;
-//char *tmp_argv[3];
+void (*THR_EXECUTION_SEQUENCE[MAX_EXECUTION_SEQUENCE_DEPTH])(int argc, char *argv[]); // sequence execution stack (array of function pointers)
 
-thr_argv_array_t THR_ARGV_SEQUENCE[50];
 
 
 // Conversion multipliers are factors used to transform input variable to an uint16_t value needed to be stored/read in/from THRUSTER REGISTER MAP.
@@ -164,9 +163,6 @@ int l4_thr_counter = 0; // counter for received bytes
 
 void l4_thruster_init (void *dummy) {
 
-//	char* testvar = "hello thruster";
-//	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, testvar, strlen(testvar));
-
 
 	// Initialize Thruster Firing sequence operational registers
 	THRUSTER_FIRING_STATUS = false;
@@ -199,13 +195,13 @@ void l4_thruster_init (void *dummy) {
 	THR_ARGV_SEQUENCE[0].thr_argv[2]= "3000";
 
 
-	// general set request
-	THR_ARGV_SEQUENCE[1].thr_argv[0]= "500";
+	// wait
+	THR_ARGV_SEQUENCE[1].thr_argv[0]= "1000";
 	THR_ARGV_SEQUENCE[1].thr_argv[1]= "0";
 	THR_ARGV_SEQUENCE[1].thr_argv[2]= "0";
 
 	// wait
-	THR_ARGV_SEQUENCE[2].thr_argv[0]= "500";
+	THR_ARGV_SEQUENCE[2].thr_argv[0]= "1500";
 	THR_ARGV_SEQUENCE[2].thr_argv[1]= "0";
 	THR_ARGV_SEQUENCE[2].thr_argv[2]= "0";
 
@@ -436,11 +432,10 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 		for(int i=0;i<uint16_payload_length;i++){
 
-			//printf("\n i=%d",i);
-			char print_str[10];
-			sprintf(print_str, "i = %d \n", i);
-			uint8_t len = strlen(print_str);
-			deb_print_pure_debug((uint8_t *)print_str, len);
+			//char print_str[10];
+			//sprintf(print_str, "i = %d \n", i);
+			//uint8_t len = strlen(print_str);
+			//deb_print_pure_debug((uint8_t *)print_str, len);
 
 			if(length_of_next_register ==1){
 
@@ -491,7 +486,23 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 
 void GeneralSetRequest_sequence(int argc, char *argv[]){
+	/*
+	 * _sequence is a wrapper arround General  thruster registor Read/Set request functions
+	 *
+	 * it passes input argv further into original function
+	 *
+	 * However after execution of original function pointer of execution sequence stack THR_EXECUTION_INDEX
+	 * is increased so that next stage can be executed.
+	 *
+	 * after completion of sequence - timestamp is recorded
+	 */
 	GeneralSetRequest(argc,argv);
+
+	char print_str[200];
+	sprintf(print_str, "\nStage index= %d completed\n",THR_EXECUTION_INDEX);
+	int len = strlen(print_str);
+
+	deb_print_pure_debug((uint8_t *)print_str, len);
 	THR_EXECUTION_INDEX++;
 	THR_SEQUENCE_EXECUTION_STAGE = (uint32_t)timGetSystime(); // Save timestamp at which sequence stage finished
 
@@ -770,7 +781,19 @@ void thr_fire_cmd(int argc, char *argv[]){
 
 //////
 void thr_wait(int argc, char *argv[]){
-	//uint32_t previous_timestamp = atoi(argv[0]);
+
+	/*
+	 * thr_wait is a "staging" function incorporated in THR_EXECUTION_SEQUENCE
+	 * at end of previous stage - timestep of stage completion is recorded
+	 *
+	 * duration is required input from argv
+	 *
+	 * function will do nothing untill difference between current and previous timestamps is less then duration
+	 *
+	 * THR_EXECUTION_INDEX points to next action in the execution sequence stack.
+	 * THR_EXECUTION INDEX is increased after current timestamp increased above designed wait duration
+	 *
+	 */
 	uint32_t duration = atoi(argv[0]);
 	uint32_t now_timestamp = (uint32_t)timGetSystime();
 
@@ -792,6 +815,11 @@ void thr_wait(int argc, char *argv[]){
 
 
 void thr_execute_sequence_cmd(int argc, char *argv[]){
+	/*
+	 * This function is meant to trigger execution of SEQUENCE
+	 * Triggered function is thr_execute_sequence()
+
+	*/
 
 
 	THR_SEQUENCE_TRIGGER = true;
@@ -809,6 +837,11 @@ void thr_execute_sequence_cmd(int argc, char *argv[]){
 
 
 void thr_execute_sequence(){
+	/*
+	 *
+	 * Executes pregrogrammed sequence  defined in THR_EXECUTION_SEQUENCE function pointer array
+	 * THR_ARGV_SEQUENCE array of argv to be input into THR_EXECUTION_SEQUENCE
+	 */
 
 	if (THR_EXECUTION_INDEX ==3){
 		char print_str[200];
