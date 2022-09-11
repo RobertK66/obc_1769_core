@@ -41,7 +41,10 @@
 bool THRUSTER_FIRING_STATUS;
 uint32_t THR_FIRE_DURATION;
 uint32_t THR_FIRE_START_TIMESTAMP;
+uint16_t THR_FIRE_SI;
+uint16_t THR_FIRE_THRUST;
 bool THRUSTER_FIRE_FIRST_TIME;
+uint32_t THR_EXECUTION_TIMESTAMP;
 
 // uint8_t CRC8_thruster(uint8_t* str, size_t length);
 
@@ -578,19 +581,75 @@ void GeneralReadRequest(int argc, char *argv[]){
 void thr_fire_exe(){
 	// thruster fire sequence
 	uint32_t now_timestamp = (uint32_t)timGetSystime();
-	//uint32_t fire_start_timestamp;
 
-	char print_str[20];
+	// for debug prints
+	char print_str[200];
 	uint8_t len;
+
+	// for thruster requests
+	char *requests_argv[3];
+
+	// for function internal variables
+	double reservoir_temp;
 
 
 	if(THRUSTER_FIRE_FIRST_TIME){
+
+		THR_EXECUTION_TIMESTAMP = (uint32_t)timGetSystime(); // First time now_timestamp = execution timestamp
+
 		// TODO implement start fire procedure
-		sprintf(print_str, "FIRE BEGIN  t = %d \n", THR_FIRE_START_TIMESTAMP);
+		sprintf(print_str, "\nFIRE BEGIN  t = %d\n", THR_FIRE_START_TIMESTAMP);
 		len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
 
-		THRUSTER_FIRE_FIRST_TIME = false;
+
+
+		// TODO : 1) Check if THRUSTER MODE = 1 ( temp reached above 179K)
+		requests_argv[0] ="6"; // read cmd //not neccesary
+		requests_argv[1]="99"; // reservoir temperature register
+		GeneralReadRequest(2, requests_argv); // Request sent
+		// TODO WAIT UNTILL REQUEST BYTES ARE SENT, WAIT UNTILL REPLY RECEIVED
+		// TODO CHECK IF REPLY IS MOST RECENT
+		reservoir_temp = REGISTER_DATA[99];
+		sprintf(print_str, "\nReservoir  T = %fK\n", reservoir_temp);
+		len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len);
+
+		if(reservoir_temp < 160){
+			// Do not continue with thrust ! Not yet hot enough reservoir
+			//THRUSTER_FIRING_STATUS = false; // this will prevent further execution
+			sprintf(print_str, "\nRESERVOIR NOT YET READY\n", reservoir_temp);
+			len = strlen(print_str);
+			//deb_print_pure_debug((uint8_t *)print_str, len);
+		}
+
+		/*
+		if ( (THR_EXECUTION_TIMESTAMP - now_timestamp) <= 10 ){
+			THR_EXECUTION_TIMESTAMP = (uint32_t)timGetSystime();
+			return;
+		}
+		*/
+
+		//Set extractor mode 0
+		requests_argv[0]="7";
+		requests_argv[1]="45";
+		requests_argv[2]="0";
+		//GeneralSetRequest(3, requests_argv);
+
+		//Set emitter mode 0
+		requests_argv[0]="7";
+		requests_argv[1]="30";
+		requests_argv[2]="0";
+		//GeneralSetRequest(3, requests_argv);
+
+		//Set extractor mode 0
+		requests_argv[0]="7";
+		requests_argv[1]="75";
+		requests_argv[2]="0";
+		//GeneralSetRequest(3, requests_argv);
+
+
+		THRUSTER_FIRE_FIRST_TIME = false; // set to false to prevent further execution of initialization block
 	}
 
 	if(THRUSTER_FIRING_STATUS){
@@ -603,7 +662,7 @@ void thr_fire_exe(){
 
 		else{
 			// TODO Implement stop fire procedure
-			sprintf(print_str, "STOP t = %d\n", now_timestamp);
+			sprintf(print_str, "\nSTOP t = %d\n", now_timestamp);
 			len = strlen(print_str);
 			deb_print_pure_debug((uint8_t *)print_str, len);
 
@@ -632,6 +691,8 @@ void thr_fire_cmd(int argc, char *argv[]){
 	THRUSTER_FIRING_STATUS = true;
 	THRUSTER_FIRE_FIRST_TIME = true;
 	THR_FIRE_DURATION = atoi(argv[1]);
+	THR_FIRE_SI = atoi(argv[2]); // SI [s]
+	THR_FIRE_THRUST = atoi(argv[2]); // thrust [microN]
 	THR_FIRE_START_TIMESTAMP = (uint32_t)timGetSystime();
 
 
