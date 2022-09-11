@@ -46,6 +46,7 @@ uint16_t THR_FIRE_THRUST;
 bool THRUSTER_FIRE_FIRST_TIME;
 uint32_t THR_EXECUTION_TIMESTAMP;
 
+bool THR_SEQUENCE_TRIGGER;
 uint16_t THR_EXECUTION_INDEX;
 uint32_t THR_SEQUENCE_EXECUTION_BEGIN;
 uint32_t THR_SEQUENCE_EXECUTION_STAGE;
@@ -53,6 +54,7 @@ uint32_t THR_SEQUENCE_EXECUTION_STAGE;
 void thr_wait(int argc, char *argv[]);
 void GeneralSetRequest_sequence(int argc, char *argv[]);
 void thr_execute_sequence();
+//void thr_execute_sequence_cmd(int argc, char *argv[]);
 
 typedef struct {
 	char *thr_argv[3];
@@ -175,7 +177,8 @@ void l4_thruster_init (void *dummy) {
 
 
 
-
+	/// **************** PREPROGRAMM SEQUENCES HERE ****************
+	THR_SEQUENCE_TRIGGER = false;
 	// TEST SEQUENCE declaration
 	//THR_EXECUTION_SEQUENCE[0] = thr_wait;
 	//THR_EXECUTION_SEQUENCE[1] = GeneralSetRequest_sequence;
@@ -225,7 +228,11 @@ void l4_thruster_main (void) {
 	//deb_print_pure_debug((uint8_t *)print_str, len);
 
 	if (THRUSTER_FIRING_STATUS){
-		//thr_fire_exe();
+		thr_fire_exe();
+
+	}
+
+	if (THR_SEQUENCE_TRIGGER){
 		thr_execute_sequence();
 
 	}
@@ -770,7 +777,7 @@ void thr_wait(int argc, char *argv[]){
 	char print_str[200];
 	int len;
 
-	if ( (now_timestamp - THR_SEQUENCE_EXECUTION_STAGE) <= duration ){
+	if ( (now_timestamp - THR_SEQUENCE_EXECUTION_STAGE) < duration ){
 		// do nothing
 	}
 	else{
@@ -784,14 +791,31 @@ void thr_wait(int argc, char *argv[]){
 }
 
 
+void thr_execute_sequence_cmd(int argc, char *argv[]){
+
+
+	THR_SEQUENCE_TRIGGER = true;
+	THR_SEQUENCE_EXECUTION_BEGIN = (uint32_t)timGetSystime();
+	THR_SEQUENCE_EXECUTION_STAGE = (uint32_t)timGetSystime();
+
+	char print_str[200];
+	sprintf(print_str, "\nSequence start\n");
+	int len = strlen(print_str);
+	deb_print_pure_debug((uint8_t *)print_str, len);
+
+
+}
+
+
+
 void thr_execute_sequence(){
 
-	if (THR_EXECUTION_INDEX ==2){
+	if (THR_EXECUTION_INDEX ==3){
 		char print_str[200];
 		sprintf(print_str, "\nSequence complete\n");
 		int len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
-		THRUSTER_FIRING_STATUS = false;
+		THR_SEQUENCE_TRIGGER = false;
 		THR_EXECUTION_INDEX =0;
 		return;
 	}

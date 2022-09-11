@@ -56,6 +56,8 @@ void ParseReadRequest(uint8_t* received_buffer,int len);
 void thr_fire_cmd(int argc, char *argv[]);
 void thr_fire_exe();
 
+void thr_execute_sequence_cmd(int argc, char *argv[]);
+
 // Thruster operational registors
 extern bool THRUSTER_FIRING_STATUS;
 extern uint32_t THR_FIRE_DURATION;
