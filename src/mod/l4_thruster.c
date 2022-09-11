@@ -50,10 +50,12 @@ bool THR_SEQUENCE_TRIGGER;
 uint16_t THR_EXECUTION_INDEX;
 uint32_t THR_SEQUENCE_EXECUTION_BEGIN;
 uint32_t THR_SEQUENCE_EXECUTION_STAGE;
+uint16_t THR_SEQUENCE_LENGTH;
 
 void thr_wait(int argc, char *argv[]);
 void GeneralSetRequest_sequence(int argc, char *argv[]);
 void thr_execute_sequence();
+void thr_void(int argc, char *argv[]);
 //void thr_execute_sequence_cmd(int argc, char *argv[]);
 
 #define MAX_EXECUTION_SEQUENCE_DEPTH 50 // Maximum size of execution sequence stack
@@ -175,14 +177,13 @@ void l4_thruster_init (void *dummy) {
 
 	/// **************** PREPROGRAMM SEQUENCES HERE ****************
 	THR_SEQUENCE_TRIGGER = false;
-	// TEST SEQUENCE declaration
-	//THR_EXECUTION_SEQUENCE[0] = thr_wait;
-	//THR_EXECUTION_SEQUENCE[1] = GeneralSetRequest_sequence;
-	//THR_EXECUTION_SEQUENCE[2] = thr_wait;
 
-	THR_EXECUTION_SEQUENCE[0] = thr_wait;
+	THR_EXECUTION_SEQUENCE[0] = GeneralSetRequest_sequence;
 	THR_EXECUTION_SEQUENCE[1] = thr_wait;
-	THR_EXECUTION_SEQUENCE[2] = thr_wait;
+	THR_EXECUTION_SEQUENCE[2] = GeneralSetRequest_sequence;
+	THR_EXECUTION_SEQUENCE[3] = thr_void; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
+
+	THR_SEQUENCE_LENGTH = 3; // MANUALLY DEFINE LENGTH OF SEQUENCE // NOTE : SEQUENCE LENGTH IS MAXIMUM INDEX OF THR_EXECUTION_SEQUENCE ARRAY
 
 
 
@@ -190,9 +191,9 @@ void l4_thruster_init (void *dummy) {
 
 	//Build argv array for execution sequence
 	// Wait 500 ms
-	THR_ARGV_SEQUENCE[0].thr_argv[0]= "500";
+	THR_ARGV_SEQUENCE[0].thr_argv[0]= "7";
 	THR_ARGV_SEQUENCE[0].thr_argv[1]= "20";
-	THR_ARGV_SEQUENCE[0].thr_argv[2]= "3000";
+	THR_ARGV_SEQUENCE[0].thr_argv[2]= "1500";
 
 
 	// wait
@@ -201,9 +202,9 @@ void l4_thruster_init (void *dummy) {
 	THR_ARGV_SEQUENCE[1].thr_argv[2]= "0";
 
 	// wait
-	THR_ARGV_SEQUENCE[2].thr_argv[0]= "1500";
-	THR_ARGV_SEQUENCE[2].thr_argv[1]= "0";
-	THR_ARGV_SEQUENCE[2].thr_argv[2]= "0";
+	THR_ARGV_SEQUENCE[2].thr_argv[0]= "7";
+	THR_ARGV_SEQUENCE[2].thr_argv[1]= "20";
+	THR_ARGV_SEQUENCE[2].thr_argv[2]= "1500";
 
 
 
@@ -804,12 +805,24 @@ void thr_wait(int argc, char *argv[]){
 		// do nothing
 	}
 	else{
-		THR_EXECUTION_INDEX++; // increase sequence execution index so that after wait - next module to be executed
 		THR_SEQUENCE_EXECUTION_STAGE = (uint32_t)timGetSystime(); //save execution finish time of wait stage
-		sprintf(print_str, "\nWait END t = %d\n", now_timestamp);
+		sprintf(print_str, "\nWait Stage= %d Complete t = %d\n", THR_EXECUTION_INDEX,now_timestamp);
 		len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
+		THR_EXECUTION_INDEX++; // increase sequence execution index so that after wait - next module to be executed
 	}
+
+}
+
+void thr_void(int argc, char *argv[]){
+
+	/*
+	 * Incorporates with sequence execution
+	 *
+	 * void function that does nothing
+	 */
+
+	//THR_EXECUTION_INDEX++;
 
 }
 
@@ -843,7 +856,7 @@ void thr_execute_sequence(){
 	 * THR_ARGV_SEQUENCE array of argv to be input into THR_EXECUTION_SEQUENCE
 	 */
 
-	if (THR_EXECUTION_INDEX ==3){
+	if (THR_EXECUTION_INDEX == THR_SEQUENCE_LENGTH){
 		char print_str[200];
 		sprintf(print_str, "\nSequence complete\n");
 		int len = strlen(print_str);
@@ -852,10 +865,11 @@ void thr_execute_sequence(){
 		THR_EXECUTION_INDEX =0;
 		return;
 	}
-
-	void (*f)(int argc, char *argv[]);
-	f = THR_EXECUTION_SEQUENCE[THR_EXECUTION_INDEX];
-	f(3,THR_ARGV_SEQUENCE[THR_EXECUTION_INDEX].thr_argv);
+	else{
+		void (*f)(int argc, char *argv[]);
+		f = THR_EXECUTION_SEQUENCE[THR_EXECUTION_INDEX];
+		f(3,THR_ARGV_SEQUENCE[THR_EXECUTION_INDEX].thr_argv);
+	}
 
 
 
