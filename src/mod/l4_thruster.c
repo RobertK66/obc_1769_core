@@ -47,9 +47,9 @@
 //uint32_t THR_EXECUTION_TIMESTAMP;
 
 bool THR_SEQUENCE_TRIGGER;
-uint16_t THR_EXECUTION_INDEX;
-uint32_t THR_SEQUENCE_EXECUTION_BEGIN;
-uint32_t THR_SEQUENCE_EXECUTION_STAGE;
+//uint16_t THR_EXECUTION_INDEX;
+//uint32_t THR_SEQUENCE_EXECUTION_BEGIN;
+//uint32_t THR_SEQUENCE_EXECUTION_STAGE;
 uint8_t THR_PROCEDURE_ID;
 
 void thr_wait(int argc, char *argv[]);
@@ -66,11 +66,15 @@ typedef struct {
 	char *thr_argv[3];
 	void (*function)(int argc, char *argv[]);
 } thr_sequences_t;
-thr_sequences_t THR_SEQUENCES[MAX_EXECUTION_SEQUENCE_DEPTH]; // array of argv for sequence execution stack
+//thr_sequences_t THR_SEQUENCES[MAX_EXECUTION_SEQUENCE_DEPTH]; // array of argv for sequence execution stack
 
 typedef struct {
 	thr_sequences_t *sequences;
-	uint8_t length;
+	uint8_t length; // length of sequence
+	uint16_t execution_index; // current index of execution stack
+	uint32_t sequence_execution_begin; // timestamp at which sequence begin
+	uint32_t sequence_execution_stage; // timestamp at which stage is completed
+	bool sequence_trigger;
 
 }thr_hardcoded_sequences_t;
 thr_hardcoded_sequences_t THR_HARDCODED_SEQUENCES[5];
@@ -176,120 +180,112 @@ int l4_thr_counter = 0; // counter for received bytes
 void l4_thruster_init (void *dummy) {
 
 
-	// Initialize Thruster Firing sequence operational registers
-	//THRUSTER_FIRING_STATUS = false;
-	//THR_FIRE_DURATION= 0;
-	//THR_FIRE_START_TIMESTAMP =0;
-	//THRUSTER_FIRE_FIRST_TIME = true;
-	//THR_EXECUTION_INDEX=0;
-
-
-
 	/// **************** PREPROGRAMM SEQUENCES HERE ****************
 	THR_SEQUENCE_TRIGGER = false;
 
-	//THR_EXECUTION_SEQUENCE[0] = GeneralSetRequest_sequence;
-	//THR_EXECUTION_SEQUENCE[1] = thr_wait;
-	//THR_EXECUTION_SEQUENCE[2] = GeneralReadRequest_sequence;
-	//THR_EXECUTION_SEQUENCE[3] = thr_wait; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
-	//THR_EXECUTION_SEQUENCE[4] = GeneralSetRequest_sequence; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
-	//THR_EXECUTION_SEQUENCE[5] = thr_wait; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
-	//THR_EXECUTION_SEQUENCE[6] = GeneralReadRequest_sequence; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
-	//THR_EXECUTION_SEQUENCE[7] = thr_wait; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
-	//THR_EXECUTION_SEQUENCE[8] = GeneralSetRequest_sequence; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
-	//THR_EXECUTION_SEQUENCE[9] = thr_wait; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
-	//THR_EXECUTION_SEQUENCE[10] = GeneralReadRequest_sequence; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
-	//THR_EXECUTION_SEQUENCE[11] = thr_wait; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
-	//THR_EXECUTION_SEQUENCE[12] = thr_void; // ALWAYS FINISH SEQUENCE WITH VOID FUNCTION
+
+
+	char *wait_between_stages_str ="5000";
 
 
 
-	char *wait_between_stages_str ="10000";
 
 
-	//Build argv array for execution sequence
-	//1 SET SI
-	THR_SEQUENCES[0].function = GeneralSetRequest_sequence;
-	THR_SEQUENCES[0].thr_argv[0]= "7";
-	THR_SEQUENCES[0].thr_argv[1]= "20";
-	THR_SEQUENCES[0].thr_argv[2]= "1500";
+	//////////// ******** SEQUENCE 2***************
+	thr_sequences_t temp_sequence2[MAX_EXECUTION_SEQUENCE_DEPTH];
 
-
-	//2 wait
-	THR_SEQUENCES[1].function = thr_wait;
-	THR_SEQUENCES[1].thr_argv[0]= wait_between_stages_str;
-	THR_SEQUENCES[1].thr_argv[1]= "0";
-	THR_SEQUENCES[1].thr_argv[2]= "0";
-
-	//3 READ SI
-	THR_SEQUENCES[2].function = GeneralReadRequest_sequence;
-	THR_SEQUENCES[2].thr_argv[0]= "6";
-	THR_SEQUENCES[2].thr_argv[1]= "20";
-	THR_SEQUENCES[2].thr_argv[2]= "0";
-
-	//4 wait
-	THR_SEQUENCES[3].function = thr_wait;
-	THR_SEQUENCES[3].thr_argv[0]= wait_between_stages_str;
-	THR_SEQUENCES[3].thr_argv[1]= "0";
-	THR_SEQUENCES[3].thr_argv[2]= "0";
-
-	//5 SET
-	THR_SEQUENCES[4].function = GeneralSetRequest_sequence;
-	THR_SEQUENCES[4].thr_argv[0]= "7";
-	THR_SEQUENCES[4].thr_argv[1]= "20";
-	THR_SEQUENCES[4].thr_argv[2]= "1750";
-
-	//6 wait
-	THR_SEQUENCES[5].function = thr_wait;
-	THR_SEQUENCES[5].thr_argv[0]= wait_between_stages_str;
-	THR_SEQUENCES[5].thr_argv[1]= "0";
-	THR_SEQUENCES[5].thr_argv[2]= "0";
-
-	//7 READ
-	THR_SEQUENCES[6].function = GeneralReadRequest_sequence;
-	THR_SEQUENCES[6].thr_argv[0]= "6";
-	THR_SEQUENCES[6].thr_argv[1]= "20";
-	THR_SEQUENCES[6].thr_argv[2]= "0";
-
-	//8 wait
-	THR_SEQUENCES[7].function = thr_wait;
-	THR_SEQUENCES[7].thr_argv[0]= wait_between_stages_str;
-	THR_SEQUENCES[7].thr_argv[1]= "0";
-	THR_SEQUENCES[7].thr_argv[2]= "0";
-
-	//9 SET
-	THR_SEQUENCES[8].function = GeneralSetRequest_sequence;
-	THR_SEQUENCES[8].thr_argv[0]= "7";
-	THR_SEQUENCES[8].thr_argv[1]= "20";
-	THR_SEQUENCES[8].thr_argv[2]= "2250";
-
-	//10 wait
-	THR_SEQUENCES[9].function = thr_wait;
-	THR_SEQUENCES[9].thr_argv[0]= wait_between_stages_str;
-	THR_SEQUENCES[9].thr_argv[1]= "0";
-	THR_SEQUENCES[9].thr_argv[2]= "0";
 
 	//11 READ
-	THR_SEQUENCES[10].function = GeneralReadRequest_sequence;
-	THR_SEQUENCES[10].thr_argv[0]= "6";
-	THR_SEQUENCES[10].thr_argv[1]= "20";
-	THR_SEQUENCES[10].thr_argv[2]= "0";
+			temp_sequence2[0].function = GeneralSetRequest_sequence;
+			temp_sequence2[0].thr_argv[0]= wait_between_stages_str;
+			temp_sequence2[0].thr_argv[1]= "20";
+			temp_sequence2[0].thr_argv[2]= "2550";
 
-	//11 wait
-	THR_SEQUENCES[11].function = thr_wait;
-	THR_SEQUENCES[11].thr_argv[0]= wait_between_stages_str;
-	THR_SEQUENCES[11].thr_argv[1]= "20";
-	THR_SEQUENCES[11].thr_argv[2]= "0";
+			//11 wait
+			temp_sequence2[1].function = thr_wait;
+			temp_sequence2[1].thr_argv[0]= wait_between_stages_str;
+			temp_sequence2[1].thr_argv[1]= "20";
+			temp_sequence2[1].thr_argv[2]= "0";
 
-	//12 void
-	THR_SEQUENCES[12].function = thr_void;
-	THR_SEQUENCES[12].thr_argv[0]= "0";
-	THR_SEQUENCES[12].thr_argv[1]= "0";
-	THR_SEQUENCES[12].thr_argv[2]= "0";
+			//12 void
+			temp_sequence2[2].function = GeneralReadRequest_sequence;
+			temp_sequence2[2].thr_argv[0]= "6";
+			temp_sequence2[2].thr_argv[1]= "20";
+			temp_sequence2[2].thr_argv[2]= "0";
+
+			//12 void
+			temp_sequence2[3].function = thr_wait;
+			temp_sequence2[3].thr_argv[0]= wait_between_stages_str;
+			temp_sequence2[3].thr_argv[1]= "0";
+			temp_sequence2[3].thr_argv[2]= "0";
+
+			//12 void
+			temp_sequence2[4].function = thr_void;
+			temp_sequence2[4].thr_argv[0]= wait_between_stages_str;
+			temp_sequence2[4].thr_argv[1]= "0";
+			temp_sequence2[4].thr_argv[2]= "0";
 
 
-	THR_HARDCODED_SEQUENCES[0].sequences = THR_SEQUENCES; // save sequence
-	THR_HARDCODED_SEQUENCES[0].length = 12; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+
+
+			THR_HARDCODED_SEQUENCES[1].sequences = temp_sequence2; // save sequence
+			THR_HARDCODED_SEQUENCES[1].length = 4; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+			THR_HARDCODED_SEQUENCES[1].sequence_trigger = false;
+
+
+		//////////// ******** SEQUENCE 3***************
+
+			//thr_sequences_t temp_sequence[MAX_EXECUTION_SEQUENCE_DEPTH];
+			thr_sequences_t temp_sequence3[MAX_EXECUTION_SEQUENCE_DEPTH];
+
+			//11 READ
+			temp_sequence3[0].function = GeneralSetRequest_sequence;
+			temp_sequence3[0].thr_argv[0]= wait_between_stages_str;
+			temp_sequence3[0].thr_argv[1]= "20";
+			temp_sequence3[0].thr_argv[2]= "2550";
+
+			//11 wait
+			temp_sequence3[1].function = thr_wait;
+			temp_sequence3[1].thr_argv[0]= wait_between_stages_str;
+			temp_sequence3[1].thr_argv[1]= "20";
+			temp_sequence3[1].thr_argv[2]= "0";
+
+			//12 void
+			temp_sequence3[2].function = GeneralReadRequest_sequence;
+			temp_sequence3[2].thr_argv[0]= "6";
+			temp_sequence3[2].thr_argv[1]= "20";
+			temp_sequence3[2].thr_argv[2]= "0";
+
+			//12 void
+			temp_sequence3[3].function = thr_wait;
+			temp_sequence3[3].thr_argv[0]= wait_between_stages_str;
+			temp_sequence3[3].thr_argv[1]= "0";
+			temp_sequence3[3].thr_argv[2]= "0";
+
+			//12 void
+			temp_sequence3[4].function = thr_void;
+			temp_sequence3[4].thr_argv[0]= wait_between_stages_str;
+			temp_sequence3[4].thr_argv[1]= "0";
+			temp_sequence3[4].thr_argv[2]= "0";
+
+
+
+
+			THR_HARDCODED_SEQUENCES[2].sequences = temp_sequence3; // save sequence
+			THR_HARDCODED_SEQUENCES[2].length = 4; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+			THR_HARDCODED_SEQUENCES[2].sequence_trigger = false;
+
+			THR_HARDCODED_SEQUENCES[3].sequences = temp_sequence3; // save sequence
+			THR_HARDCODED_SEQUENCES[3].length = 4; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+			THR_HARDCODED_SEQUENCES[3].sequence_trigger = false;
+
+			THR_HARDCODED_SEQUENCES[4].sequences = temp_sequence3; // save sequence
+			THR_HARDCODED_SEQUENCES[4].length = 4; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+			THR_HARDCODED_SEQUENCES[4].sequence_trigger = false;
+
+			THR_HARDCODED_SEQUENCES[0].sequences = temp_sequence3; // save sequence
+			THR_HARDCODED_SEQUENCES[0].length = 4; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+			THR_HARDCODED_SEQUENCES[0].sequence_trigger = false;
 
 
 
@@ -581,15 +577,20 @@ void GeneralSetRequest_sequence(int argc, char *argv[]){
 	 *
 	 * after completion of sequence - timestamp is recorded
 	 */
-	GeneralSetRequest(argc,argv);
+	GeneralSetRequest(3,argv);
 
 	char print_str[200];
-	sprintf(print_str, "\nStage index= %d completed\n",THR_EXECUTION_INDEX);
+	//sprintf(print_str, "\nStage SET index= %d completed\n",THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].execution_index);
+	sprintf(print_str, "\nStage SET index=  completed\n");
 	int len = strlen(print_str);
 
 	deb_print_pure_debug((uint8_t *)print_str, len);
-	THR_EXECUTION_INDEX++;
-	THR_SEQUENCE_EXECUTION_STAGE = (uint32_t)timGetSystime(); // Save timestamp at which sequence stage finished
+
+	THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].execution_index++;
+	THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].sequence_execution_stage = (uint32_t)timGetSystime();
+
+	//THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].execution_index++;
+	//THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].sequence_execution_stage = (uint32_t)timGetSystime();
 
 }
 
@@ -709,12 +710,15 @@ void GeneralReadRequest_sequence(int argc, char *argv[]){
 	GeneralReadRequest(3,argv);
 
 	char print_str[200];
-	sprintf(print_str, "\nStage index= %d completed\n",THR_EXECUTION_INDEX);
+	sprintf(print_str, "\nStage READ index= %d completed\n",THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].execution_index);
 	int len = strlen(print_str);
 
 	deb_print_pure_debug((uint8_t *)print_str, len);
-	THR_EXECUTION_INDEX++;
-	THR_SEQUENCE_EXECUTION_STAGE = (uint32_t)timGetSystime(); // Save timestamp at which sequence stage finished
+	//THR_EXECUTION_INDEX++;
+	//THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID]. = (uint32_t)timGetSystime(); // Save timestamp at which sequence stage finished
+
+	THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].execution_index++;
+	THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].sequence_execution_stage = (uint32_t)timGetSystime();
 
 }
 
@@ -775,18 +779,19 @@ void thr_wait(int argc, char *argv[]){
 	uint32_t duration = atoi(argv[0]);
 	uint32_t now_timestamp = (uint32_t)timGetSystime();
 
+
 	char print_str[200];
 	int len;
 
-	if ( (now_timestamp - THR_SEQUENCE_EXECUTION_STAGE) < duration ){
+	if ( (now_timestamp - THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].sequence_execution_stage) < duration ){
 		// do nothing
 	}
 	else{
-		THR_SEQUENCE_EXECUTION_STAGE = (uint32_t)timGetSystime(); //save execution finish time of wait stage
-		sprintf(print_str, "\nWait Stage= %d Complete t = %d\n", THR_EXECUTION_INDEX,now_timestamp);
+		THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].sequence_execution_stage = (uint32_t)timGetSystime(); //save execution finish time of wait stage
+		sprintf(print_str, "\nWait Stage= %d Complete t = %d\n", THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].execution_index,now_timestamp);
 		len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
-		THR_EXECUTION_INDEX++; // increase sequence execution index so that after wait - next module to be executed
+		THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].execution_index++; // increase sequence execution index so that after wait - next module to be executed
 	}
 
 }
@@ -799,7 +804,13 @@ void thr_void(int argc, char *argv[]){
 	 * void function that does nothing
 	 */
 
-	//THR_EXECUTION_INDEX++;
+
+	//char print_str[200];
+	//sprintf(print_str, "\nSequence complete\n");
+	//int len = strlen(print_str);
+	//deb_print_pure_debug((uint8_t *)print_str, len);
+	//THR_SEQUENCE_TRIGGER = false;
+	//THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].execution_index =0;
 
 }
 
@@ -815,12 +826,14 @@ void thr_execute_sequence_cmd(int argc, char *argv[]){
 	THR_PROCEDURE_ID = sequence_index;
 
 
+
 	THR_SEQUENCE_TRIGGER = true;
-	THR_SEQUENCE_EXECUTION_BEGIN = (uint32_t)timGetSystime();
-	THR_SEQUENCE_EXECUTION_STAGE = (uint32_t)timGetSystime();
+	THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].execution_index = 0;
+	THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].sequence_execution_begin = (uint32_t)timGetSystime();
+	THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].sequence_execution_stage = (uint32_t)timGetSystime();
 
 	char print_str[200];
-	sprintf(print_str, "\nSequence start\n");
+	sprintf(print_str, "\nSequence id=%d start\n",THR_PROCEDURE_ID);
 	int len = strlen(print_str);
 	deb_print_pure_debug((uint8_t *)print_str, len);
 
@@ -836,13 +849,16 @@ void thr_execute_sequence(){
 	 * THR_SEQUENCES array of argv to be input into THR_EXECUTION_SEQUENCE
 	 */
 
-	if (THR_EXECUTION_INDEX == THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].length){
+
+
+	if (THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].execution_index >= THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].length){
+	//if (false){
 		char print_str[200];
 		sprintf(print_str, "\nSequence complete\n");
 		int len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
 		THR_SEQUENCE_TRIGGER = false;
-		THR_EXECUTION_INDEX =0;
+		THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].execution_index =0;
 		return;
 	}
 	else{
@@ -850,8 +866,8 @@ void thr_execute_sequence(){
 
 		//f = THR_SEQUENCES[THR_EXECUTION_INDEX].function;
 		//f(3,THR_SEQUENCES[THR_EXECUTION_INDEX].thr_argv);
-		f = THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].sequences[THR_EXECUTION_INDEX].function;
-		f(3,THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].sequences[THR_EXECUTION_INDEX].thr_argv);
+		f = THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].sequences[THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].execution_index].function;
+		f(3,THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].sequences[THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].execution_index].thr_argv);
 	}
 
 
