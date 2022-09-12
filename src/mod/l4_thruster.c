@@ -235,7 +235,7 @@ void l4_thruster_init (void *dummy) {
 		temp_sequence[5].procedure_id = 0;
 
 		//7 READ
-		temp_sequence[6].function = GeneralReadRequest_sequence;
+		temp_sequence[6].function = GeneralSetRequest_sequence;
 		temp_sequence[6].thr_argv[0]= "0";
 		temp_sequence[6].thr_argv[1]= "20";
 		temp_sequence[6].thr_argv[2]= "0";
@@ -263,7 +263,7 @@ void l4_thruster_init (void *dummy) {
 		temp_sequence[9].procedure_id = 0;
 
 		//11 READ
-		temp_sequence[10].function = GeneralReadRequest_sequence;
+		temp_sequence[10].function = GeneralSetRequest_sequence;
 		temp_sequence[10].thr_argv[0]= "0";
 		temp_sequence[10].thr_argv[1]= "20";
 		temp_sequence[10].thr_argv[2]= "0";
@@ -289,7 +289,7 @@ void l4_thruster_init (void *dummy) {
 		THR_HARDCODED_SEQUENCES[0].sequence_trigger = false;
 
 
-/*
+
 
 
 	//////////// ******** SEQUENCE 2***************
@@ -298,35 +298,35 @@ void l4_thruster_init (void *dummy) {
 
 	//11 READ
 			temp_sequence2[0].function = GeneralSetRequest_sequence;
-			temp_sequence2[0].thr_argv[0]= wait_between_stages_str;
+			temp_sequence2[0].thr_argv[0]= "1";
 			temp_sequence2[0].thr_argv[1]= "20";
 			temp_sequence2[0].thr_argv[2]= "2550";
 			temp_sequence2[0].procedure_id = 1;
 
 			//11 wait
 			temp_sequence2[1].function = thr_wait;
-			temp_sequence2[1].thr_argv[0]= wait_between_stages_str;
-			temp_sequence2[1].thr_argv[1]= "20";
+			temp_sequence2[1].thr_argv[0]= "1";
+			temp_sequence2[1].thr_argv[1]= "2000";
 			temp_sequence2[1].thr_argv[2]= "0";
 			temp_sequence2[1].procedure_id = 1;
 
 			//12 void
 			temp_sequence2[2].function = GeneralReadRequest_sequence;
-			temp_sequence2[2].thr_argv[0]= "6";
+			temp_sequence2[2].thr_argv[0]= "1";
 			temp_sequence2[2].thr_argv[1]= "20";
 			temp_sequence2[2].thr_argv[2]= "0";
 			temp_sequence2[2].procedure_id = 1;
 
 			//12 void
 			temp_sequence2[3].function = thr_wait;
-			temp_sequence2[3].thr_argv[0]= wait_between_stages_str;
-			temp_sequence2[3].thr_argv[1]= "0";
+			temp_sequence2[3].thr_argv[0]= "1";
+			temp_sequence2[3].thr_argv[1]= "1000";
 			temp_sequence2[3].thr_argv[2]= "0";
 			temp_sequence2[3].procedure_id = 1;
 
 			//12 void
 			temp_sequence2[4].function = thr_void;
-			temp_sequence2[4].thr_argv[0]= wait_between_stages_str;
+			temp_sequence2[4].thr_argv[0]= "1";
 			temp_sequence2[4].thr_argv[1]= "0";
 			temp_sequence2[4].thr_argv[2]= "0";
 			temp_sequence2[4].procedure_id = 1;
@@ -346,35 +346,35 @@ void l4_thruster_init (void *dummy) {
 
 			//11 READ
 			temp_sequence3[0].function = GeneralSetRequest_sequence;
-			temp_sequence3[0].thr_argv[0]= wait_between_stages_str;
+			temp_sequence3[0].thr_argv[0]= "2";
 			temp_sequence3[0].thr_argv[1]= "20";
 			temp_sequence3[0].thr_argv[2]= "2550";
 			temp_sequence3[0].procedure_id = 2;
 
 			//11 wait
 			temp_sequence3[1].function = thr_wait;
-			temp_sequence3[1].thr_argv[0]= wait_between_stages_str;
-			temp_sequence3[1].thr_argv[1]= "20";
+			temp_sequence3[1].thr_argv[0]= "2";
+			temp_sequence3[1].thr_argv[1]= "2000";
 			temp_sequence3[1].thr_argv[2]= "0";
 			temp_sequence3[1].procedure_id = 2;
 
 			//12 void
 			temp_sequence3[2].function = GeneralReadRequest_sequence;
-			temp_sequence3[2].thr_argv[0]= "6";
+			temp_sequence3[2].thr_argv[0]= "2";
 			temp_sequence3[2].thr_argv[1]= "20";
 			temp_sequence3[2].thr_argv[2]= "0";
 			temp_sequence3[2].procedure_id = 2;
 
 			//12 void
 			temp_sequence3[3].function = thr_wait;
-			temp_sequence3[3].thr_argv[0]= wait_between_stages_str;
+			temp_sequence3[3].thr_argv[0]= "2";
 			temp_sequence3[3].thr_argv[1]= "0";
 			temp_sequence3[3].thr_argv[2]= "0";
 			temp_sequence3[3].procedure_id = 2;
 
 			//12 void
 			temp_sequence3[4].function = thr_void;
-			temp_sequence3[4].thr_argv[0]= wait_between_stages_str;
+			temp_sequence3[4].thr_argv[0]= "2";
 			temp_sequence3[4].thr_argv[1]= "0";
 			temp_sequence3[4].thr_argv[2]= "0";
 			temp_sequence3[4].procedure_id = 2;
@@ -394,7 +394,7 @@ void l4_thruster_init (void *dummy) {
 
 
 
-*/
+
 
 
 
@@ -434,8 +434,16 @@ void l4_thruster_main (void) {
 
 			}
 
+	if (THR_HARDCODED_SEQUENCES[1].sequence_trigger ){ //if trigger for sequence is set to True - execute sequence
+				thr_execute_sequence(1);
+
+			}
 
 
+	if (THR_HARDCODED_SEQUENCES[2].sequence_trigger ){ //if trigger for sequence is set to True - execute sequence
+				thr_execute_sequence(2);
+
+			}
 }
 
 
