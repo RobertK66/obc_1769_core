@@ -35,29 +35,21 @@
 
 #include "tim/obc_time.h"
 
+#include <mod/ado_mram.h>
 
 
-// THRUSTER FIRING SEQUENCE OPERATION REGISTORS
-//bool THRUSTER_FIRING_STATUS;
-//uint32_t THR_FIRE_DURATION;
-//uint32_t THR_FIRE_START_TIMESTAMP;
-//uint16_t THR_FIRE_SI;
-//uint16_t THR_FIRE_THRUST;
-//bool THRUSTER_FIRE_FIRST_TIME;
-//uint32_t THR_EXECUTION_TIMESTAMP;
-
-bool THR_SEQUENCE_TRIGGER;
-//uint16_t THR_EXECUTION_INDEX;
-//uint32_t THR_SEQUENCE_EXECUTION_BEGIN;
-//uint32_t THR_SEQUENCE_EXECUTION_STAGE;
-//uint8_t THR_PROCEDURE_ID;
 
 void thr_wait(int argc, char *argv[]);
 void GeneralSetRequest_sequence(int argc, char *argv[]);
 void GeneralReadRequest_sequence(int argc, char *argv[]);
 void thr_execute_sequence();
 void thr_void(int argc, char *argv[]);
-//void thr_execute_sequence_cmd(int argc, char *argv[]);
+//MEM
+void thr_write_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
+void thr_write_mem();
+void thr_read_mem();
+void thr_read_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
+uint8_t MMRAM_READ_BUFFER[5];
 
 #define MAX_EXECUTION_SEQUENCE_DEPTH 50 // Maximum size of execution sequence stack
 #define MAX_HARDCODED_SEQUENCES 50 // Maximum number of preprogrammed sequences
@@ -182,7 +174,6 @@ void l4_thruster_init (void *dummy) {
 
 
 	/// **************** PREPROGRAMM SEQUENCES HERE ****************
-	THR_SEQUENCE_TRIGGER = false;
 
 
 
@@ -380,10 +371,10 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[4].procedure_id = 2;
 
 			//12 void
-			temp_sequence3[5].function = thr_wait;
+			temp_sequence3[5].function = GeneralSetRequest_sequence;
 			temp_sequence3[5].thr_argv[0]= "2";
-			temp_sequence3[5].thr_argv[1]= "1000";
-			temp_sequence3[5].thr_argv[2]= "0";
+			temp_sequence3[5].thr_argv[1]= "20";
+			temp_sequence3[5].thr_argv[2]= "3000";
 			temp_sequence3[5].procedure_id = 2;
 
 			//12 void
@@ -394,10 +385,10 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[6].procedure_id = 2;
 
 			//12 void
-			temp_sequence3[7].function = thr_wait;
+			temp_sequence3[7].function = GeneralSetRequest_sequence;
 			temp_sequence3[7].thr_argv[0]= "2";
-			temp_sequence3[7].thr_argv[1]= "1000";
-			temp_sequence3[7].thr_argv[2]= "0";
+			temp_sequence3[7].thr_argv[1]= "20";
+			temp_sequence3[7].thr_argv[2]= "1500";
 			temp_sequence3[7].procedure_id = 2;
 
 			THR_HARDCODED_SEQUENCES[0].sequences = temp_sequence; // save sequence
@@ -986,6 +977,8 @@ void thr_execute_sequence_cmd(int argc, char *argv[]){
 	int len = strlen(print_str);
 	deb_print_pure_debug((uint8_t *)print_str, len);
 
+	thr_write_mem(); //debug test
+
 
 }
 
@@ -1025,3 +1018,66 @@ void thr_execute_sequence(int procedure_id){
 
 
 }
+
+//****************** THIS IS JUST TEST AND TRIAL********************************
+
+void thr_write_mem(){
+	uint8_t testdata[5];
+	testdata[0] = 0x68;
+	testdata[1] = 0x65;
+	testdata[2] = 0x6C;
+	testdata[3] = 0x6C;
+	testdata[4] = 0x6F;
+	testdata[5] = 0x0A;
+	MramWriteAsync(0, 5000, (uint8_t*)&testdata, sizeof(testdata), thr_write_mem_callback);
+
+}
+
+
+void thr_write_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
+
+	if (result == MRAM_RES_SUCCESS) {
+		char print_str[200];
+		sprintf(print_str, "\nMemory Write Success\n");
+		int len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len);
+
+		thr_read_mem();
+
+
+
+	} else {
+		// TODO:?? retry counter / timeouts ....
+	}
+}
+
+
+
+void thr_read_mem(){
+	MramReadAsync(0, 5000, MMRAM_READ_BUFFER, sizeof(MMRAM_READ_BUFFER), thr_read_mem_callback);
+	//void MramReadAsync(uint8_t chipIdx, uint32_t adr,  uint8_t *rx_data,  uint32_t len,
+	//void (*finishedHandler)(uint8_t chipIdx,mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len))
+}
+
+void thr_read_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
+
+	if (result == MRAM_RES_SUCCESS) {
+		char print_str[200];
+		sprintf(print_str, "\nMemory Read Success\n");
+		int len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len);
+
+		len = strlen((char*)data);
+		deb_print_pure_debug(data, len);
+
+		sprintf(print_str, "\n-----msg_end--------\n");
+		len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len);
+
+
+
+	} else {
+		// TODO:?? retry counter / timeouts ....
+	}
+}
+// ******************************************************************************
