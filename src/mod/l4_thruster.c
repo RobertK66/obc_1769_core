@@ -192,7 +192,7 @@ void l4_thruster_init (void *dummy) {
 
 		thr_sequences_t temp_sequence[MAX_EXECUTION_SEQUENCE_DEPTH];
 		//1 SET SI
-		temp_sequence[0].function = GeneralSetRequest_sequence;
+		temp_sequence[0].function = thr_wait;
 		temp_sequence[0].thr_argv[0]= "0"; // FIRST ARGUMENT ALWAYS PROCES ID
 		temp_sequence[0].thr_argv[1]= "20";
 		temp_sequence[0].thr_argv[2]= "1500";
@@ -207,9 +207,9 @@ void l4_thruster_init (void *dummy) {
 		temp_sequence[1].procedure_id = 0;
 
 		//3 READ SI
-		temp_sequence[2].function = GeneralSetRequest_sequence;
+		temp_sequence[2].function = thr_wait;
 		temp_sequence[2].thr_argv[0]= "0";
-		temp_sequence[2].thr_argv[1]= "20";
+		temp_sequence[2].thr_argv[1]= "200";
 		temp_sequence[2].thr_argv[2]= "3000";
 		temp_sequence[2].procedure_id = 0;
 
@@ -221,23 +221,23 @@ void l4_thruster_init (void *dummy) {
 		temp_sequence[3].procedure_id = 0;
 
 		//5 SET
-		temp_sequence[4].function = GeneralSetRequest_sequence;
+		temp_sequence[4].function = thr_wait;
 		temp_sequence[4].thr_argv[0]= "0";
-		temp_sequence[4].thr_argv[1]= "20";
+		temp_sequence[4].thr_argv[1]= "2000";
 		temp_sequence[4].thr_argv[2]= "1750";
 		temp_sequence[4].procedure_id = 0;
 
 		//6 wait
 		temp_sequence[5].function = thr_wait;
 		temp_sequence[5].thr_argv[0]= "0";
-		temp_sequence[5].thr_argv[1]= wait_between_stages_str;
+		temp_sequence[5].thr_argv[1]= "1000";
 		temp_sequence[5].thr_argv[2]= "0";
 		temp_sequence[5].procedure_id = 0;
 
 		//7 READ
-		temp_sequence[6].function = GeneralSetRequest_sequence;
+		temp_sequence[6].function = thr_wait;
 		temp_sequence[6].thr_argv[0]= "0";
-		temp_sequence[6].thr_argv[1]= "20";
+		temp_sequence[6].thr_argv[1]= "2000";
 		temp_sequence[6].thr_argv[2]= "0";
 		temp_sequence[6].procedure_id = 0;
 
@@ -249,9 +249,9 @@ void l4_thruster_init (void *dummy) {
 		temp_sequence[7].procedure_id = 0;
 
 		//9 SET
-		temp_sequence[8].function = GeneralSetRequest_sequence;
+		temp_sequence[8].function = thr_wait;
 		temp_sequence[8].thr_argv[0]= "0";
-		temp_sequence[8].thr_argv[1]= "20";
+		temp_sequence[8].thr_argv[1]= "2000";
 		temp_sequence[8].thr_argv[2]= "2250";
 		temp_sequence[8].procedure_id = 0;
 
@@ -263,9 +263,9 @@ void l4_thruster_init (void *dummy) {
 		temp_sequence[9].procedure_id = 0;
 
 		//11 READ
-		temp_sequence[10].function = GeneralSetRequest_sequence;
+		temp_sequence[10].function = thr_wait;
 		temp_sequence[10].thr_argv[0]= "0";
-		temp_sequence[10].thr_argv[1]= "20";
+		temp_sequence[10].thr_argv[1]= "2000";
 		temp_sequence[10].thr_argv[2]= "0";
 		temp_sequence[10].procedure_id = 0;
 
@@ -277,9 +277,9 @@ void l4_thruster_init (void *dummy) {
 		temp_sequence[11].procedure_id = 0;
 
 		//12 void
-		temp_sequence[12].function = thr_void;
+		temp_sequence[12].function = thr_wait;
 		temp_sequence[12].thr_argv[0]= "0";
-		temp_sequence[12].thr_argv[1]= "0";
+		temp_sequence[12].thr_argv[1]= "1000";
 		temp_sequence[12].thr_argv[2]= "0";
 		temp_sequence[12].procedure_id = 0;
 
@@ -373,11 +373,32 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[3].procedure_id = 2;
 
 			//12 void
-			temp_sequence3[4].function = thr_void;
+			temp_sequence3[4].function = thr_wait;
 			temp_sequence3[4].thr_argv[0]= "2";
-			temp_sequence3[4].thr_argv[1]= "0";
+			temp_sequence3[4].thr_argv[1]= "2000";
 			temp_sequence3[4].thr_argv[2]= "0";
 			temp_sequence3[4].procedure_id = 2;
+
+			//12 void
+			temp_sequence3[5].function = thr_wait;
+			temp_sequence3[5].thr_argv[0]= "2";
+			temp_sequence3[5].thr_argv[1]= "1000";
+			temp_sequence3[5].thr_argv[2]= "0";
+			temp_sequence3[5].procedure_id = 2;
+
+			//12 void
+			temp_sequence3[6].function = thr_wait;
+			temp_sequence3[6].thr_argv[0]= "2";
+			temp_sequence3[6].thr_argv[1]= "1000";
+			temp_sequence3[6].thr_argv[2]= "0";
+			temp_sequence3[6].procedure_id = 2;
+
+			//12 void
+			temp_sequence3[7].function = thr_wait;
+			temp_sequence3[7].thr_argv[0]= "2";
+			temp_sequence3[7].thr_argv[1]= "1000";
+			temp_sequence3[7].thr_argv[2]= "0";
+			temp_sequence3[7].procedure_id = 2;
 
 			THR_HARDCODED_SEQUENCES[0].sequences = temp_sequence; // save sequence
 			THR_HARDCODED_SEQUENCES[0].length = 12; // MANUALLY DEFINE LENGTH OF SEQUENCE //
@@ -389,7 +410,7 @@ void l4_thruster_init (void *dummy) {
 
 
 			THR_HARDCODED_SEQUENCES[2].sequences = temp_sequence3; // save sequence
-			THR_HARDCODED_SEQUENCES[2].length = 4; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+			THR_HARDCODED_SEQUENCES[2].length = 7; // MANUALLY DEFINE LENGTH OF SEQUENCE //
 			THR_HARDCODED_SEQUENCES[2].sequence_trigger = false;
 
 
