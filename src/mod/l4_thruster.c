@@ -36,7 +36,7 @@
 #include "tim/obc_time.h"
 
 #include <mod/ado_mram.h>
-
+#include "modules_globals.h"
 
 
 void thr_wait(int argc, char *argv[]);
@@ -415,6 +415,7 @@ void l4_thruster_init (void *dummy) {
 }
 
 void l4_thruster_main (void) {
+	LAST_STARTED_MODULE = 11;
 
 	// TODO : I am not sure what to do here.
 	// Leaving it for now so that l4_thruster_module can be
@@ -463,13 +464,7 @@ void l4_thruster_main (void) {
 
 
 
-void l4_debugPrintBuffer(uint8_t *buffer,int bufferlen){
-	//LPC_UART2 is debug UART
-	for (int i=0;i<bufferlen;i++){
-		Chip_UART_SendByte(LPC_UART2, buffer[i]);
-	}
 
-}
 
 
 
@@ -479,6 +474,7 @@ void l4_debugPrintBuffer(uint8_t *buffer,int bufferlen){
 
 
 void ThrSendVersionRequestCmd(int argc, char *argv[]){
+	LAST_STARTED_MODULE = 1101;
 
 	uint8_t request[8];
 	request[0]= 0x00;
@@ -501,6 +497,7 @@ void ThrSendVersionRequestCmd(int argc, char *argv[]){
 
 
 void ReadAllRegisters(int argc, char *argv[]){
+	LAST_STARTED_MODULE = 1102;
 
 
 	uint8_t request[8];
@@ -536,6 +533,7 @@ void ReadAllRegisters(int argc, char *argv[]){
 // received_buffer of arbitrary size
 // len length of actual thruster reply
 void ParseReadRequest(uint8_t* received_buffer,int len){
+	LAST_STARTED_MODULE = 1103;
 
 	//uint8_t sender = received_buffer[0];
 	//uint8_t receiver = received_buffer[1];
@@ -707,6 +705,7 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 
 void GeneralSetRequest_sequence(int argc, char *argv[]){
+	LAST_STARTED_MODULE = 1104;
 	/*
 	 * _sequence is a wrapper arround General  thruster registor Read/Set request functions
 	 *
@@ -734,6 +733,7 @@ void GeneralSetRequest_sequence(int argc, char *argv[]){
 
 
 void GeneralSetRequest(int argc, char *argv[]){
+	LAST_STARTED_MODULE = 1105;
 
 
 
@@ -845,6 +845,7 @@ void GeneralSetRequest(int argc, char *argv[]){
 
 
 void GeneralReadRequest_sequence(int argc, char *argv[]){
+	LAST_STARTED_MODULE = 1106;
 	uint16_t procedure_id = atoi(argv[0]); // procedure_id is always fist index of argument array
 	GeneralReadRequest(3,argv);
 
@@ -864,6 +865,7 @@ void GeneralReadRequest_sequence(int argc, char *argv[]){
 
 //General read request to any register
 void GeneralReadRequest(int argc, char *argv[]){
+	LAST_STARTED_MODULE = 1107;
 
 		// FIRST ARGUMENT SHOUD BE int VALUE OF REGISTER THAT WOULD BE READ FROM
 		uint8_t access_register = atoi(argv[1]);
@@ -902,6 +904,7 @@ void GeneralReadRequest(int argc, char *argv[]){
 
 //////
 void thr_wait(int argc, char *argv[]){
+	LAST_STARTED_MODULE = 1108;
 
 	/*
 	 * thr_wait is a "staging" function incorporated in THR_EXECUTION_SEQUENCE
@@ -937,6 +940,7 @@ void thr_wait(int argc, char *argv[]){
 }
 
 void thr_void(int argc, char *argv[]){
+	LAST_STARTED_MODULE = 1109;
 
 	/*
 	 * Incorporates with sequence execution
@@ -956,6 +960,7 @@ void thr_void(int argc, char *argv[]){
 
 
 void thr_execute_sequence_cmd(int argc, char *argv[]){
+	LAST_STARTED_MODULE = 1110;
 	/*
 	 * This function is meant to trigger execution of SEQUENCE
 	 * Triggered function is thr_execute_sequence()
@@ -985,6 +990,7 @@ void thr_execute_sequence_cmd(int argc, char *argv[]){
 
 
 void thr_execute_sequence(int procedure_id){
+	LAST_STARTED_MODULE = 1111;
 	/*
 	 *
 	 * Executes pregrogrammed sequence  defined in THR_EXECUTION_SEQUENCE function pointer array
@@ -1022,6 +1028,7 @@ void thr_execute_sequence(int procedure_id){
 //****************** THIS IS JUST TEST AND TRIAL********************************
 
 void thr_write_mem(){
+	LAST_STARTED_MODULE = 1112;
 	uint8_t testdata[5];
 	testdata[0] = 0x68;
 	testdata[1] = 0x65;
@@ -1035,6 +1042,7 @@ void thr_write_mem(){
 
 
 void thr_write_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
+	LAST_STARTED_MODULE = 1113;
 
 	if (result == MRAM_RES_SUCCESS) {
 		char print_str[200];
@@ -1054,12 +1062,14 @@ void thr_write_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, ui
 
 
 void thr_read_mem(){
+	LAST_STARTED_MODULE = 1114;
 	MramReadAsync(0, 5000, MMRAM_READ_BUFFER, sizeof(MMRAM_READ_BUFFER), thr_read_mem_callback);
 	//void MramReadAsync(uint8_t chipIdx, uint32_t adr,  uint8_t *rx_data,  uint32_t len,
 	//void (*finishedHandler)(uint8_t chipIdx,mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len))
 }
 
 void thr_read_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
+	LAST_STARTED_MODULE = 1115;
 
 	if (result == MRAM_RES_SUCCESS) {
 		char print_str[200];

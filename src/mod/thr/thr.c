@@ -9,6 +9,9 @@
 #include "../l7_climb_app.h"
 #include "../l2_debug_com.h"
 #include "../l4_thruster.h" // with that we include variable  l4_thr_ExpectedReceiveBuffer  which defines expected RX buffer length
+#include "../modules_globals.h"
+
+//uint16_t LAST_STARTED_MODULE;
 
 
 // prototypes
@@ -97,6 +100,7 @@ void thrInit (void *initData) {
 }
 
 void thrMain (void) {
+	LAST_STARTED_MODULE=10;
 	// Uart Rx
 	int32_t stat = Chip_UART_ReadLineStatus(thrInitData->pUart);
 	if (stat & UART_LSR_RDR) {
@@ -109,6 +113,7 @@ void thrMain (void) {
 }
 
 void thrUartIRQ(LPC_USART_T *pUART) {
+	LAST_STARTED_MODULE=1001;
 	if (thrInitData->pUart->IER & UART_IER_THREINT) {
 		// Transmit register is empty now (byte was sent out)
 		if (thrTxBufferEmpty() == false) {
@@ -126,6 +131,7 @@ void thrUartIRQ(LPC_USART_T *pUART) {
 }
 
 void thrSendByte(uint8_t b) {
+	LAST_STARTED_MODULE=1002;
 
 	// block irq while handling tx buffer
 	Chip_UART_IntDisable(thrInitData->pUart, UART_IER_THREINT);
@@ -159,6 +165,7 @@ void thrSendByte(uint8_t b) {
 }
 
 void thrSendBytes(uint8_t *data, uint8_t len) {
+	LAST_STARTED_MODULE=1003;
 	//set to transmit when sending data package
 	Chip_GPIO_SetPinOutHigh(LPC_GPIO, 2, 5); //  This is PINIDX_RS485_TX_RX TRANSMIT
 	for (int i=0;i<len;i++) {
@@ -169,6 +176,7 @@ void thrSendBytes(uint8_t *data, uint8_t len) {
 
 
 void thrProcessRxByte(uint8_t rxByte) {
+	LAST_STARTED_MODULE=1004;
 	// do your processing of RX here....
 
 	if (l4_thr_counter< l4_thr_ExpectedReceiveBuffer){ // change it to expected buffer length SET by REQUEST functions

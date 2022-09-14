@@ -27,6 +27,8 @@
 
 #include "../radtest/radtest.h"
 
+#include "modules_globals.h"
+
 typedef struct {
 	uint8_t	cmdId;
 	void 	(*command_function)(int argc, char *argv[]);
@@ -117,6 +119,7 @@ void app_init (void *dummy) {
 }
 
 void app_main (void) {
+	LAST_STARTED_MODULE = 9;
 	// Debug Command Polling (direct from L2 CLI Module)
 	DEB_L2_CMD_T cmd;
 	if ( deb_getCommandIfAvailable(&cmd) ) {
@@ -138,6 +141,7 @@ void app_main (void) {
 // a 'Layer3' protocol to handle this (At this moment there is a simple protocol used which has a Start-EndFrame (0x7E) token and escapes any occurrences of
 // 0x7E and 0x7D in the data by using 0x7D as Escape token).
 void _SysEvent(event_t event) {
+	LAST_STARTED_MODULE = 901;
 	// send all events to umbilical UART as debug frames
 	deb_sendEventFrame(event.id, event.data, event.byteCnt);
 
@@ -155,6 +159,7 @@ void _SysEvent(event_t event) {
 uint8_t  tempData[MRAM_MAX_WRITE_SIZE];
 
 void app_processCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 902;
 	char* cmd = argv[0];
 
 	for (int i=0; i<APP_CMD_CNT; i++) {
@@ -168,6 +173,7 @@ void app_processCmd(int argc, char *argv[]) {
 
 static bool spOn[4]={false,false,false,false};
 void SpPowerSwitch(char sp) {
+	LAST_STARTED_MODULE = 903;
 	uint8_t pinIdx = PINIDX_SP3_VCC_EN;
 	bool *flag  = 0;
 	if ((sp=='a')||(sp=='A')) {
@@ -199,11 +205,13 @@ void SpPowerSwitch(char sp) {
 }
 
 void SendToGpsUartCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 904;
 	gpsSendBytes((uint8_t *)"1U2", 3);
 }
 
 
 void SpPowerCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 905;
 	if (argc != 2) {
 		SysEventString("uasge: p <a|A/b|B/c|C/d|D>");
 	} else {
@@ -219,28 +227,33 @@ void SpPowerCmd(int argc, char *argv[]) {
 }
 
 void CardPowerOnCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 906;
 	memCardOn();
 //	HwcSetOutput(PINIDX_SD_VCC_EN, HWC_Low);	// Sd Card Power On
 //	SdcCardinitialize(0);		// initialize Card[0]
 }
 
 void CardPowerOffCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 907;
 	memCardOff();
 //	HwcSetOutput(PINIDX_SD_VCC_EN, HWC_High);
 }
 
 void TriggerWatchdogCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 908;
 	while(true);
 }
 
 
 void ReadAllSensorsCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 909;
 	SenReadAllValues();
 	//SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_SENSORVALUES, &values, sizeof(sensor_values_t));
 }
 
 uint8_t tempBlockData[2000];
 void ReadSdcardCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 910;
 	if (argc != 2) {
 		SysEventString("uasge: R <blockNr>")
 	} else {
@@ -252,6 +265,7 @@ void ReadSdcardCmd(int argc, char *argv[]) {
 }
 
 void ReadSdcardFinished (sdc_res_t result, uint32_t blockNr, uint8_t *data, uint32_t len) {
+	LAST_STARTED_MODULE = 911;
     if (result == SDC_RES_SUCCESS) {
     	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_RAWDATA, data, len);
     	//deb_sendFrame((uint8_t*)data, len);
@@ -261,11 +275,13 @@ void ReadSdcardFinished (sdc_res_t result, uint32_t blockNr, uint8_t *data, uint
 }
 
 void WriteSdcardCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 912;
 
 }
 
 
 void ReadMramCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 913;
 	if (argc != 4) {
 		SysEventString("uasge: r <chipIdx> <adr> <len>");
 	} else {
@@ -284,6 +300,7 @@ void ReadMramCmd(int argc, char *argv[]) {
 }
 
 void ReadMramFinished (uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
+	LAST_STARTED_MODULE = 914;
     if (result == MRAM_RES_SUCCESS) {
     	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_RAWDATA, data, len);
     	//deb_sendFrame((uint8_t*)data, len);
@@ -296,6 +313,7 @@ void ReadMramFinished (uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t
 
 
 void WriteMramCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 915;
 	if (argc != 5) {
 		char *str="uasge: w <chipidx> <adr> <databyte> <len>";
 		SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, str,strlen(str));
@@ -323,6 +341,7 @@ void WriteMramCmd(int argc, char *argv[]) {
 
 
 void WriteMramFinished (uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
+	LAST_STARTED_MODULE = 916;
 	if (result == MRAM_RES_SUCCESS) {
 		SysEventString("SUCCESS");
 	} else {
@@ -332,6 +351,7 @@ void WriteMramFinished (uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_
 
 
 void HwcSetOutputCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 917;
 	hwc_OutStatus stat = HWC_Signal_Slow;
 	uint8_t idx = 0;
 	if (argc > 1) {
@@ -345,6 +365,7 @@ void HwcSetOutputCmd(int argc, char *argv[]) {
 }
 
 void HwcMirrorInputCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 918;
 	uint8_t idxIn  = PINIDX_RBF;
 	uint8_t idxOut = PINIDX_LED;	//LED
 	if (argc > 1) {
@@ -358,6 +379,7 @@ void HwcMirrorInputCmd(int argc, char *argv[]) {
 }
 
 void SetObcNameCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 919;
 	if (argc != 2) {
 		SysEventString("uasge: O <instanceName>");
 	} else {
@@ -367,6 +389,7 @@ void SetObcNameCmd(int argc, char *argv[]) {
 
 
 void SetSdCardNameCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 920;
 	if (argc != 2) {
 		SysEventString("uasge: N <cardName>");
 	} else {
@@ -376,6 +399,7 @@ void SetSdCardNameCmd(int argc, char *argv[]) {
 
 
 void GetSystemInfoCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 921;
 	app_systeminfo_t info;
 	//info.CurrentTime = tim_getSystemTime();
 	memGetInstanceName(info.InstanceName,16);
@@ -397,6 +421,7 @@ void GetSystemInfoCmd(int argc, char *argv[]) {
 }
 
 void SetUtcDateTimeCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 922;
 	// setTime <year><Month><day><hours><minutes><seconds> as single uint32
 	uint16_t year = 0;
 	uint8_t month = 0;
@@ -433,6 +458,7 @@ void SetUtcDateTimeCmd(int argc, char *argv[]) {
 
 
 void GetFullTimeCmd(int argc, char *argv[]) {
+	LAST_STARTED_MODULE = 923;
 	obc_utc_fulltime_t ft = timGetUTCTime();
 	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_FULLTIMEINFO, &ft, sizeof(ft));
 }
