@@ -68,6 +68,7 @@ typedef struct {
 	uint32_t sequence_execution_begin; // timestamp at which sequence begin
 	uint32_t sequence_execution_stage; // timestamp at which stage is completed
 	bool sequence_trigger;
+	bool repeat;
 
 }thr_hardcoded_sequences_t;
 thr_hardcoded_sequences_t THR_HARDCODED_SEQUENCES[5];
@@ -278,6 +279,7 @@ void l4_thruster_init (void *dummy) {
 		THR_HARDCODED_SEQUENCES[0].sequences = temp_sequence; // save sequence
 		THR_HARDCODED_SEQUENCES[0].length = 12; // MANUALLY DEFINE LENGTH OF SEQUENCE //
 		THR_HARDCODED_SEQUENCES[0].sequence_trigger = false;
+		THR_HARDCODED_SEQUENCES[0].repeat = true;
 
 
 
@@ -328,6 +330,7 @@ void l4_thruster_init (void *dummy) {
 			THR_HARDCODED_SEQUENCES[1].sequences = temp_sequence2; // save sequence
 			THR_HARDCODED_SEQUENCES[1].length = 4; // MANUALLY DEFINE LENGTH OF SEQUENCE //
 			THR_HARDCODED_SEQUENCES[1].sequence_trigger = false;
+			THR_HARDCODED_SEQUENCES[1].repeat = false;
 
 
 		//////////// ******** SEQUENCE 3***************
@@ -391,18 +394,12 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[7].thr_argv[2]= "1500";
 			temp_sequence3[7].procedure_id = 2;
 
-			THR_HARDCODED_SEQUENCES[1].sequences = temp_sequence2; // save sequence
-			THR_HARDCODED_SEQUENCES[1].length = 4; // MANUALLY DEFINE LENGTH OF SEQUENCE //
-			THR_HARDCODED_SEQUENCES[1].sequence_trigger = false;
 
 			THR_HARDCODED_SEQUENCES[2].sequences = temp_sequence3; // save sequence
 			THR_HARDCODED_SEQUENCES[2].length = 7; // MANUALLY DEFINE LENGTH OF SEQUENCE //
 			THR_HARDCODED_SEQUENCES[2].sequence_trigger = false;
+			THR_HARDCODED_SEQUENCES[2].repeat = false;
 
-
-			THR_HARDCODED_SEQUENCES[0].sequences = temp_sequence; // save sequence
-			THR_HARDCODED_SEQUENCES[0].length = 12; // MANUALLY DEFINE LENGTH OF SEQUENCE //
-			THR_HARDCODED_SEQUENCES[0].sequence_trigger = false;
 
 
 
@@ -1007,19 +1004,28 @@ void thr_execute_sequence(int procedure_id){
 
 
 	if (THR_HARDCODED_SEQUENCES[procedure_id].execution_index >= THR_HARDCODED_SEQUENCES[procedure_id].length){
-	//if (false){
 		LAST_STARTED_MODULE = 11110; //DEBUG
 
 		char print_str[200];
 		sprintf(print_str, "\nSequence complete\n");
 		int len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
-		//THR_SEQUENCE_TRIGGER = false;
-		THR_HARDCODED_SEQUENCES[procedure_id].sequence_trigger = false;
-		THR_HARDCODED_SEQUENCES[procedure_id].execution_index =0;
 
-		LAST_STARTED_MODULE = 10001; //DEBUG
-		return;
+		if(THR_HARDCODED_SEQUENCES[procedure_id].repeat){
+			sprintf(print_str, "\nRepeat sequence\n");
+			len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, len);
+			THR_HARDCODED_SEQUENCES[procedure_id].sequence_trigger = true;
+			THR_HARDCODED_SEQUENCES[procedure_id].execution_index =0;
+		}
+		else{
+			THR_HARDCODED_SEQUENCES[procedure_id].sequence_trigger = false;
+			THR_HARDCODED_SEQUENCES[procedure_id].execution_index =0;
+			return;
+
+		}
+
+
 	}
 	else{
 		void (*f)(int argc, char *argv[]);
