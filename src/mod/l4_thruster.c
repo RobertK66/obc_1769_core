@@ -49,7 +49,7 @@ void thr_write_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, ui
 void thr_write_mem();
 void thr_read_mem();
 void thr_read_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
-uint8_t MMRAM_READ_BUFFER[5];
+uint8_t MMRAM_READ_BUFFER[6];
 
 #define MAX_EXECUTION_SEQUENCE_DEPTH 50 // Maximum size of execution sequence stack
 #define MAX_HARDCODED_SEQUENCES 50 // Maximum number of preprogrammed sequences
@@ -965,12 +965,7 @@ void thr_execute_sequence_cmd(int argc, char *argv[]){
 	 * Triggered function is thr_execute_sequence()
 
 	*/
-
 	uint8_t procedure_id = atoi(argv[1]);
-
-	thr_write_mem(); //debug test
-
-
 
 	//THR_SEQUENCE_TRIGGER = true;
 	THR_HARDCODED_SEQUENCES[procedure_id].sequence_trigger = true;
@@ -992,7 +987,8 @@ void thr_execute_sequence_cmd(int argc, char *argv[]){
 	THR_HARDCODED_SEQUENCES[procedure_id].sequences[0].thr_argv[1] = "20";
 	THR_HARDCODED_SEQUENCES[procedure_id].sequences[0].thr_argv[2] = "3000";
 	THR_HARDCODED_SEQUENCES[procedure_id].sequences[0].function = GeneralSetRequest_sequence;
-	// ***********************************************************************
+	 //***********************************************************************
+
 
 
 
@@ -1043,11 +1039,12 @@ void thr_execute_sequence(int procedure_id){
 
 }
 
+
 //****************** THIS IS JUST TEST AND TRIAL********************************
 
 void thr_write_mem(){
 	LAST_STARTED_MODULE = 1112;
-	uint8_t testdata[5];
+	uint8_t testdata[6];
 	testdata[0] = 0x68;
 	testdata[1] = 0x65;
 	testdata[2] = 0x6C;
@@ -1107,5 +1104,12 @@ void thr_read_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uin
 	} else {
 		// TODO:?? retry counter / timeouts ....
 	}
+}
+
+
+void mem_write_cmd(int argc, char *argv[]){
+
+	thr_write_mem(); //debug test
+
 }
 // ******************************************************************************

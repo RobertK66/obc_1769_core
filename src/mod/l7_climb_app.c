@@ -100,7 +100,9 @@ static const app_command_t Commands[] = {
 		{ '5' , ReadAllRegisters },
 		{ '6' , GeneralReadRequest },
 		{ '7' , GeneralSetRequest },
-		{ '8' , thr_execute_sequence_cmd } // 1st argument - thrust duration in ms
+		{ '8' , thr_execute_sequence_cmd }, // 1st argument - thrust duration in ms
+		{ '9' , mem_write_cmd }
+
 };
 
 
