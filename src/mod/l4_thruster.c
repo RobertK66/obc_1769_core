@@ -181,7 +181,7 @@ void l4_thruster_init (void *dummy) {
 
 	//Build argv array for execution sequence
 
-		thr_sequences_t temp_sequence[MAX_EXECUTION_SEQUENCE_DEPTH];
+		static thr_sequences_t temp_sequence[MAX_EXECUTION_SEQUENCE_DEPTH];
 		//1 SET SI
 		temp_sequence[0].function = thr_wait;
 		temp_sequence[0].thr_argv[0]= "0"; // FIRST ARGUMENT ALWAYS PROCES ID
@@ -198,9 +198,9 @@ void l4_thruster_init (void *dummy) {
 		temp_sequence[1].procedure_id = 0;
 
 		//3 READ SI
-		temp_sequence[2].function = thr_wait;
+		temp_sequence[2].function = GeneralSetRequest_sequence;
 		temp_sequence[2].thr_argv[0]= "0";
-		temp_sequence[2].thr_argv[1]= "200";
+		temp_sequence[2].thr_argv[1]= "20";
 		temp_sequence[2].thr_argv[2]= "3000";
 		temp_sequence[2].procedure_id = 0;
 
@@ -212,9 +212,9 @@ void l4_thruster_init (void *dummy) {
 		temp_sequence[3].procedure_id = 0;
 
 		//5 SET
-		temp_sequence[4].function = thr_wait;
+		temp_sequence[4].function = GeneralReadRequest_sequence;
 		temp_sequence[4].thr_argv[0]= "0";
-		temp_sequence[4].thr_argv[1]= "2000";
+		temp_sequence[4].thr_argv[1]= "20";
 		temp_sequence[4].thr_argv[2]= "1750";
 		temp_sequence[4].procedure_id = 0;
 
@@ -226,10 +226,10 @@ void l4_thruster_init (void *dummy) {
 		temp_sequence[5].procedure_id = 0;
 
 		//7 READ
-		temp_sequence[6].function = thr_wait;
+		temp_sequence[6].function = GeneralSetRequest_sequence;
 		temp_sequence[6].thr_argv[0]= "0";
-		temp_sequence[6].thr_argv[1]= "2000";
-		temp_sequence[6].thr_argv[2]= "0";
+		temp_sequence[6].thr_argv[1]= "20";
+		temp_sequence[6].thr_argv[2]= "2500";
 		temp_sequence[6].procedure_id = 0;
 
 		//8 wait
@@ -240,9 +240,9 @@ void l4_thruster_init (void *dummy) {
 		temp_sequence[7].procedure_id = 0;
 
 		//9 SET
-		temp_sequence[8].function = thr_wait;
+		temp_sequence[8].function = thr_void;
 		temp_sequence[8].thr_argv[0]= "0";
-		temp_sequence[8].thr_argv[1]= "2000";
+		temp_sequence[8].thr_argv[1]= "20";
 		temp_sequence[8].thr_argv[2]= "2250";
 		temp_sequence[8].procedure_id = 0;
 
@@ -254,9 +254,9 @@ void l4_thruster_init (void *dummy) {
 		temp_sequence[9].procedure_id = 0;
 
 		//11 READ
-		temp_sequence[10].function = thr_wait;
+		temp_sequence[10].function = GeneralReadRequest_sequence;
 		temp_sequence[10].thr_argv[0]= "0";
-		temp_sequence[10].thr_argv[1]= "2000";
+		temp_sequence[10].thr_argv[1]= "20";
 		temp_sequence[10].thr_argv[2]= "0";
 		temp_sequence[10].procedure_id = 0;
 
@@ -284,7 +284,7 @@ void l4_thruster_init (void *dummy) {
 
 
 	//////////// ******** SEQUENCE 2***************
-	thr_sequences_t temp_sequence2[MAX_EXECUTION_SEQUENCE_DEPTH];
+	static thr_sequences_t temp_sequence2[MAX_EXECUTION_SEQUENCE_DEPTH];
 
 
 	//11 READ
@@ -333,7 +333,7 @@ void l4_thruster_init (void *dummy) {
 		//////////// ******** SEQUENCE 3***************
 
 			//thr_sequences_t temp_sequence[MAX_EXECUTION_SEQUENCE_DEPTH];
-			thr_sequences_t temp_sequence3[MAX_EXECUTION_SEQUENCE_DEPTH];
+			static thr_sequences_t temp_sequence3[MAX_EXECUTION_SEQUENCE_DEPTH];
 
 			//11 READ
 			temp_sequence3[0].function = GeneralSetRequest_sequence;
@@ -391,18 +391,22 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[7].thr_argv[2]= "1500";
 			temp_sequence3[7].procedure_id = 2;
 
-			THR_HARDCODED_SEQUENCES[0].sequences = temp_sequence; // save sequence
-			THR_HARDCODED_SEQUENCES[0].length = 12; // MANUALLY DEFINE LENGTH OF SEQUENCE //
-			THR_HARDCODED_SEQUENCES[0].sequence_trigger = false;
-
 			THR_HARDCODED_SEQUENCES[1].sequences = temp_sequence2; // save sequence
 			THR_HARDCODED_SEQUENCES[1].length = 4; // MANUALLY DEFINE LENGTH OF SEQUENCE //
 			THR_HARDCODED_SEQUENCES[1].sequence_trigger = false;
 
-
 			THR_HARDCODED_SEQUENCES[2].sequences = temp_sequence3; // save sequence
 			THR_HARDCODED_SEQUENCES[2].length = 7; // MANUALLY DEFINE LENGTH OF SEQUENCE //
 			THR_HARDCODED_SEQUENCES[2].sequence_trigger = false;
+
+
+			THR_HARDCODED_SEQUENCES[0].sequences = temp_sequence; // save sequence
+			THR_HARDCODED_SEQUENCES[0].length = 12; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+			THR_HARDCODED_SEQUENCES[0].sequence_trigger = false;
+
+
+
+
 
 
 
@@ -948,13 +952,8 @@ void thr_void(int argc, char *argv[]){
 	 * void function that does nothing
 	 */
 
-
-	//char print_str[200];
-	//sprintf(print_str, "\nSequence complete\n");
-	//int len = strlen(print_str);
-	//deb_print_pure_debug((uint8_t *)print_str, len);
-	//THR_SEQUENCE_TRIGGER = false;
-	//THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID].execution_index =0;
+	uint16_t procedure_id = atoi(argv[0]); // procedure_id is always fist index of argument array
+	THR_HARDCODED_SEQUENCES[procedure_id].execution_index ++;
 
 }
 
@@ -969,6 +968,8 @@ void thr_execute_sequence_cmd(int argc, char *argv[]){
 
 	uint8_t procedure_id = atoi(argv[1]);
 
+	thr_write_mem(); //debug test
+
 
 
 	//THR_SEQUENCE_TRIGGER = true;
@@ -982,7 +983,17 @@ void thr_execute_sequence_cmd(int argc, char *argv[]){
 	int len = strlen(print_str);
 	deb_print_pure_debug((uint8_t *)print_str, len);
 
-	thr_write_mem(); //debug test
+
+
+	//*** THIS IS TEST EXAMPLE TO DEMONSTRATE THAT IT IS POSSIBLE TO CHANGE EXECUTION FUNCTION AND ARGUMENTS IN A SEQUENCE
+	char temp_arg[1];
+	sprintf(temp_arg, "%d",procedure_id);
+	THR_HARDCODED_SEQUENCES[procedure_id].sequences[0].thr_argv[0] = temp_arg;
+	THR_HARDCODED_SEQUENCES[procedure_id].sequences[0].thr_argv[1] = "20";
+	THR_HARDCODED_SEQUENCES[procedure_id].sequences[0].thr_argv[2] = "3000";
+	THR_HARDCODED_SEQUENCES[procedure_id].sequences[0].function = GeneralSetRequest_sequence;
+	// ***********************************************************************
+
 
 
 }
@@ -1001,6 +1012,8 @@ void thr_execute_sequence(int procedure_id){
 
 	if (THR_HARDCODED_SEQUENCES[procedure_id].execution_index >= THR_HARDCODED_SEQUENCES[procedure_id].length){
 	//if (false){
+		LAST_STARTED_MODULE = 11110; //DEBUG
+
 		char print_str[200];
 		sprintf(print_str, "\nSequence complete\n");
 		int len = strlen(print_str);
@@ -1008,6 +1021,8 @@ void thr_execute_sequence(int procedure_id){
 		//THR_SEQUENCE_TRIGGER = false;
 		THR_HARDCODED_SEQUENCES[procedure_id].sequence_trigger = false;
 		THR_HARDCODED_SEQUENCES[procedure_id].execution_index =0;
+
+		LAST_STARTED_MODULE = 10001; //DEBUG
 		return;
 	}
 	else{
@@ -1015,8 +1030,11 @@ void thr_execute_sequence(int procedure_id){
 
 		//f = THR_SEQUENCES[THR_EXECUTION_INDEX].function;
 		//f(3,THR_SEQUENCES[THR_EXECUTION_INDEX].thr_argv);
+		LAST_STARTED_MODULE = 10002; //DEBUG
 		f = THR_HARDCODED_SEQUENCES[procedure_id].sequences[THR_HARDCODED_SEQUENCES[procedure_id].execution_index].function;
+		LAST_STARTED_MODULE = THR_HARDCODED_SEQUENCES[procedure_id].execution_index; //DEBUG
 		f(3,THR_HARDCODED_SEQUENCES[procedure_id].sequences[THR_HARDCODED_SEQUENCES[procedure_id].execution_index].thr_argv);
+		LAST_STARTED_MODULE = 10004; //DEBUG
 	}
 
 
