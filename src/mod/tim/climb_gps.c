@@ -13,6 +13,8 @@
 
 #include "obc_time.h"
 
+#include "../l2_debug_com.h"
+
 // Event structs - used as API to ground station (or debug IF) only
 //typedef struct __attribute__((packed)) {
 //	char	talker;
@@ -127,9 +129,21 @@ void gpsInit (void *initData) {
 	InitUart(gpsInitData->pUart, 9600, gpsUartIRQ);
 	gpsFirstByteAfterReset = true;
 
+
+	/// TEST MESSAGE DURING INIT FOR DEBUG
+	uint8_t request[4];
+	request[0] =0x01;
+	request[1] = 0x02;
+	request[2] = 0x03;
+	request[3] = 0x00; // checksum
+	uint8_t len = sizeof(request);
+	gpsSendBytes(request,len);
+	////////////////////////////////////
+
 }
 
 void gpsMain (void) {
+
 	// Uart Rx
 	int32_t stat = Chip_UART_ReadLineStatus(gpsInitData->pUart);
 	if (stat & UART_LSR_RDR) {
@@ -323,6 +337,7 @@ static gps_rx_state gpsRxStatus = GPS_RX_IDLE;
 
 
 void gpsProcessRxByte(uint8_t rxByte) {
+	deb_print_pure_debug(&rxByte, 1); // print received byte into debug uart for visualization
 
 	switch (gpsRxStatus) {
 	case GPS_RX_IDLE:
