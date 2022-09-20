@@ -100,7 +100,7 @@ void i2c_arduino_main() { // in main we check for active read jobs
 
 
 	i2c_Proccess_Received_Buffer(readJob, readRx,6);
-	//i2c_Proccess_Received_Buffer(readJob, read2,6);
+	i2c_Proccess_Received_Buffer(readJob, read2,6);
 
 
 	///////// SEND I2C bytes every once in a while
@@ -108,7 +108,7 @@ void i2c_arduino_main() { // in main we check for active read jobs
 	if(i2c_delayCounter ==100000){
 		i2c_delayCounter=0;
 		//i2cArduino_SendReadRequest(i2c_arduino_read_request);
-		//i2cArduino_Read();
+		i2cArduino_Read();
 
 	}// end if delay
 
@@ -144,13 +144,13 @@ bool i2cArduino_SendReadRequest(uint8_t *read_request ) {  //when send i2c read 
 	///////////////////////////
 
 
-	readJob.device = LPC_I2C0;
+	readJob.device = LPC_I2C2;
 	//readJob.tx_size = sizeof(read_request)/sizeof(uint8_t); // number of entries in read request array
 	readJob.tx_size = 9; // number of entries in read request array
 	readJob.tx_data = read_request;
 	readJob.rx_size = sizeof(readRx)/sizeof(uint8_t);
 	readJob.rx_data = readRx;
-	readJob.adress = 57;
+	readJob.adress = 8;
 
 	i2c_add_job(&readJob);
 	return true;
@@ -171,7 +171,7 @@ bool i2cArduino_Read() {  //when send i2c read request we add READ JOB expecting
 	//readJob.tx_data = read_request;
 	readJob.rx_size = sizeof(read2)/sizeof(uint8_t);
 	readJob.rx_data = read2;
-	readJob.adress = 57;
+	readJob.adress = 8;
 
 	i2c_add_job(&readJob);
 	return true;
