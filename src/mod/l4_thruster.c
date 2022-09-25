@@ -44,6 +44,7 @@ void GeneralSetRequest_sequence(int argc, char *argv[]);
 void GeneralReadRequest_sequence(int argc, char *argv[]);
 void thr_execute_sequence();
 void thr_void(int argc, char *argv[]);
+void thr_value_ramp(int argc, char *argv[]);
 //MEM
 void thr_write_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
 void thr_write_mem();
@@ -55,7 +56,7 @@ uint8_t MMRAM_READ_BUFFER[6];
 #define MAX_HARDCODED_SEQUENCES 50 // Maximum number of preprogrammed sequences
 
 typedef struct {
-	char *thr_argv[3];
+	char *thr_argv[6];
 	void (*function)(int argc, char *argv[]);
 	uint16_t procedure_id;
 } thr_sequences_t;
@@ -71,6 +72,7 @@ typedef struct {
 	bool repeat;
 	bool pause;
 	bool restart;
+	int substage_index;
 
 }thr_hardcoded_sequences_t;
 thr_hardcoded_sequences_t THR_HARDCODED_SEQUENCES[5];
@@ -282,6 +284,7 @@ void l4_thruster_init (void *dummy) {
 		THR_HARDCODED_SEQUENCES[0].length = 12; // MANUALLY DEFINE LENGTH OF SEQUENCE //
 		THR_HARDCODED_SEQUENCES[0].sequence_trigger = false;
 		THR_HARDCODED_SEQUENCES[0].repeat = true;
+		THR_HARDCODED_SEQUENCES[0].substage_index = 0; //DEFAULT SUBSTAGE INDEX
 
 
 
@@ -333,6 +336,7 @@ void l4_thruster_init (void *dummy) {
 			THR_HARDCODED_SEQUENCES[1].length = 4; // MANUALLY DEFINE LENGTH OF SEQUENCE //
 			THR_HARDCODED_SEQUENCES[1].sequence_trigger = false;
 			THR_HARDCODED_SEQUENCES[1].repeat = false;
+			THR_HARDCODED_SEQUENCES[1].substage_index = 0; //DEFAULT SUBSTAGE INDEX
 
 
 		//////////// ******** SEQUENCE 3***************
@@ -341,10 +345,12 @@ void l4_thruster_init (void *dummy) {
 			static thr_sequences_t temp_sequence3[MAX_EXECUTION_SEQUENCE_DEPTH];
 
 			//11 READ
-			temp_sequence3[0].function = GeneralSetRequest_sequence;
-			temp_sequence3[0].thr_argv[0]= "2";
-			temp_sequence3[0].thr_argv[1]= "20";
-			temp_sequence3[0].thr_argv[2]= "2550";
+			temp_sequence3[0].function = thr_value_ramp;
+			temp_sequence3[0].thr_argv[0]= "2"; //procedure id HARDCODED
+			temp_sequence3[0].thr_argv[1]= "20"; // access register of a ramp (specific impulse)
+			temp_sequence3[0].thr_argv[2]= "3000"; // GOAL of RAMP - manually set to 3000s
+			temp_sequence3[0].thr_argv[3]= "100"; // ramp duration 30s
+			temp_sequence3[0].thr_argv[4]= "10"; // 10 seconds between set requests
 			temp_sequence3[0].procedure_id = 2;
 
 			//11 wait
@@ -376,7 +382,7 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[4].procedure_id = 2;
 
 			//12 void
-			temp_sequence3[5].function = GeneralSetRequest_sequence;
+			temp_sequence3[5].function = GeneralReadRequest_sequence;
 			temp_sequence3[5].thr_argv[0]= "2";
 			temp_sequence3[5].thr_argv[1]= "20";
 			temp_sequence3[5].thr_argv[2]= "3000";
@@ -390,7 +396,7 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[6].procedure_id = 2;
 
 			//12 void
-			temp_sequence3[7].function = GeneralSetRequest_sequence;
+			temp_sequence3[7].function = GeneralReadRequest_sequence;
 			temp_sequence3[7].thr_argv[0]= "2";
 			temp_sequence3[7].thr_argv[1]= "20";
 			temp_sequence3[7].thr_argv[2]= "1500";
@@ -401,6 +407,7 @@ void l4_thruster_init (void *dummy) {
 			THR_HARDCODED_SEQUENCES[2].length = 7; // MANUALLY DEFINE LENGTH OF SEQUENCE //
 			THR_HARDCODED_SEQUENCES[2].sequence_trigger = false;
 			THR_HARDCODED_SEQUENCES[2].repeat = false;
+			THR_HARDCODED_SEQUENCES[2].substage_index = 0; //DEFAULT SUBSTAGE INDEX
 
 
 
@@ -956,6 +963,116 @@ void thr_void(int argc, char *argv[]){
 
 }
 
+void thr_value_ramp(int argc, char *argv[]){
+	//int substage_index =0;
+
+	uint16_t procedure_id = atoi(argv[0]); // procedure_id is always fist index of argument array
+	uint8_t register_index = atoi(argv[1]); // first argument is register index at which SET ramp would be implemented
+	double goal = atof((const char*)argv[2]); // goal to which value should be set
+	uint32_t ramp_duration = atoi(argv[3]); // time through which value should be changed from initial to goal
+	uint32_t ramp_dt = atoi(argv[4]); // wait between SET
+	double initial_value;
+	uint32_t now_timestamp;
+
+	char print_str[200];
+	int len;
+
+	double ramp_iterations = ramp_duration/ ramp_dt; // WARING - HARDCODE IN A WAY THAT THIS IS ALWAYS INT
+	double value_step;
+
+
+
+	switch (THR_HARDCODED_SEQUENCES[procedure_id].substage_index){
+
+	case 0:// first we make read request to desired register in order to obtain initial register value
+		GeneralReadRequest(argc,argv); // make sure that argv[1] is register index
+		//substage_index++;
+		THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
+		sprintf(print_str, "\nWInitial read Request Sent\n");
+		len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len);
+		break;
+	case 1: // wait for some time while proccess request is executing
+		now_timestamp = (uint32_t)timGetSystime();
+		if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage) < 1000 ){
+					// do nothing
+				}
+		else{
+			THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime(); //save execution finish time of wait stage
+			//substage_index++;
+			THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
+			sprintf(print_str, "\nWaiting to proccess initial READ reques\n");
+			len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, len);
+		}
+		break;
+	case 2: // now we are sure that read request was proccessed - read initial value
+		//initial_value = REGISTER_DATA[register_index];
+		// SAVE INITIAL VALUE AS ONE OF ARGUMENTS THAT IS USED BY FUNCTION //// IMPORTANT !!!!!!
+		sprintf(THR_HARDCODED_SEQUENCES[procedure_id].sequences[THR_HARDCODED_SEQUENCES[procedure_id].execution_index].thr_argv[5], "%.1f",REGISTER_DATA[register_index]);
+		THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
+		sprintf(print_str, "\nInitial value Obtained value = %.2f\n",REGISTER_DATA[register_index]);
+		len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len);
+		break;
+	case 3:
+
+
+		initial_value  = atof((const char*)argv[5]); // RETRIEVE PREVIOUSLY SAVED INITIAL VALUE
+		value_step = (goal -initial_value)/ramp_iterations;
+
+		char *temp_argv[3];
+		sprintf(temp_argv[0], "%d",7);
+		sprintf(temp_argv[1], "%d",register_index);
+		sprintf(temp_argv[2], "%.1f",REGISTER_DATA[register_index]+value_step);
+		GeneralSetRequest(3, temp_argv);
+		REGISTER_DATA[register_index] = REGISTER_DATA[register_index] +value_step;
+		THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
+
+
+		sprintf(print_str, "\nSET RAMP value = %.2f\n",REGISTER_DATA[register_index]);
+		len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len);
+		break;
+	case 4: // WAIT after RAMP set request done
+		now_timestamp = (uint32_t)timGetSystime();
+		if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage) < ramp_dt ){
+			// do nothing
+		}
+		else{
+			THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime(); //save execution finish time of wait stage
+			//substage_index++;
+			THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
+			sprintf(print_str, "\nWaiting after SET RAMP\n");
+			len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, len);
+		}
+
+		// EXIT CONDITIONS
+		if (REGISTER_DATA[register_index] == goal){
+			// GOAL REACHED// EXIT FUNCTION
+			THR_HARDCODED_SEQUENCES[procedure_id].execution_index ++;
+
+		}
+		else{
+			 // IF GOAL VALUE NOT YET REACHED JUMP BACK TO SET REQUEST
+			THR_HARDCODED_SEQUENCES[procedure_id].substage_index=3;
+		}
+
+		break;
+
+
+
+
+	}
+
+
+
+
+
+
+
+}
 
 void thr_execute_sequence_cmd(int argc, char *argv[]){
 	LAST_STARTED_MODULE = 1110;
