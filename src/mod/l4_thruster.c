@@ -69,6 +69,8 @@ typedef struct {
 	uint32_t sequence_execution_stage; // timestamp at which stage is completed
 	bool sequence_trigger;
 	bool repeat;
+	bool pause;
+	bool restart;
 
 }thr_hardcoded_sequences_t;
 thr_hardcoded_sequences_t THR_HARDCODED_SEQUENCES[5];
@@ -963,27 +965,81 @@ void thr_execute_sequence_cmd(int argc, char *argv[]){
 
 	*/
 	uint8_t procedure_id = atoi(argv[1]);
-
-	//THR_SEQUENCE_TRIGGER = true;
-	THR_HARDCODED_SEQUENCES[procedure_id].sequence_trigger = true;
-	THR_HARDCODED_SEQUENCES[procedure_id].execution_index = 0;
-	THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_begin = (uint32_t)timGetSystime();
-	THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
-
+	uint8_t action = atoi(argv[2]);
 	char print_str[200];
-	sprintf(print_str, "\nSequence id=%d start\n",procedure_id);
-	int len = strlen(print_str);
-	deb_print_pure_debug((uint8_t *)print_str, len);
+	int len;
+
+	switch(action){
+
+	case 0: // start sequenece
+
+		THR_HARDCODED_SEQUENCES[procedure_id].sequence_trigger = true;
+		THR_HARDCODED_SEQUENCES[procedure_id].execution_index = 0;
+		THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_begin = (uint32_t)timGetSystime();
+		THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
+		sprintf(print_str, "\nSequence id=%d start\n",procedure_id);
+		len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len);
+		break;
+	case 1: // restart sequence
+		THR_HARDCODED_SEQUENCES[procedure_id].restart = true;
+		sprintf(print_str, "\nSequence id=%d will now restart start\n",procedure_id);
+		len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len);
+		break;
+	case 2: //repeat sequence
+		THR_HARDCODED_SEQUENCES[procedure_id].repeat = true;
+		sprintf(print_str, "\nSequence id=%d will now repeat\n",procedure_id);
+		len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len);
+		break;
+	case 3: //cancel repeat sequence
+			THR_HARDCODED_SEQUENCES[procedure_id].repeat = false;
+			sprintf(print_str, "\nSequence id=%d stop repeat\n",procedure_id);
+			len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, len);
+			break;
+	case 4: //Pause sequence
+			THR_HARDCODED_SEQUENCES[procedure_id].pause = true;
+			THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
+			sprintf(print_str, "\nSequence id=%d paused\n",procedure_id);
+			len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, len);
+			break;
+	case 5: //resume sequence
+			THR_HARDCODED_SEQUENCES[procedure_id].pause = false;
+			THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
+			sprintf(print_str, "\nSequence id=%d resumed\n",procedure_id);
+			len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, len);
+			break;
+	case 6: //Stop sequence
+			THR_HARDCODED_SEQUENCES[procedure_id].sequence_trigger = false;
+			THR_HARDCODED_SEQUENCES[procedure_id].execution_index = 0;
+			sprintf(print_str, "\nSequence id=%d manual stop\n",procedure_id);
+			len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, len);
+			break;
+	}
+
+	//THR_HARDCODED_SEQUENCES[procedure_id].sequence_trigger = true;
+	//THR_HARDCODED_SEQUENCES[procedure_id].execution_index = 0;
+	//THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_begin = (uint32_t)timGetSystime();
+	//THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
+
+	//sprintf(print_str, "\nSequence id=%d start\n",procedure_id);
+	//len = strlen(print_str);
+	//deb_print_pure_debug((uint8_t *)print_str, len);
 
 
 
 	//*** THIS IS TEST EXAMPLE TO DEMONSTRATE THAT IT IS POSSIBLE TO CHANGE EXECUTION FUNCTION AND ARGUMENTS IN A SEQUENCE
-	char temp_arg[1];
-	sprintf(temp_arg, "%d",procedure_id);
-	THR_HARDCODED_SEQUENCES[procedure_id].sequences[0].thr_argv[0] = temp_arg;
-	THR_HARDCODED_SEQUENCES[procedure_id].sequences[0].thr_argv[1] = "20";
-	THR_HARDCODED_SEQUENCES[procedure_id].sequences[0].thr_argv[2] = "3000";
-	THR_HARDCODED_SEQUENCES[procedure_id].sequences[0].function = GeneralSetRequest_sequence;
+	//char temp_arg[1];
+	//sprintf(temp_arg, "%d",procedure_id);
+	//THR_HARDCODED_SEQUENCES[procedure_id].sequences[0].thr_argv[0] = temp_arg;
+	//THR_HARDCODED_SEQUENCES[procedure_id].sequences[0].thr_argv[1] = "20";
+	//THR_HARDCODED_SEQUENCES[procedure_id].sequences[0].thr_argv[2] = "3000";
+	//THR_HARDCODED_SEQUENCES[procedure_id].sequences[0].function = GeneralSetRequest_sequence;
 	 //***********************************************************************
 
 
@@ -1001,7 +1057,19 @@ void thr_execute_sequence(int procedure_id){
 	 * THR_SEQUENCES array of argv to be input into THR_EXECUTION_SEQUENCE
 	 */
 
+	if(THR_HARDCODED_SEQUENCES[procedure_id].pause){
+		// if sequence pause set to true
+		// do nothing
+		return;
+		}
 
+	if(THR_HARDCODED_SEQUENCES[procedure_id].restart){
+					// Restart sequence
+					THR_HARDCODED_SEQUENCES[procedure_id].sequence_trigger = true;
+					THR_HARDCODED_SEQUENCES[procedure_id].execution_index =0; // reset execution index to 0
+					THR_HARDCODED_SEQUENCES[procedure_id].restart = false;
+					return;
+			}
 
 	if (THR_HARDCODED_SEQUENCES[procedure_id].execution_index >= THR_HARDCODED_SEQUENCES[procedure_id].length){
 		LAST_STARTED_MODULE = 11110; //DEBUG
@@ -1027,6 +1095,7 @@ void thr_execute_sequence(int procedure_id){
 
 
 	}
+
 	else{
 		void (*f)(int argc, char *argv[]);
 
