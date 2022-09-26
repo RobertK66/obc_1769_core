@@ -365,7 +365,7 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[2].thr_argv[0]= "2"; //procedure id HARDCODED
 			temp_sequence3[2].thr_argv[1]= "20"; // access register of a ramp (specific impulse)
 			temp_sequence3[2].thr_argv[2]= "3000"; // GOAL of RAMP - manually set to 3000s
-			temp_sequence3[2].thr_argv[3]= "100"; // ramp duration 30s
+			temp_sequence3[2].thr_argv[3]= "30"; // ramp duration 30s
 			temp_sequence3[2].thr_argv[4]= "10"; // 10 seconds between set requests
 			temp_sequence3[2].procedure_id = 2;
 
@@ -373,8 +373,8 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[3].thr_argv[0]= "2"; //procedure id HARDCODED
 			temp_sequence3[3].thr_argv[1]= "20"; // access register of a ramp (specific impulse)
 			temp_sequence3[3].thr_argv[2]= "3700"; // GOAL of RAMP - manually set to 3000s
-			temp_sequence3[3].thr_argv[3]= "100"; // ramp duration 30s
-			temp_sequence3[3].thr_argv[4]= "10"; // 10 seconds between set requests
+			temp_sequence3[3].thr_argv[3]= "35"; // ramp duration 30s
+			temp_sequence3[3].thr_argv[4]= "5"; // 10 seconds between set requests
 			temp_sequence3[3].procedure_id = 2;
 
 
@@ -1034,6 +1034,7 @@ void thr_value_ramp(int argc, char *argv[]){
 
 		initial_value  = THR_HARDCODED_SEQUENCES[procedure_id].ramp_initial_value;
 		value_step = (goal -initial_value)/ramp_iterations;
+		REGISTER_DATA[register_index] = REGISTER_DATA[register_index] +value_step;
 
 		if ((REGISTER_DATA[register_index] >= goal && value_step >0)    || (REGISTER_DATA[register_index] <= goal && value_step <0 )    ){
 			// GOAL REACHED// EXIT FUNCTION
@@ -1050,21 +1051,20 @@ void thr_value_ramp(int argc, char *argv[]){
 
 			//sprintf(temp_argv[2], "%.2f",REGISTER_DATA[register_index]+value_step);
 			GeneralSetRequest(3, temp_argv);
+			REGISTER_DATA[register_index] = goal;
 
-			sprintf(print_str, "\nOVER THE GOAL \n");
+			sprintf(print_str, "\nOVER THE GOAL %.2f \n",REGISTER_DATA[register_index]);
 			len = strlen(print_str);
 			deb_print_pure_debug((uint8_t *)print_str, len);
 			return;
 		}
 
 
-		initial_value  = THR_HARDCODED_SEQUENCES[procedure_id].ramp_initial_value; //
 
 		sprintf(print_str, "\nRestore saved initial value = %.2f\n",initial_value );
 		len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
 
-		value_step = (goal -initial_value)/ramp_iterations;
 
 		sprintf(print_str, "\nSTEP = %.2f\n",value_step);
 		len = strlen(print_str);
@@ -1083,14 +1083,14 @@ void thr_value_ramp(int argc, char *argv[]){
 		temp_argv[2]= argument3;
 
 		//sprintf(temp_argv[2], "%.2f",REGISTER_DATA[register_index]+value_step); // this also works
-		GeneralSetRequest(3, temp_argv);
-		REGISTER_DATA[register_index] = REGISTER_DATA[register_index] +value_step;
-
-
-
 		sprintf(print_str, "\nSET RAMP value = %.2f\n",REGISTER_DATA[register_index]);
 		len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
+
+		GeneralSetRequest(3, temp_argv);
+
+
+
 		THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
 		THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
 
