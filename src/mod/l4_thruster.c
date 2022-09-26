@@ -984,7 +984,7 @@ void thr_value_ramp(int argc, char *argv[]){
 	char *temp_argv[3];
 	char argument1[1];
 	char argument2[2];
-	char argument3[7];
+	char argument3[10]; //7
 	char *initial_value_string;
 
 
@@ -1038,12 +1038,13 @@ void thr_value_ramp(int argc, char *argv[]){
 
 
 		initial_value  = THR_HARDCODED_SEQUENCES[procedure_id].ramp_initial_value; //
-		sprintf(print_str, "\nRestore saved initial value = %.2f\n",initial_value);
+
+		sprintf(print_str, "\nRestore saved initial value = %.2f\n",initial_value );
 		len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
-		//initial_value = 3000;
+
 		value_step = (goal -initial_value)/ramp_iterations;
-		//value_step = 100;
+
 		sprintf(print_str, "\nSTEP = %.2f\n",value_step);
 		len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
