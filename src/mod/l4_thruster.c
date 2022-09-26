@@ -982,10 +982,9 @@ void thr_value_ramp(int argc, char *argv[]){
 	double value_step;
 
 	char *temp_argv[3];
-	char argument1[1];
-	char argument2[2];
-	char argument3[10]; //7
-	char *initial_value_string;
+	//char argument1[1];
+	//char argument2[2];
+	char argument3[50]; //7 //length of array should always be more then maximum characters for set value !!!!!
 
 
 
@@ -993,12 +992,12 @@ void thr_value_ramp(int argc, char *argv[]){
 
 	case 0:// first we make read request to desired register in order to obtain initial register value
 		GeneralReadRequest(argc,argv); // make sure that argv[1] is register index
-		//substage_index++;
+
 		sprintf(print_str, "\nWInitial read Request Sent\n");
 		len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
+
 		THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
-		//THR_HARDCODED_SEQUENCES[procedure_id].substage_index=4; /// WARNING DEBUG
 		break;
 	case 1: // wait for some time while proccess request is executing
 		now_timestamp = (uint32_t)timGetSystime();
@@ -1084,7 +1083,6 @@ void thr_value_ramp(int argc, char *argv[]){
 			sprintf(print_str, "\nWaiting after SET RAMP\n");
 			len = strlen(print_str);
 			deb_print_pure_debug((uint8_t *)print_str, len);
-			THR_HARDCODED_SEQUENCES[procedure_id].substage_index ++;
 		}
 
 		break;
@@ -1105,24 +1103,6 @@ void thr_value_ramp(int argc, char *argv[]){
 		}
 
 		break;
-	case 6:
-		//THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 3;
-		// EXIT CONDITIONS
-				if (REGISTER_DATA[register_index] == goal){
-					// GOAL REACHED// EXIT FUNCTION
-					THR_HARDCODED_SEQUENCES[procedure_id].execution_index ++;
-					THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
-					return;
-
-				}
-				else{
-					 // IF GOAL VALUE NOT YET REACHED JUMP BACK TO SET REQUEST
-					THR_HARDCODED_SEQUENCES[procedure_id].substage_index=3;
-					THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
-				}
-
-				break;
-
 
 
 
