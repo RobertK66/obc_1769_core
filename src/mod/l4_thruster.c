@@ -987,7 +987,7 @@ void thr_value_ramp(int argc, char *argv[]){
 
 	char *temp_argv[3];
 	//char argument1[1];
-	//char argument2[2];
+	char argument2[50];
 	char argument3[50]; //7 //length of array should always be more then maximum characters for set value !!!!!
 
 
@@ -1032,10 +1032,28 @@ void thr_value_ramp(int argc, char *argv[]){
 		break;
 	case 3:
 
-		if (REGISTER_DATA[register_index] == goal){
+		initial_value  = THR_HARDCODED_SEQUENCES[procedure_id].ramp_initial_value;
+		value_step = (goal -initial_value)/ramp_iterations;
+
+		if ((REGISTER_DATA[register_index] >= goal && value_step >0)    || (REGISTER_DATA[register_index] <= goal && value_step <0 )    ){
 			// GOAL REACHED// EXIT FUNCTION
 			THR_HARDCODED_SEQUENCES[procedure_id].execution_index ++;
 			THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
+
+			temp_argv[0]= "7";
+
+			sprintf(argument2, "%d",register_index);
+			temp_argv[1]= argument2;
+
+			sprintf(argument3, "%.2f",goal);
+			temp_argv[2]= argument3;
+
+			//sprintf(temp_argv[2], "%.2f",REGISTER_DATA[register_index]+value_step);
+			GeneralSetRequest(3, temp_argv);
+
+			sprintf(print_str, "\nOVER THE GOAL \n");
+			len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, len);
 			return;
 		}
 
@@ -1053,16 +1071,18 @@ void thr_value_ramp(int argc, char *argv[]){
 		deb_print_pure_debug((uint8_t *)print_str, len);
 
 
-		//sprintf(argument1, "%d",7);
 		temp_argv[0]= "7";
-		//sprintf(argument2, "%d",register_index);
-		temp_argv[1]= "20";
-		//temp_argv[2]= "2100";
-		//sprintf(temp_argv[2], "%.2f",register_index);
-		sprintf(argument3, "%.2f",register_index);
+
+		sprintf(argument2, "%d",register_index);
+		temp_argv[1]= argument2;
+
+		sprintf(argument3, "%.2f",goal);
 		temp_argv[2]= argument3;
 
-		sprintf(temp_argv[2], "%.2f",REGISTER_DATA[register_index]+value_step);
+		sprintf(argument3, "%.2f",REGISTER_DATA[register_index]+value_step);
+		temp_argv[2]= argument3;
+
+		//sprintf(temp_argv[2], "%.2f",REGISTER_DATA[register_index]+value_step); // this also works
 		GeneralSetRequest(3, temp_argv);
 		REGISTER_DATA[register_index] = REGISTER_DATA[register_index] +value_step;
 
