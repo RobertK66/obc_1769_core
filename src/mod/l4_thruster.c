@@ -346,34 +346,38 @@ void l4_thruster_init (void *dummy) {
 			static thr_sequences_t temp_sequence3[MAX_EXECUTION_SEQUENCE_DEPTH];
 
 			//11 READ
-			temp_sequence3[0].function = thr_value_ramp;
-			temp_sequence3[0].thr_argv[0]= "2"; //procedure id HARDCODED
-			temp_sequence3[0].thr_argv[1]= "20"; // access register of a ramp (specific impulse)
-			temp_sequence3[0].thr_argv[2]= "3000"; // GOAL of RAMP - manually set to 3000s
-			temp_sequence3[0].thr_argv[3]= "100"; // ramp duration 30s
-			temp_sequence3[0].thr_argv[4]= "10"; // 10 seconds between set requests
-			temp_sequence3[0].procedure_id = 2;
 
 			//11 wait
+			temp_sequence3[0].function = GeneralSetRequest_sequence;
+			temp_sequence3[0].thr_argv[0]= "2";
+			temp_sequence3[0].thr_argv[1]= "20";
+			temp_sequence3[0].thr_argv[2]= "3500";
+			temp_sequence3[0].procedure_id = 2;
+
+			//12 void
 			temp_sequence3[1].function = thr_wait;
 			temp_sequence3[1].thr_argv[0]= "2";
-			temp_sequence3[1].thr_argv[1]= "2000";
+			temp_sequence3[1].thr_argv[1]= "3000";
 			temp_sequence3[1].thr_argv[2]= "0";
 			temp_sequence3[1].procedure_id = 2;
 
-			//12 void
-			temp_sequence3[2].function = GeneralReadRequest_sequence;
-			temp_sequence3[2].thr_argv[0]= "2";
-			temp_sequence3[2].thr_argv[1]= "20";
-			temp_sequence3[2].thr_argv[2]= "0";
+			temp_sequence3[2].function = thr_value_ramp;  // RAMP DOWN
+			temp_sequence3[2].thr_argv[0]= "2"; //procedure id HARDCODED
+			temp_sequence3[2].thr_argv[1]= "20"; // access register of a ramp (specific impulse)
+			temp_sequence3[2].thr_argv[2]= "3000"; // GOAL of RAMP - manually set to 3000s
+			temp_sequence3[2].thr_argv[3]= "100"; // ramp duration 30s
+			temp_sequence3[2].thr_argv[4]= "10"; // 10 seconds between set requests
 			temp_sequence3[2].procedure_id = 2;
 
-			//12 void
-			temp_sequence3[3].function = thr_wait;
-			temp_sequence3[3].thr_argv[0]= "2";
-			temp_sequence3[3].thr_argv[1]= "0";
-			temp_sequence3[3].thr_argv[2]= "0";
+			temp_sequence3[3].function = thr_value_ramp;  // RAMP UP
+			temp_sequence3[3].thr_argv[0]= "2"; //procedure id HARDCODED
+			temp_sequence3[3].thr_argv[1]= "20"; // access register of a ramp (specific impulse)
+			temp_sequence3[3].thr_argv[2]= "3700"; // GOAL of RAMP - manually set to 3000s
+			temp_sequence3[3].thr_argv[3]= "100"; // ramp duration 30s
+			temp_sequence3[3].thr_argv[4]= "10"; // 10 seconds between set requests
 			temp_sequence3[3].procedure_id = 2;
+
+
 
 			//12 void
 			temp_sequence3[4].function = thr_wait;
@@ -1090,16 +1094,40 @@ void thr_value_ramp(int argc, char *argv[]){
 	case 5:
 
 		// EXIT CONDITIONS
-		if (REGISTER_DATA[register_index] == goal){
-			// GOAL REACHED// EXIT FUNCTION
-			THR_HARDCODED_SEQUENCES[procedure_id].execution_index ++;
-			THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
 
+		initial_value  = THR_HARDCODED_SEQUENCES[procedure_id].ramp_initial_value;
+		value_step = (goal -initial_value)/ramp_iterations;
+
+		if (value_step > 0){
+			if (REGISTER_DATA[register_index] >= goal){
+				// GOAL REACHED// EXIT FUNCTION
+				THR_HARDCODED_SEQUENCES[procedure_id].execution_index ++;
+				THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
+
+			}
+			else{
+			 	 // IF GOAL VALUE NOT YET REACHED JUMP BACK TO SET REQUEST
+				THR_HARDCODED_SEQUENCES[procedure_id].substage_index=3;
+				THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
+			}
 		}
-		else{
-			 // IF GOAL VALUE NOT YET REACHED JUMP BACK TO SET REQUEST
-			THR_HARDCODED_SEQUENCES[procedure_id].substage_index=3;
-			THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
+
+		if(value_step <0){
+
+			if (REGISTER_DATA[register_index] <= goal){
+							// GOAL REACHED// EXIT FUNCTION
+							THR_HARDCODED_SEQUENCES[procedure_id].execution_index ++;
+							THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
+
+						}
+						else{
+						 	 // IF GOAL VALUE NOT YET REACHED JUMP BACK TO SET REQUEST
+							THR_HARDCODED_SEQUENCES[procedure_id].substage_index=3;
+							THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
+						}
+
+
+
 		}
 
 		break;
