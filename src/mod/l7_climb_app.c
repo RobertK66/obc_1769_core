@@ -55,8 +55,10 @@ static uint32_t climbCmdCounter = 0;
 static uint32_t climbErrorCounter = 0;
 
 //I2C receive buffer
-I2C_Data i2c_message; // create structure that will contain i2c message
-uint8_t l7_receive_buff[8];
+static I2C_Data i2c_message; // create structure that will contain i2c message
+static I2C_Data PSU_transmit_register_msg; // create structure that will contain i2c message
+uint8_t PSU_receive_buff[3]; // Buffer that will keep datavector replied by PSU. Length of buffer defines amount of received bytes. MAX =86
+uint8_t PSU_register_request[1]; // PSU starting access register This should be GLOBAL variable
 
 
 // Prototypes
@@ -161,31 +163,10 @@ void app_main (void) {
 
 
 	}
-	// handle event - queue ....
 
 
 
- ///I2C print received ///////////////
-
-/*
-	if (readInProgress) {
-			if (i2c_message.job_done == 1) {
-				readInProgress = false;
-
-				if (i2c_message.error == I2C_ERROR_NO_ERROR) {
-					// if no errors
-
-
-					i2c_debugPrintBuffer(l7_receive_buff,6);
-
-				} // end if no errors
-
-			} //end if job done
-		}//end if read in progress
-*/
-
-
-	l7_Proccess_Received_I2CBuffer(i2c_message, l7_receive_buff,sizeof(l7_receive_buff)/sizeof(uint8_t));
+	l7_Proccess_Received_I2CBuffer(i2c_message, PSU_receive_buff,sizeof(PSU_receive_buff)/sizeof(uint8_t)); // proccess buffer in the main of module
 
 
 
@@ -550,34 +531,29 @@ void I2cSendCmd(int argc, char *argv[]){
 		}
 		readInProgress = true;
 
-		/*
-		uint8_t request[9];
-		request[0]= 0x00;
-		request[1]= 0xFF;
-		request[2]= 0x03;
-		request[3]= 0x14;
-		request[4]= 0x02;
-		request[5]= 0x00;
-		request[6]= 0x00;
-		request[7]= 0x01;
-		request[8]= 0x01;
-		*/
-		uint8_t request[1];
-		request[0]= 87;
+
+		PSU_register_request[0] = 3;
+
+		PSU_transmit_register_msg.tx_data=PSU_register_request;
+		PSU_transmit_register_msg.tx_size = sizeof(PSU_register_request)/sizeof(uint8_t);
+		PSU_transmit_register_msg.tx_size = 1;
+		PSU_transmit_register_msg.adress = 0b1010101; // address of device to which we send data
+		PSU_transmit_register_msg.device = LPC_I2C2;// which I2C on which side
+
+		i2c_add_job(&PSU_transmit_register_msg); // add job ??? and message is transmitted ? // unused wariable warning
 
 
+		///////// PURE READ REQUEST
 
 
-		i2c_message.tx_data=request; // assign "request" bytes into transmit data buffer
-		i2c_message.tx_size = sizeof(request)/sizeof(uint8_t);
-		//i2c_message.tx_size = 1;
 		i2c_message.adress = 0b1010101; // address of device to which we send data
 		i2c_message.device = LPC_I2C2;// which I2C on which side
 
-		i2c_message.rx_size = sizeof(l7_receive_buff)/sizeof(uint8_t);
-		i2c_message.rx_data = l7_receive_buff;
+		i2c_message.rx_size = sizeof(PSU_receive_buff)/sizeof(uint8_t);
+		i2c_message.rx_data = PSU_receive_buff;
 
-		uint8_t add_job_return =  i2c_add_job(&i2c_message); // add job ??? and message is transmitted ? // unused wariable warning
+		i2c_add_job(&i2c_message); // add job ??? and message is transmitted ? // unused wariable warning
+
 
 }
 
