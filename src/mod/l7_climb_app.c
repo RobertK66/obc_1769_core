@@ -27,6 +27,8 @@
 
 #include "../radtest/radtest.h"
 
+#include "psu/psu.h"
+
 typedef struct {
 	uint8_t	cmdId;
 	void 	(*command_function)(int argc, char *argv[]);
@@ -97,7 +99,8 @@ static const app_command_t Commands[] = {
 		{ 'g' , SendToGpsUartCmd },
 		{ '5' , ReadAllRegisters },
 		{ '6' , GeneralReadRequest },
-		{ '7' , GeneralSetRequest }
+		{ '7' , GeneralSetRequest },
+		{ 'k' , PSU_datavector_request }
 };
 
 

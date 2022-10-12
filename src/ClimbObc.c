@@ -31,6 +31,8 @@
 #include "mod/thr/thr.h"
 #include "mod/l4_thruster.h"
 
+#include "mod/psu/psu.h"
+
 
 #if BA_BOARD == BA_OM13085_EM2T
 // EM2T Test Hardware has 2 SD Cards connected to SSP0/SSP1
@@ -75,6 +77,16 @@ static thr_initdata_t ThrInit = {
 
 };
 
+
+//LPC_I2C0 - C/D      LPC_I2C2 - A/B
+static i2c_arduino_initdata_t i2cArduinoInitData = {
+		LPC_I2C2, //device
+		100 // frequency [kHz]
+
+};
+
+
+
 // List of (wire) busses to be initialized.
 //static ado_wbus_config_t WBuses[] = {
 //		{ADO_WBUS_SPI,    0, LPC_SPI  },
@@ -103,7 +115,8 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( app_init, app_main, NULL),
 		// MOD_INIT( rtst_init, rtst_main, &RadtestInit),
 		MOD_INIT( thrInit, thrMain, &ThrInit),
-		MOD_INIT( l4_thruster_init, l4_thruster_main, NULL)
+		MOD_INIT( l4_thruster_init, l4_thruster_main, NULL),
+		MOD_INIT( i2c_arduino_init, i2c_arduino_main, &i2cArduinoInitData)
 
 };
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
