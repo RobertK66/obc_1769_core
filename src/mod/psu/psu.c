@@ -14,25 +14,25 @@
 
 #include <ado_modules.h>
 
-
+#define PSU_BUFFER_LENGTH 1
 
 //I2C receive buffer
 static I2C_Data i2c_message; // create structure that will contain i2c message
 static I2C_Data PSU_transmit_register_msg; // create structure that will contain i2c message
-uint8_t PSU_receive_buff[3]; // Buffer that will keep datavector replied by PSU. Length of buffer defines amount of received bytes. MAX =86
+uint8_t PSU_receive_buff[PSU_BUFFER_LENGTH]; // Buffer that will keep datavector replied by PSU. Length of buffer defines amount of received bytes. MAX =86
 uint8_t PSU_register_request[1]; // PSU starting access register This should be GLOBAL variable
 
 
 
 
-static i2c_arduino_initdata_t *i2c_arduino_InitData;
+static psu_i2c_initdata_t *psu_InitData;
 
 
 
 
 
-void i2c_arduino_init (void *initData) {
-	i2c_arduino_InitData = (i2c_arduino_initdata_t*) initData;
+void psu_init (void *initData) {
+	psu_InitData = (psu_i2c_initdata_t*) initData;
 
 	// ENABLE A and B and C and D
 
@@ -46,7 +46,7 @@ void i2c_arduino_init (void *initData) {
 
 
 	// Init I2C
-	init_i2c(i2c_arduino_InitData->pI2C, i2c_arduino_InitData->frequency);		// 100 kHz
+	init_i2c(psu_InitData->pI2C, psu_InitData->frequency);		// 100 kHz
 
 
 
@@ -54,7 +54,7 @@ void i2c_arduino_init (void *initData) {
 
 }
 
-void i2c_arduino_main() { // in main we check for active read jobs
+void psu_main() { // in main we check for active read jobs
 
 
 
@@ -89,7 +89,6 @@ void i2c_Proccess_Received_Buffer(I2C_Data i2cJob, uint8_t *i2c_buffer,uint8_t i
 
 					// do stuff with received buffer
 					//print received buffer
-					//i2c_debugPrintBuffer(i2c_buffer,i2c_buffer_len);
 					deb_print_pure_debug(i2c_buffer, i2c_buffer_len);
 
 				} // end if no errors
@@ -114,7 +113,7 @@ void PSU_datavector_request(int argc, char *argv[]){
 		readInProgress = true;
 
 
-		PSU_register_request[0] = 3;
+		PSU_register_request[0] = 3; // index of STARTING register at PSU datavector that is desired to be read from
 
 		PSU_transmit_register_msg.tx_data=PSU_register_request;
 		PSU_transmit_register_msg.tx_size = sizeof(PSU_register_request)/sizeof(uint8_t);

@@ -20,7 +20,7 @@
 typedef struct {
 	LPC_I2C_T 	*pI2C;
 	uint16_t frequency;
-} i2c_arduino_initdata_t;
+} psu_i2c_initdata_t;
 
 
 //////
@@ -28,15 +28,12 @@ static bool readInProgress = false;
 ///////
 
 // Module base
-void i2c_arduino_init(void *);
-void i2c_arduino_main();
+void psu_init(void *);
+void psu_main();
 
 
 
 
-bool i2cArduino_Read();
-bool i2cArduino_SendReadRequest(uint8_t *read_request );
-void i2c_debugPrintBuffer(uint8_t *buffer,int bufferlen);
 void i2c_Proccess_Received_Buffer(I2C_Data i2cJob, uint8_t *i2c_buffer,uint8_t i2c_buffer_len);
 void PSU_datavector_request(int argc, char *argv[]);
 

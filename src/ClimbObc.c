@@ -79,7 +79,7 @@ static thr_initdata_t ThrInit = {
 
 
 //LPC_I2C0 - C/D      LPC_I2C2 - A/B
-static i2c_arduino_initdata_t i2cArduinoInitData = {
+static psu_i2c_initdata_t PSUInitData = {
 		LPC_I2C2, //device
 		100 // frequency [kHz]
 
@@ -116,7 +116,7 @@ static const MODULE_DEF_T Modules[] = {
 		// MOD_INIT( rtst_init, rtst_main, &RadtestInit),
 		MOD_INIT( thrInit, thrMain, &ThrInit),
 		MOD_INIT( l4_thruster_init, l4_thruster_main, NULL),
-		MOD_INIT( i2c_arduino_init, i2c_arduino_main, &i2cArduinoInitData)
+		MOD_INIT( psu_init, psu_main, &PSUInitData)
 
 };
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
