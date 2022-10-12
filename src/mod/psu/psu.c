@@ -14,7 +14,7 @@
 
 #include <ado_modules.h>
 
-#define PSU_BUFFER_LENGTH 1
+#define PSU_BUFFER_LENGTH 3
 
 //I2C receive buffer
 static I2C_Data i2c_message; // create structure that will contain i2c message
