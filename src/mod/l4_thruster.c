@@ -180,8 +180,9 @@ void l4_thruster_init (void *dummy) {
 
 
 	/// **************** PREPROGRAMM SEQUENCES HERE ****************
-	uint8_t exeFunc_index=0; // this is helper index to simplify HARDCODDING sequence manually.
+	uint8_t exeFunc_index; // this is helper index to simplify HARDCODDING sequence manually.
 	char* sequenc_id_char;
+	int sequence_id_int;
 
 
 
@@ -190,6 +191,7 @@ void l4_thruster_init (void *dummy) {
 	//Build argv array for execution sequence
 	exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
 	sequenc_id_char = "0";
+	sequence_id_int = 0;
 
 		static thr_sequences_t temp_sequence[MAX_EXECUTION_SEQUENCE_DEPTH];
 		//1 SET SI
@@ -231,6 +233,7 @@ void l4_thruster_init (void *dummy) {
 		temp_sequence[exeFunc_index].thr_argv[0]= sequenc_id_char;
 		temp_sequence[exeFunc_index].thr_argv[1]= "20";
 		temp_sequence[exeFunc_index].thr_argv[2]= "1750";
+		temp_sequence[exeFunc_index].thr_argv[5]= "Custom message Read Specific impulse request ";
 		temp_sequence[exeFunc_index].procedure_id = 0;
 		exeFunc_index++;
 
@@ -299,64 +302,78 @@ void l4_thruster_init (void *dummy) {
 		//exeFunc_index++; after last function - dont increase index
 
 
-		THR_HARDCODED_SEQUENCES[0].sequences = temp_sequence; // save sequence
-		THR_HARDCODED_SEQUENCES[0].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
-		THR_HARDCODED_SEQUENCES[0].sequence_trigger = false;
-		THR_HARDCODED_SEQUENCES[0].repeat = false;
-		THR_HARDCODED_SEQUENCES[0].substage_index = 0; //DEFAULT SUBSTAGE INDEX
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences = temp_sequence; // save sequence
+		THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = false;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
 		exeFunc_index= 0;
 
 
+	// ******   SEQUENCE 2  *******System Cold Test Neutralizer Bias Test
 
+	exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
+	sequenc_id_char = "1";
+	sequence_id_int = 1;
 
-
-	//////////// ******** SEQUENCE 2***************
 	static thr_sequences_t temp_sequence2[MAX_EXECUTION_SEQUENCE_DEPTH];
 
+				// Lets wait a bit before start of execution of sequence.
+				temp_sequence2[exeFunc_index].function = thr_wait;
+				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
+				temp_sequence2[exeFunc_index].thr_argv[1]= "1000";
+				temp_sequence2[exeFunc_index].thr_argv[5]= "\nSystem Cold Test : Neutralizer Bias Test Started\n";
+				temp_sequence2[exeFunc_index].procedure_id = 0;
+				exeFunc_index++;
 
-	//11 READ
-			temp_sequence2[0].function = GeneralSetRequest_sequence;
-			temp_sequence2[0].thr_argv[0]= "1";
-			temp_sequence2[0].thr_argv[1]= "20";
-			temp_sequence2[0].thr_argv[2]= "2550";
-			temp_sequence2[0].procedure_id = 1;
+				//Action 12001: Set Neutralizer Mode 0 // Register 0x4B hex 75 dec
+				temp_sequence2[exeFunc_index].function = GeneralSetRequest_sequence;
+				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
+				temp_sequence2[exeFunc_index].thr_argv[1]= "75"; //Neutralizer Mode
+				temp_sequence2[exeFunc_index].thr_argv[2]= "0";
+				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12001: Set Neutralizer Mode 0\n";
+				temp_sequence2[exeFunc_index].procedure_id = 0;
+				exeFunc_index++;
 
-			//11 wait
-			temp_sequence2[1].function = thr_wait;
-			temp_sequence2[1].thr_argv[0]= "1";
-			temp_sequence2[1].thr_argv[1]= "2000";
-			temp_sequence2[1].thr_argv[2]= "0";
-			temp_sequence2[1].procedure_id = 1;
+				//4 wait
+				temp_sequence2[exeFunc_index].function = thr_wait;
+				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
+				temp_sequence2[exeFunc_index].thr_argv[1]= wait_between_stages_str;
+				temp_sequence2[exeFunc_index].thr_argv[2]= "1000";
+				//temp_sequence2[exeFunc_index].thr_argv[5]= "\nCustom Function Argument message\n";
+				temp_sequence2[exeFunc_index].procedure_id = 0;
+				exeFunc_index++;
 
-			//12 void
-			temp_sequence2[2].function = GeneralReadRequest_sequence;
-			temp_sequence2[2].thr_argv[0]= "1";
-			temp_sequence2[2].thr_argv[1]= "20";
-			temp_sequence2[2].thr_argv[2]= "0";
-			temp_sequence2[2].procedure_id = 1;
+				//3 Action 12002: Set Neutralizer Bias Ref 1 // Register 0x4E hex 78 dec
+				temp_sequence2[exeFunc_index].function = GeneralSetRequest_sequence;
+				temp_sequence2[exeFunc_index].thr_argv[0]= "78";
+				temp_sequence2[exeFunc_index].thr_argv[1]= "1";
+				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12002: Set Neutralizer Bias Ref 1\n";
+				temp_sequence2[exeFunc_index].procedure_id = 0;
+				exeFunc_index++;
 
-			//12 void
-			temp_sequence2[3].function = thr_wait;
-			temp_sequence2[3].thr_argv[0]= "1";
-			temp_sequence2[3].thr_argv[1]= "1000";
-			temp_sequence2[3].thr_argv[2]= "0";
-			temp_sequence2[3].procedure_id = 1;
-
-			//12 void
-			temp_sequence2[4].function = thr_void;
-			temp_sequence2[4].thr_argv[0]= "1";
-			temp_sequence2[4].thr_argv[1]= "0";
-			temp_sequence2[4].thr_argv[2]= "0";
-			temp_sequence2[4].procedure_id = 1;
-
-
+				//4 wait
+				temp_sequence2[exeFunc_index].function = thr_wait;
+				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
+				temp_sequence2[exeFunc_index].thr_argv[1]= wait_between_stages_str;
+				temp_sequence2[exeFunc_index].thr_argv[2]= "1000";
+				//temp_sequence2[exeFunc_index].thr_argv[5]= "\nCustom Function Argument message\n";
+				temp_sequence2[exeFunc_index].procedure_id = 0;
+				//exeFunc_index++;
 
 
-			THR_HARDCODED_SEQUENCES[1].sequences = temp_sequence2; // save sequence
-			THR_HARDCODED_SEQUENCES[1].length = 4; // MANUALLY DEFINE LENGTH OF SEQUENCE //
-			THR_HARDCODED_SEQUENCES[1].sequence_trigger = false;
-			THR_HARDCODED_SEQUENCES[1].repeat = false;
-			THR_HARDCODED_SEQUENCES[1].substage_index = 0; //DEFAULT SUBSTAGE INDEX
+
+
+
+
+				THR_HARDCODED_SEQUENCES[sequence_id_int].sequences = temp_sequence2; // save sequence
+				THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+				THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
+				THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = false;
+				THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
+				exeFunc_index= 0;
+
+
 
 
 		//////////// ******** SEQUENCE 3*************** SYSTEM COLD TEST Heater Ramp Test
@@ -369,12 +386,13 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[0].thr_argv[0]= "2";
 			temp_sequence3[0].thr_argv[1]= "60";
 			temp_sequence3[0].thr_argv[2]= "0";
+			temp_sequence3[0].thr_argv[5]= "\nAction 11001: Heater Mode set 0 \n";
 			temp_sequence3[0].procedure_id = 2;
 
 			//1 Waiting between requests
 			temp_sequence3[1].function = thr_wait;
 			temp_sequence3[1].thr_argv[0]= "2";
-			temp_sequence3[1].thr_argv[1]= "1000";
+			temp_sequence3[1].thr_argv[1]= "2000";
 			temp_sequence3[1].thr_argv[2]= "0";
 			temp_sequence3[1].procedure_id = 2;
 
@@ -388,7 +406,7 @@ void l4_thruster_init (void *dummy) {
 			//3 Waiting between requests
 			temp_sequence3[3].function = thr_wait;
 			temp_sequence3[3].thr_argv[0]= "2";
-			temp_sequence3[3].thr_argv[1]= "1000";
+			temp_sequence3[3].thr_argv[1]= "2000";
 			temp_sequence3[3].thr_argv[2]= "0";
 			temp_sequence3[3].procedure_id = 2;
 
@@ -402,7 +420,7 @@ void l4_thruster_init (void *dummy) {
 			//5 Waiting between requests
 			temp_sequence3[5].function = thr_wait;
 			temp_sequence3[5].thr_argv[0]= "2";
-			temp_sequence3[5].thr_argv[1]= "1000"; //1000 ms
+			temp_sequence3[5].thr_argv[1]= "2000"; //1000 ms
 			temp_sequence3[5].thr_argv[2]= "0";
 			temp_sequence3[5].procedure_id = 2;
 
@@ -416,7 +434,7 @@ void l4_thruster_init (void *dummy) {
 			//7 Waiting between requests
 			temp_sequence3[7].function = thr_wait;
 			temp_sequence3[7].thr_argv[0]= "2";
-			temp_sequence3[7].thr_argv[1]= "1000";
+			temp_sequence3[7].thr_argv[1]= "2000";
 			temp_sequence3[7].thr_argv[2]= "0";
 			temp_sequence3[7].procedure_id = 2;
 
@@ -430,7 +448,7 @@ void l4_thruster_init (void *dummy) {
 			//9 Waiting between requests
 			temp_sequence3[9].function = thr_wait;
 			temp_sequence3[9].thr_argv[0]= "2";
-			temp_sequence3[9].thr_argv[1]= "1000"; // wait 1000 ms
+			temp_sequence3[9].thr_argv[1]= "2000"; // wait 1000 ms
 			temp_sequence3[9].thr_argv[2]= "0";
 			temp_sequence3[9].procedure_id = 2;
 
@@ -440,13 +458,14 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[10].thr_argv[1]= "65"; // Heater Power Ref register
 			temp_sequence3[10].thr_argv[2]= "10"; // GOAL of RAMP - manually set to 3000s
 			temp_sequence3[10].thr_argv[3]= "30"; // ramp duration 30s
-			temp_sequence3[10].thr_argv[4]= "1"; // 1 Secons between set requests = 1Hz
+			temp_sequence3[10].thr_argv[4]= "2"; // 1 Secons between set requests = 1Hz
+			temp_sequence3[10].thr_argv[5]= "\nAction 11006: Heater Power Ref ramp (30s,1Hz) from 0W to 10W\n ";
 			temp_sequence3[10].procedure_id = 2;
 
 			//11 Waiting between requests
 			temp_sequence3[11].function = thr_wait;
 			temp_sequence3[11].thr_argv[0]= "2";
-			temp_sequence3[11].thr_argv[1]= "1000";
+			temp_sequence3[11].thr_argv[1]= "2000";
 			temp_sequence3[11].thr_argv[2]= "0";
 			temp_sequence3[11].procedure_id = 2;
 
@@ -456,13 +475,14 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[12].thr_argv[1]= "65"; // Heater Power Ref register
 			temp_sequence3[12].thr_argv[2]= "0"; // GOAL of RAMP - manually set to 3000s
 			temp_sequence3[12].thr_argv[3]= "30"; // ramp duration 30s
-			temp_sequence3[12].thr_argv[4]= "1"; // 1 Secons between set requests = 1Hz
+			temp_sequence3[12].thr_argv[4]= "3"; // 1 Secons between set requests = 1Hz
+			temp_sequence3[12].thr_argv[5]= "\nAction 11007: Heater Power Ref ramp (30s,1Hz) from 10W to 0W\n ";
 			temp_sequence3[12].procedure_id = 2;
 
 			//12 Waiting between requests
 			temp_sequence3[13].function = thr_wait;
 			temp_sequence3[13].thr_argv[0]= "2";
-			temp_sequence3[13].thr_argv[1]= "1000";
+			temp_sequence3[13].thr_argv[1]= "2000";
 			temp_sequence3[13].thr_argv[2]= "0";
 			temp_sequence3[13].procedure_id = 2;
 
@@ -476,7 +496,7 @@ void l4_thruster_init (void *dummy) {
 			//14 Waiting between requests
 			temp_sequence3[15].function = thr_wait;
 			temp_sequence3[15].thr_argv[0]= "2";
-			temp_sequence3[15].thr_argv[1]= "1000";
+			temp_sequence3[15].thr_argv[1]= "2000";
 			temp_sequence3[15].thr_argv[2]= "0";
 			temp_sequence3[15].procedure_id = 2;
 
@@ -490,7 +510,7 @@ void l4_thruster_init (void *dummy) {
 			//16 Waiting between requests
 			temp_sequence3[17].function = thr_wait;
 			temp_sequence3[17].thr_argv[0]= "2";
-			temp_sequence3[17].thr_argv[1]= "1000";
+			temp_sequence3[17].thr_argv[1]= "2000";
 			temp_sequence3[17].thr_argv[2]= "0";
 			temp_sequence3[17].procedure_id = 2;
 
@@ -504,7 +524,7 @@ void l4_thruster_init (void *dummy) {
 			//18 Waiting between requests
 			temp_sequence3[19].function = thr_wait;
 			temp_sequence3[19].thr_argv[0]= "2";
-			temp_sequence3[19].thr_argv[1]= "1000"; //1000 ms
+			temp_sequence3[19].thr_argv[1]= "2000"; //1000 ms
 			temp_sequence3[19].thr_argv[2]= "0";
 			temp_sequence3[19].procedure_id = 2;
 
@@ -849,8 +869,13 @@ void GeneralSetRequest_sequence(int argc, char *argv[]){
 	char print_str[200];
 	sprintf(print_str, "\nStage SET index= %d completed\n",THR_HARDCODED_SEQUENCES[procedure_id].execution_index);
 	int len = strlen(print_str);
-
 	deb_print_pure_debug((uint8_t *)print_str, len);
+
+	//*******assume that argv[5] is custom print message !!!!! WARNING I AM NOT SURE THAT THIS IS GOOD IDEA
+	len = strlen(argv[5]);
+	deb_print_pure_debug((uint8_t *)argv[5], len);
+	//// WARNING THIS BLOCK MIGHT BE NO GOOD *********
+
 
 	THR_HARDCODED_SEQUENCES[procedure_id].execution_index++;
 	THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
@@ -979,10 +1004,13 @@ void GeneralReadRequest_sequence(int argc, char *argv[]){
 	char print_str[200];
 	sprintf(print_str, "\nStage READ index= %d completed\n",THR_HARDCODED_SEQUENCES[procedure_id].execution_index);
 	int len = strlen(print_str);
-
 	deb_print_pure_debug((uint8_t *)print_str, len);
-	//THR_EXECUTION_INDEX++;
-	//THR_HARDCODED_SEQUENCES[THR_PROCEDURE_ID]. = (uint32_t)timGetSystime(); // Save timestamp at which sequence stage finished
+
+	//*******assume that argv[5] is custom print message !!!!! WARNING I AM NOT SURE THAT THIS IS GOOD IDEA
+	len = strlen(argv[5]);
+	deb_print_pure_debug((uint8_t *)argv[5], len);
+	//// WARNING THIS BLOCK MIGHT BE NO GOOD *********
+
 
 	THR_HARDCODED_SEQUENCES[procedure_id].execution_index++;
 	THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
@@ -1062,6 +1090,11 @@ void thr_wait(int argc, char *argv[]){
 		len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
 		THR_HARDCODED_SEQUENCES[procedure_id].execution_index++; // increase sequence execution index so that after wait - next module to be executed
+
+		//*******assume that argv[5] is custom print message !!!!! WARNING I AM NOT SURE THAT THIS IS GOOD IDEA
+		len = strlen(argv[5]);
+		deb_print_pure_debug((uint8_t *)argv[5], len);
+		//// WARNING THIS BLOCK MIGHT BE NO GOOD *********
 	}
 
 }
@@ -1093,7 +1126,7 @@ void thr_value_ramp(int argc, char *argv[]){
 	uint8_t register_index = atoi(argv[1]); // first argument is register index at which SET ramp would be implemented
 	double goal = atof((const char*)argv[2]); // goal to which value should be set
 	uint32_t ramp_duration = atoi(argv[3]); // time through which value should be changed from initial to goal
-	uint32_t ramp_dt = atoi(argv[4]); // wait between SET
+	uint32_t ramp_dt = atoi(argv[4]); // wait between SET / Converted to (ms)
 	double initial_value;
 	uint32_t now_timestamp;
 
@@ -1118,6 +1151,11 @@ void thr_value_ramp(int argc, char *argv[]){
 		sprintf(print_str, "\nWInitial read Request Sent\n");
 		len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
+
+		//*******assume that argv[5] is custom print message !!!!! WARNING I AM NOT SURE THAT THIS IS GOOD IDEA
+		len = strlen(argv[5]);
+		deb_print_pure_debug((uint8_t *)argv[5], len);
+		//// WARNING THIS BLOCK MIGHT BE NO GOOD *********
 
 		THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
 		break;
@@ -1199,8 +1237,8 @@ void thr_value_ramp(int argc, char *argv[]){
 		sprintf(argument2, "%d",register_index);
 		temp_argv[1]= argument2;
 
-		sprintf(argument3, "%.2f",goal);
-		temp_argv[2]= argument3;
+		//sprintf(argument3, "%.2f",goal);
+		//temp_argv[2]= argument3;
 
 		sprintf(argument3, "%.2f",REGISTER_DATA[register_index]+value_step);
 		temp_argv[2]= argument3;
@@ -1220,7 +1258,7 @@ void thr_value_ramp(int argc, char *argv[]){
 		break;
 	case 4: // WAIT after RAMP set request done
 		now_timestamp = (uint32_t)timGetSystime();
-		if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage) < 5000){
+		if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage) < ramp_dt*1000){ // ramp_dt*1000 converts dt from [s] to [ms]
 			// do nothing
 		}
 		else{
