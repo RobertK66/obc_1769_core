@@ -333,9 +333,7 @@ void l4_thruster_init (void *dummy) {
 				//2 wait
 				temp_sequence2[exeFunc_index].function = thr_wait;
 				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= wait_between_stages_str;
-				temp_sequence2[exeFunc_index].thr_argv[2]= "2000";
-				//temp_sequence2[exeFunc_index].thr_argv[5]= "\nCustom Function Argument message\n";
+				temp_sequence2[exeFunc_index].thr_argv[1]= "2000";
 				temp_sequence2[exeFunc_index].procedure_id = 0;
 				exeFunc_index++;
 
@@ -369,8 +367,7 @@ void l4_thruster_init (void *dummy) {
 				//6 Action 12004: Wait for 60s
 				temp_sequence2[exeFunc_index].function = thr_wait;
 				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= wait_between_stages_str;
-				temp_sequence2[exeFunc_index].thr_argv[2]= "10000";
+				temp_sequence2[exeFunc_index].thr_argv[1]= "10000";
 				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 10s\n";
 				temp_sequence2[exeFunc_index].procedure_id = 0;
 				exeFunc_index++;
@@ -378,49 +375,70 @@ void l4_thruster_init (void *dummy) {
 				//7 wait
 				temp_sequence2[exeFunc_index].function = thr_wait;
 				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= wait_between_stages_str;
-				temp_sequence2[exeFunc_index].thr_argv[2]= "10000";
+				temp_sequence2[exeFunc_index].thr_argv[1]= "10000";
 				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 20s\n";
 				temp_sequence2[exeFunc_index].procedure_id = 0;
 				exeFunc_index++;
 
 
-				//7 wait
+				//8 wait
 				temp_sequence2[exeFunc_index].function = thr_wait;
 				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= wait_between_stages_str;
-				temp_sequence2[exeFunc_index].thr_argv[2]= "10000";
+				temp_sequence2[exeFunc_index].thr_argv[1]= "10000";
 				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 30s\n";
 				temp_sequence2[exeFunc_index].procedure_id = 0;
 				exeFunc_index++;
 
-				//7 wait
+				//9 wait
 				temp_sequence2[exeFunc_index].function = thr_wait;
 				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= wait_between_stages_str;
-				temp_sequence2[exeFunc_index].thr_argv[2]= "10000";
+				temp_sequence2[exeFunc_index].thr_argv[1]= "10000";
 				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 40s\n";
 				temp_sequence2[exeFunc_index].procedure_id = 0;
 				exeFunc_index++;
 
-				//7 wait
+				//10 wait
 				temp_sequence2[exeFunc_index].function = thr_wait;
 				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= wait_between_stages_str;
-				temp_sequence2[exeFunc_index].thr_argv[2]= "10000";
+				temp_sequence2[exeFunc_index].thr_argv[1]= "10000";
 				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 50s\n";
 				temp_sequence2[exeFunc_index].procedure_id = 0;
 				exeFunc_index++;
 
-				//7 wait
+				//11 wait
 				temp_sequence2[exeFunc_index].function = thr_wait;
 				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= wait_between_stages_str;
-				temp_sequence2[exeFunc_index].thr_argv[2]= "10000";
-				temp_sequence2[exeFunc_index].thr_argv[5]= "\nWaiting 60s\n";
+				temp_sequence2[exeFunc_index].thr_argv[1]= "10000";
+				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 60s\n";
+				temp_sequence2[exeFunc_index].procedure_id = 0;
+				exeFunc_index++;
+
+				//12 Action 12005: Set Neutralizer Bias Ref 1 // Register 0x4E hex 78 dec
+				temp_sequence2[exeFunc_index].function = GeneralSetRequest_sequence;
+				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
+				temp_sequence2[exeFunc_index].thr_argv[1]= "78";
+				temp_sequence2[exeFunc_index].thr_argv[2]= "0";
+				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12005: Set Neutralizer Bias Ref 0\n";
+				temp_sequence2[exeFunc_index].procedure_id = 0;
+				exeFunc_index++;
+
+
+				//13 Wait between SET requests
+				temp_sequence2[exeFunc_index].function = thr_wait;
+				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
+				temp_sequence2[exeFunc_index].thr_argv[1]= "2000";
+				temp_sequence2[exeFunc_index].procedure_id = 0;
+				exeFunc_index++;
+
+
+				//14 Action 12006: Set Neutralizer Mode 0 // Register 0x4B hex 75 dec
+				temp_sequence2[exeFunc_index].function = GeneralSetRequest_sequence;
+				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
+				temp_sequence2[exeFunc_index].thr_argv[1]= "75"; //Neutralizer Mode
+				temp_sequence2[exeFunc_index].thr_argv[2]= "0";
+				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12001: Set Neutralizer Mode 0\n";
 				temp_sequence2[exeFunc_index].procedure_id = 0;
 				//exeFunc_index++;
-
 
 
 				THR_HARDCODED_SEQUENCES[sequence_id_int].sequences = temp_sequence2; // save sequence
