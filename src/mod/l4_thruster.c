@@ -424,75 +424,82 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[10].thr_argv[4]= "1"; // 1 Secons between set requests = 1Hz
 			temp_sequence3[10].procedure_id = 2;
 
-			//11 Action 11007: Heater Power Ref ramp (30s,1Hz) from 10W to 0W // Register 0x45 65 dec
-			temp_sequence3[11].function = thr_value_ramp;  // RAMP UP
-			temp_sequence3[11].thr_argv[0]= "2"; //procedure id HARDCODED
-			temp_sequence3[11].thr_argv[1]= "65"; // Heater Power Ref register
-			temp_sequence3[11].thr_argv[2]= "0"; // GOAL of RAMP - manually set to 3000s
-			temp_sequence3[11].thr_argv[3]= "30"; // ramp duration 30s
-			temp_sequence3[11].thr_argv[4]= "1"; // 1 Secons between set requests = 1Hz
+			//11 Waiting between requests
+			temp_sequence3[11].function = thr_wait;
+			temp_sequence3[11].thr_argv[0]= "2";
+			temp_sequence3[11].thr_argv[1]= "1000";
+			temp_sequence3[11].thr_argv[2]= "0";
 			temp_sequence3[11].procedure_id = 2;
 
-			//12 Waiting between requests
-			temp_sequence3[12].function = thr_wait;
-			temp_sequence3[12].thr_argv[0]= "2";
-			temp_sequence3[12].thr_argv[1]= "1000";
-			temp_sequence3[12].thr_argv[2]= "0";
+			//11 Action 11007: Heater Power Ref ramp (30s,1Hz) from 10W to 0W // Register 0x45 65 dec
+			temp_sequence3[12].function = thr_value_ramp;  // RAMP UP
+			temp_sequence3[12].thr_argv[0]= "2"; //procedure id HARDCODED
+			temp_sequence3[12].thr_argv[1]= "65"; // Heater Power Ref register
+			temp_sequence3[12].thr_argv[2]= "0"; // GOAL of RAMP - manually set to 3000s
+			temp_sequence3[12].thr_argv[3]= "30"; // ramp duration 30s
+			temp_sequence3[12].thr_argv[4]= "1"; // 1 Secons between set requests = 1Hz
 			temp_sequence3[12].procedure_id = 2;
 
-			//13 Action 1108: Set Heater Voltage Ref 0V / Register 0x3D 61 dec
-			temp_sequence3[13].function = GeneralSetRequest_sequence;  // Set request
-			temp_sequence3[13].thr_argv[0]= "2"; //procedure id HARDCODED
-			temp_sequence3[13].thr_argv[1]= "61"; // Reservoir Heater Voltage Ref register
-			temp_sequence3[13].thr_argv[2]= "0"; //  Set to 0V
+			//12 Waiting between requests
+			temp_sequence3[13].function = thr_wait;
+			temp_sequence3[13].thr_argv[0]= "2";
+			temp_sequence3[13].thr_argv[1]= "1000";
+			temp_sequence3[13].thr_argv[2]= "0";
 			temp_sequence3[13].procedure_id = 2;
 
-			//14 Waiting between requests
-			temp_sequence3[14].function = thr_wait;
-			temp_sequence3[14].thr_argv[0]= "2";
-			temp_sequence3[14].thr_argv[1]= "1000";
-			temp_sequence3[14].thr_argv[2]= "0";
+			//13 Action 1108: Set Heater Voltage Ref 0V / Register 0x3D 61 dec
+			temp_sequence3[14].function = GeneralSetRequest_sequence;  // Set request
+			temp_sequence3[14].thr_argv[0]= "2"; //procedure id HARDCODED
+			temp_sequence3[14].thr_argv[1]= "61"; // Reservoir Heater Voltage Ref register
+			temp_sequence3[14].thr_argv[2]= "0"; //  Set to 0V
 			temp_sequence3[14].procedure_id = 2;
 
-			//15 Action 1109: Set Heater Current Ref 0A / Register 0x41 65 dec
-			temp_sequence3[15].function = GeneralSetRequest_sequence;  // Set request
-			temp_sequence3[15].thr_argv[0]= "2"; //procedure id HARDCODED
-			temp_sequence3[15].thr_argv[1]= "65"; // Reservoir Heater Current Ref register
-			temp_sequence3[15].thr_argv[2]= "0"; //  Set to 0 A
+			//14 Waiting between requests
+			temp_sequence3[15].function = thr_wait;
+			temp_sequence3[15].thr_argv[0]= "2";
+			temp_sequence3[15].thr_argv[1]= "1000";
+			temp_sequence3[15].thr_argv[2]= "0";
 			temp_sequence3[15].procedure_id = 2;
 
-			//16 Waiting between requests
-			temp_sequence3[16].function = thr_wait;
-			temp_sequence3[16].thr_argv[0]= "2";
-			temp_sequence3[16].thr_argv[1]= "1000";
-			temp_sequence3[16].thr_argv[2]= "0";
+			//15 Action 1109: Set Heater Current Ref 0A / Register 0x41 65 dec
+			temp_sequence3[16].function = GeneralSetRequest_sequence;  // Set request
+			temp_sequence3[16].thr_argv[0]= "2"; //procedure id HARDCODED
+			temp_sequence3[16].thr_argv[1]= "65"; // Reservoir Heater Current Ref register
+			temp_sequence3[16].thr_argv[2]= "0"; //  Set to 0 A
 			temp_sequence3[16].procedure_id = 2;
 
-			//17 Action 11010: Set Heater Mode 0  / Register 0x3C hex   60 dec
-			temp_sequence3[17].function = GeneralSetRequest_sequence;
-			temp_sequence3[17].thr_argv[0]= "2"; // OBC sequence id
-			temp_sequence3[17].thr_argv[1]= "60"; // Reservoir heater mode register
-			temp_sequence3[17].thr_argv[2]= "0"; // Heater mode value
+			//16 Waiting between requests
+			temp_sequence3[17].function = thr_wait;
+			temp_sequence3[17].thr_argv[0]= "2";
+			temp_sequence3[17].thr_argv[1]= "1000";
+			temp_sequence3[17].thr_argv[2]= "0";
 			temp_sequence3[17].procedure_id = 2;
 
-			//18 Waiting between requests
-			temp_sequence3[18].function = thr_wait;
-			temp_sequence3[18].thr_argv[0]= "2";
-			temp_sequence3[18].thr_argv[1]= "1000"; //1000 ms
-			temp_sequence3[18].thr_argv[2]= "0";
+			//17 Action 11010: Set Heater Mode 0  / Register 0x3C hex   60 dec
+			temp_sequence3[18].function = GeneralSetRequest_sequence;
+			temp_sequence3[18].thr_argv[0]= "2"; // OBC sequence id
+			temp_sequence3[18].thr_argv[1]= "60"; // Reservoir heater mode register
+			temp_sequence3[18].thr_argv[2]= "0"; // Heater mode value
 			temp_sequence3[18].procedure_id = 2;
 
-			//19 Action 11011: Set Heater Power Ref 6 W / Register 0x45 65 dec
-			temp_sequence3[19].function = GeneralSetRequest_sequence;  // Set request
-			temp_sequence3[19].thr_argv[0]= "2"; //procedure id HARDCODED
-			temp_sequence3[19].thr_argv[1]= "69"; // Reservoir Heater Power Ref register
-			temp_sequence3[19].thr_argv[2]= "6"; //  Set to 6 W
+			//18 Waiting between requests
+			temp_sequence3[19].function = thr_wait;
+			temp_sequence3[19].thr_argv[0]= "2";
+			temp_sequence3[19].thr_argv[1]= "1000"; //1000 ms
+			temp_sequence3[19].thr_argv[2]= "0";
 			temp_sequence3[19].procedure_id = 2;
+
+			//19 Action 11011: Set Heater Power Ref 6 W / Register 0x45 65 dec
+			temp_sequence3[20].function = GeneralSetRequest_sequence;  // Set request
+			temp_sequence3[20].thr_argv[0]= "2"; //procedure id HARDCODED
+			temp_sequence3[20].thr_argv[1]= "69"; // Reservoir Heater Power Ref register
+			temp_sequence3[20].thr_argv[2]= "6"; //  Set to 6 W
+			temp_sequence3[20].procedure_id = 2;
 
 
 
 			THR_HARDCODED_SEQUENCES[2].sequences = temp_sequence3; // save sequence
-			THR_HARDCODED_SEQUENCES[2].length = 19; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+			THR_HARDCODED_SEQUENCES[2].length = 20; // MANUALLY DEFINE LENGTH OF SEQUENCE //
 			THR_HARDCODED_SEQUENCES[2].sequence_trigger = false;
 			THR_HARDCODED_SEQUENCES[2].repeat = false;
 			THR_HARDCODED_SEQUENCES[2].substage_index = 0; //DEFAULT SUBSTAGE INDEX
@@ -1130,6 +1137,11 @@ void thr_value_ramp(int argc, char *argv[]){
 
 		if ((REGISTER_DATA[register_index] >= goal && value_step >0)    || (REGISTER_DATA[register_index] <= goal && value_step <0 )    ){
 			// GOAL REACHED// EXIT FUNCTION
+
+			sprintf(print_str, "\nWarning ! OVER THE GOAL %.2f \n",REGISTER_DATA[register_index]);
+			len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, len);
+
 			THR_HARDCODED_SEQUENCES[procedure_id].execution_index ++;
 			THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
 
@@ -1145,7 +1157,7 @@ void thr_value_ramp(int argc, char *argv[]){
 			GeneralSetRequest(3, temp_argv);
 			REGISTER_DATA[register_index] = goal;
 
-			sprintf(print_str, "\nOVER THE GOAL %.2f \n",REGISTER_DATA[register_index]);
+			sprintf(print_str, "\nValue corrected according to goal %.2f \n",REGISTER_DATA[register_index]);
 			len = strlen(print_str);
 			deb_print_pure_debug((uint8_t *)print_str, len);
 			return;
