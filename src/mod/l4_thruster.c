@@ -181,7 +181,6 @@ void l4_thruster_init (void *dummy) {
 
 	/// **************** PREPROGRAMM SEQUENCES HERE ****************
 	uint8_t exeFunc_index; // this is helper index to simplify HARDCODDING sequence manually.
-	char* sequenc_id_char;
 	int sequence_id_int;
 
 
@@ -189,9 +188,11 @@ void l4_thruster_init (void *dummy) {
 	char *wait_between_stages_str ="5000";
 
 	//Build argv array for execution sequence
+	char* sequenc_id_char;
 	exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
 	sequenc_id_char = "0";
 	sequence_id_int = 0;
+
 
 		static thr_sequences_t temp_sequence[MAX_EXECUTION_SEQUENCE_DEPTH];
 		//1 SET SI
@@ -318,15 +319,9 @@ void l4_thruster_init (void *dummy) {
 
 	static thr_sequences_t temp_sequence2[MAX_EXECUTION_SEQUENCE_DEPTH];
 
-				// Lets wait a bit before start of execution of sequence.
-				temp_sequence2[exeFunc_index].function = thr_wait;
-				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= "1000";
-				temp_sequence2[exeFunc_index].thr_argv[5]= "\nSystem Cold Test : Neutralizer Bias Test Started\n";
-				temp_sequence2[exeFunc_index].procedure_id = 0;
-				exeFunc_index++;
 
-				//Action 12001: Set Neutralizer Mode 0 // Register 0x4B hex 75 dec
+
+				//1 Action 12001: Set Neutralizer Mode 0 // Register 0x4B hex 75 dec
 				temp_sequence2[exeFunc_index].function = GeneralSetRequest_sequence;
 				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
 				temp_sequence2[exeFunc_index].thr_argv[1]= "75"; //Neutralizer Mode
@@ -335,34 +330,96 @@ void l4_thruster_init (void *dummy) {
 				temp_sequence2[exeFunc_index].procedure_id = 0;
 				exeFunc_index++;
 
-				//4 wait
+				//2 wait
 				temp_sequence2[exeFunc_index].function = thr_wait;
 				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
 				temp_sequence2[exeFunc_index].thr_argv[1]= wait_between_stages_str;
-				temp_sequence2[exeFunc_index].thr_argv[2]= "1000";
+				temp_sequence2[exeFunc_index].thr_argv[2]= "2000";
 				//temp_sequence2[exeFunc_index].thr_argv[5]= "\nCustom Function Argument message\n";
 				temp_sequence2[exeFunc_index].procedure_id = 0;
 				exeFunc_index++;
 
 				//3 Action 12002: Set Neutralizer Bias Ref 1 // Register 0x4E hex 78 dec
 				temp_sequence2[exeFunc_index].function = GeneralSetRequest_sequence;
-				temp_sequence2[exeFunc_index].thr_argv[0]= "78";
-				temp_sequence2[exeFunc_index].thr_argv[1]= "1";
+				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
+				temp_sequence2[exeFunc_index].thr_argv[1]= "78";
+				temp_sequence2[exeFunc_index].thr_argv[2]= "1";
 				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12002: Set Neutralizer Bias Ref 1\n";
 				temp_sequence2[exeFunc_index].procedure_id = 0;
 				exeFunc_index++;
 
-				//4 wait
+				//4 Wait Between Set Requests
+				temp_sequence2[exeFunc_index].function = thr_wait;
+				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
+				temp_sequence2[exeFunc_index].thr_argv[1]= "2000";
+				temp_sequence2[exeFunc_index].procedure_id = 0;
+				exeFunc_index++;
+
+				//5 Action 12003: Set Neutralizer Mode 1 // Register 0x4B hex 75 dec
+				temp_sequence2[exeFunc_index].function = GeneralSetRequest_sequence;
+				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
+				temp_sequence2[exeFunc_index].thr_argv[1]= "75"; //Neutralizer Mode
+				temp_sequence2[exeFunc_index].thr_argv[2]= "1";
+				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12003: Set Neutralizer Mode 0\n";
+				temp_sequence2[exeFunc_index].procedure_id = 0;
+				exeFunc_index++;
+
+
+
+				//6 Action 12004: Wait for 60s
 				temp_sequence2[exeFunc_index].function = thr_wait;
 				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
 				temp_sequence2[exeFunc_index].thr_argv[1]= wait_between_stages_str;
-				temp_sequence2[exeFunc_index].thr_argv[2]= "1000";
-				//temp_sequence2[exeFunc_index].thr_argv[5]= "\nCustom Function Argument message\n";
+				temp_sequence2[exeFunc_index].thr_argv[2]= "10000";
+				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 10s\n";
+				temp_sequence2[exeFunc_index].procedure_id = 0;
+				exeFunc_index++;
+
+				//7 wait
+				temp_sequence2[exeFunc_index].function = thr_wait;
+				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
+				temp_sequence2[exeFunc_index].thr_argv[1]= wait_between_stages_str;
+				temp_sequence2[exeFunc_index].thr_argv[2]= "10000";
+				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 20s\n";
+				temp_sequence2[exeFunc_index].procedure_id = 0;
+				exeFunc_index++;
+
+
+				//7 wait
+				temp_sequence2[exeFunc_index].function = thr_wait;
+				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
+				temp_sequence2[exeFunc_index].thr_argv[1]= wait_between_stages_str;
+				temp_sequence2[exeFunc_index].thr_argv[2]= "10000";
+				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 30s\n";
+				temp_sequence2[exeFunc_index].procedure_id = 0;
+				exeFunc_index++;
+
+				//7 wait
+				temp_sequence2[exeFunc_index].function = thr_wait;
+				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
+				temp_sequence2[exeFunc_index].thr_argv[1]= wait_between_stages_str;
+				temp_sequence2[exeFunc_index].thr_argv[2]= "10000";
+				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 40s\n";
+				temp_sequence2[exeFunc_index].procedure_id = 0;
+				exeFunc_index++;
+
+				//7 wait
+				temp_sequence2[exeFunc_index].function = thr_wait;
+				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
+				temp_sequence2[exeFunc_index].thr_argv[1]= wait_between_stages_str;
+				temp_sequence2[exeFunc_index].thr_argv[2]= "10000";
+				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 50s\n";
+				temp_sequence2[exeFunc_index].procedure_id = 0;
+				exeFunc_index++;
+
+				//7 wait
+				temp_sequence2[exeFunc_index].function = thr_wait;
+				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
+				temp_sequence2[exeFunc_index].thr_argv[1]= wait_between_stages_str;
+				temp_sequence2[exeFunc_index].thr_argv[2]= "10000";
+				temp_sequence2[exeFunc_index].thr_argv[5]= "\nWaiting 60s\n";
 				temp_sequence2[exeFunc_index].procedure_id = 0;
 				//exeFunc_index++;
-
-
-
 
 
 
@@ -1441,7 +1498,7 @@ void thr_execute_sequence(int procedure_id){
 					return;
 			}
 
-	if (THR_HARDCODED_SEQUENCES[procedure_id].execution_index >= THR_HARDCODED_SEQUENCES[procedure_id].length){
+	if (THR_HARDCODED_SEQUENCES[procedure_id].execution_index > THR_HARDCODED_SEQUENCES[procedure_id].length){
 		LAST_STARTED_MODULE = 11110; //DEBUG
 
 		char print_str[200];
