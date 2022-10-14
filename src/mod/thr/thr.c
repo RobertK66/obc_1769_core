@@ -6,6 +6,9 @@
  */
 #include "thr.h"
 #include <ado_uart.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "../l7_climb_app.h"
 #include "../l2_debug_com.h"
 #include "../l4_thruster.h" // with that we include variable  l4_thr_ExpectedReceiveBuffer  which defines expected RX buffer length
@@ -192,7 +195,18 @@ void thrProcessRxByte(uint8_t rxByte) {
 
 		l4_thr_counter =0;
 		ParseReadRequest((uint8_t*)&thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer);
-		   deb_print_pure_debug((uint8_t*)&thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer);
+
+		char print_str[200];
+		sprintf(print_str, "\n Thruster Reply : \n");
+		int len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len);
+
+		deb_print_pure_debug((uint8_t*)&thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer);
+
+		sprintf(print_str, "\n");
+		len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len);
+
 
 		// TODO : TEST ParseReadRequest. Make request to read all registers.
 		// Parse reply with ParseReadRequest and verify that array of data values are stored correctly
