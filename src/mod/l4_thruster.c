@@ -499,10 +499,10 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[5].thr_argv[2]= "0";
 			temp_sequence3[5].procedure_id = 2;
 
-			//6 Action 1104: Set Heater Power Ref 0W / Register 0x45 65 dec
+			//6 Action 1104: Set Heater Power Ref 0W / Register 0x45 69 dec
 			temp_sequence3[6].function = GeneralSetRequest_sequence;  // Set request
 			temp_sequence3[6].thr_argv[0]= "2"; //procedure id HARDCODED
-			temp_sequence3[6].thr_argv[1]= "65"; // Reservoir Heater Power Ref register
+			temp_sequence3[6].thr_argv[1]= "69"; // Reservoir Heater Power Ref register
 			temp_sequence3[6].thr_argv[2]= "0"; //  Set to 0 W
 			temp_sequence3[6].procedure_id = 2;
 
@@ -527,10 +527,10 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[9].thr_argv[2]= "0";
 			temp_sequence3[9].procedure_id = 2;
 
-			//10 Action 11006: Heater Power Ref ramp (30s,1Hz) from 0W to 10W // Register 0x45 65 dec
+			//10 Action 11006: Heater Power Ref ramp (30s,1Hz) from 0W to 10W // Register 0x45 69 dec
 			temp_sequence3[10].function = thr_value_ramp;  // RAMP UP
 			temp_sequence3[10].thr_argv[0]= "2"; //procedure id HARDCODED
-			temp_sequence3[10].thr_argv[1]= "65"; // Heater Power Ref register
+			temp_sequence3[10].thr_argv[1]= "69"; // Heater Power Ref register
 			temp_sequence3[10].thr_argv[2]= "10"; // GOAL of RAMP - manually set to 3000s
 			temp_sequence3[10].thr_argv[3]= "30"; // ramp duration 30s
 			temp_sequence3[10].thr_argv[4]= "2"; // 1 Secons between set requests = 1Hz
@@ -544,10 +544,10 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[11].thr_argv[2]= "0";
 			temp_sequence3[11].procedure_id = 2;
 
-			//11 Action 11007: Heater Power Ref ramp (30s,1Hz) from 10W to 0W // Register 0x45 65 dec
+			//11 Action 11007: Heater Power Ref ramp (30s,1Hz) from 10W to 0W // Register 0x45 69 dec
 			temp_sequence3[12].function = thr_value_ramp;  // RAMP UP
 			temp_sequence3[12].thr_argv[0]= "2"; //procedure id HARDCODED
-			temp_sequence3[12].thr_argv[1]= "65"; // Heater Power Ref register
+			temp_sequence3[12].thr_argv[1]= "69"; // Heater Power Ref register
 			temp_sequence3[12].thr_argv[2]= "0"; // GOAL of RAMP - manually set to 3000s
 			temp_sequence3[12].thr_argv[3]= "30"; // ramp duration 30s
 			temp_sequence3[12].thr_argv[4]= "2"; // 1 Secons between set requests = 1Hz
