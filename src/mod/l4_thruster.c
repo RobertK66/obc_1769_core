@@ -502,7 +502,7 @@ void l4_thruster_init (void *dummy) {
 			//6 Action 1104: Set Heater Power Ref 0W / Register 0x45 65 dec
 			temp_sequence3[6].function = GeneralSetRequest_sequence;  // Set request
 			temp_sequence3[6].thr_argv[0]= "2"; //procedure id HARDCODED
-			temp_sequence3[6].thr_argv[1]= "69"; // Reservoir Heater Power Ref register
+			temp_sequence3[6].thr_argv[1]= "65"; // Reservoir Heater Power Ref register
 			temp_sequence3[6].thr_argv[2]= "0"; //  Set to 0 W
 			temp_sequence3[6].procedure_id = 2;
 
