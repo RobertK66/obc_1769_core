@@ -1533,8 +1533,6 @@ void thr_value_ramp(int argc, char *argv[]){
 			len = strlen(print_str);
 			deb_print_pure_debug((uint8_t *)print_str, len);
 
-			THR_HARDCODED_SEQUENCES[procedure_id].execution_index ++;
-			THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
 
 			temp_argv[0]= "7";
 
