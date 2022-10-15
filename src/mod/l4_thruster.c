@@ -550,7 +550,7 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence3[12].thr_argv[1]= "65"; // Heater Power Ref register
 			temp_sequence3[12].thr_argv[2]= "0"; // GOAL of RAMP - manually set to 3000s
 			temp_sequence3[12].thr_argv[3]= "30"; // ramp duration 30s
-			temp_sequence3[12].thr_argv[4]= "3"; // 1 Secons between set requests = 1Hz
+			temp_sequence3[12].thr_argv[4]= "2"; // 1 Secons between set requests = 1Hz
 			temp_sequence3[12].thr_argv[5]= "\nAction 11007: Heater Power Ref ramp (30s,1Hz) from 10W to 0W\n ";
 			temp_sequence3[12].procedure_id = 2;
 
@@ -1292,6 +1292,9 @@ void thr_value_ramp(int argc, char *argv[]){
 			sprintf(print_str, "\nValue corrected according to goal %.2f \n",REGISTER_DATA[register_index]);
 			len = strlen(print_str);
 			deb_print_pure_debug((uint8_t *)print_str, len);
+
+			THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
+			THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
 			return;
 		}
 
