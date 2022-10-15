@@ -53,7 +53,7 @@ void thr_read_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uin
 uint8_t MMRAM_READ_BUFFER[6];
 
 #define MAX_EXECUTION_SEQUENCE_DEPTH 50 // Maximum size of execution sequence stack
-#define MAX_HARDCODED_SEQUENCES 50 // Maximum number of preprogrammed sequences
+#define MAX_HARDCODED_SEQUENCES 8 // Maximum number of preprogrammed sequences
 
 typedef struct {
 	char *thr_argv[6];
@@ -76,7 +76,7 @@ typedef struct {
 	double ramp_initial_value;
 
 }thr_hardcoded_sequences_t;
-thr_hardcoded_sequences_t THR_HARDCODED_SEQUENCES[5];
+thr_hardcoded_sequences_t THR_HARDCODED_SEQUENCES[MAX_HARDCODED_SEQUENCES];
 
 // Array of function pointers
 //void (*THR_EXECUTION_SEQUENCE[MAX_EXECUTION_SEQUENCE_DEPTH])(int argc, char *argv[]); // sequence execution stack (array of function pointers)
@@ -311,7 +311,7 @@ void l4_thruster_init (void *dummy) {
 		exeFunc_index= 0;
 
 
-	// ******   SEQUENCE 2  *******System Cold Test Neutralizer Bias Test
+	// ******   SEQUENCE 2  *******System Cold Test/ Neutralizer Bias Test/ Table 9-3
 
 	exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
 	sequenc_id_char = "1";
@@ -451,7 +451,7 @@ void l4_thruster_init (void *dummy) {
 
 
 
-		//////////// ******** SEQUENCE 3*************** SYSTEM COLD TEST Heater Ramp Test
+		//////////// ******** SEQUENCE 3*************** SYSTEM COLD TEST/ Heater Ramp Test/ Table 9-2
 
 			//thr_sequences_t temp_sequence[MAX_EXECUTION_SEQUENCE_DEPTH];
 			static thr_sequences_t temp_sequence3[MAX_EXECUTION_SEQUENCE_DEPTH];
@@ -624,9 +624,271 @@ void l4_thruster_init (void *dummy) {
 
 
 
+			// ******   SEQUENCE 4  *******System Cold Test / Neutralizer Heating Test /Table 9-4
+
+			exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
+			sequenc_id_char = "3";
+			sequence_id_int = 3;
+
+			static thr_sequences_t temp_sequence4[MAX_EXECUTION_SEQUENCE_DEPTH];
 
 
 
+			//1 Action 13001: Set Neutralizer Mode 0 // Register 0x4B hex 75 dec
+			temp_sequence4[exeFunc_index].function = GeneralSetRequest_sequence;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "75"; //Neutralizer Mode
+			temp_sequence4[exeFunc_index].thr_argv[2]= "0";
+			temp_sequence4[exeFunc_index].thr_argv[5]= "\nAction 12001: Set Neutralizer Mode 0\n";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+			//2 wait
+			temp_sequence4[exeFunc_index].function = thr_wait;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "2000";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+			//3 Action 13002: Set Neutralizer Heater Current Ref 0.7A // Register 0x52 82
+			temp_sequence4[exeFunc_index].function = GeneralSetRequest_sequence;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "82"; //Neutralizer Mode
+			temp_sequence4[exeFunc_index].thr_argv[2]= "0.7";
+			temp_sequence4[exeFunc_index].thr_argv[5]= "\nAction 13002: Set Heutralizer Heater Current Ref 0.7A\n";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+			//4 wait
+			temp_sequence4[exeFunc_index].function = thr_wait;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "2000";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+			//5 Action 13003: Set Neutralizer Filament Ref 1/2 // Register 0x4d 77
+			temp_sequence4[exeFunc_index].function = GeneralSetRequest_sequence;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "77"; //Neutralizer Mode
+			temp_sequence4[exeFunc_index].thr_argv[2]= "1";
+			temp_sequence4[exeFunc_index].thr_argv[5]= "\nAction 13003: Set Neutralizer Filament Ref 1\n";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+			//6 wait
+			temp_sequence4[exeFunc_index].function = thr_wait;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "2000";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+			//7 Action 13004: Set Neutralizer Heater Power Ref 0W // Register 0x56 86
+			temp_sequence4[exeFunc_index].function = GeneralSetRequest_sequence;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "86";
+			temp_sequence4[exeFunc_index].thr_argv[2]= "0";
+			temp_sequence4[exeFunc_index].thr_argv[5]= "\nAction 13004: Set Neutralizer Heater Power Ref 0W\n";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+			//8 wait
+			temp_sequence4[exeFunc_index].function = thr_wait;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "2000";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+			//9 Action 13005: Set Neutralizer Beam Current Ref 1mA // Register 0x5C 92
+			temp_sequence4[exeFunc_index].function = GeneralSetRequest_sequence;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "92";
+			temp_sequence4[exeFunc_index].thr_argv[2]= "0.001"; // 0.001 A
+			temp_sequence4[exeFunc_index].thr_argv[5]= "\nAction 13004: Set Neutralizer Heater Power Ref 0W\n";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+			//10 wait
+			temp_sequence4[exeFunc_index].function = thr_wait;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "2000";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+
+			//11 Action 13006: Set Neutralizer Bias Ref 1 // Register 0x4E hex 78 dec
+			temp_sequence4[exeFunc_index].function = GeneralSetRequest_sequence;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "78";
+			temp_sequence4[exeFunc_index].thr_argv[2]= "1";
+			temp_sequence4[exeFunc_index].thr_argv[5]= "\nAction 13006: Set Neutralizer Bias Ref 1\n";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+			//12 wait
+			temp_sequence4[exeFunc_index].function = thr_wait;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "2000";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			temp_sequence4[exeFunc_index].thr_argv[5]= "\nWait Between Stages 1\n";
+			exeFunc_index++;
+
+
+
+
+
+
+			//13 Action 13007: Set Neutralizer Mode 1 // Register 0x4B hex 75 dec
+			temp_sequence4[exeFunc_index].function = GeneralSetRequest_sequence;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "75"; //Neutralizer Mode
+			temp_sequence4[exeFunc_index].thr_argv[2]= "1";
+			temp_sequence4[exeFunc_index].thr_argv[5]= "\nAction 13007: Set Neutralizer Mode 1\n";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+
+			//14 wait
+			temp_sequence4[exeFunc_index].function = thr_wait;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "2000";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+
+
+			//15 Action 13008: Neutralizer Heater Power Ref ramp (30s,1Hz) from 0W to 2W // Register 0x56 86 dec
+			temp_sequence4[exeFunc_index].function = thr_value_ramp;  // RAMP UP
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "86"; // Neutralizer Heater Power Ref register
+			temp_sequence4[exeFunc_index].thr_argv[2]= "2"; // GOAL of RAMP - 2w
+			temp_sequence4[exeFunc_index].thr_argv[3]= "30"; // ramp duration 30s
+			temp_sequence4[exeFunc_index].thr_argv[4]= "2"; // 2 Secons between set requests = 0.5Hz
+			temp_sequence4[exeFunc_index].thr_argv[5]= "\nAction 13008: Neutralizer Heater Power Ref ramp (30s,1Hz) from 0W to 2W\n ";
+			temp_sequence4[exeFunc_index].procedure_id = 2;
+
+
+			//16 wait
+			temp_sequence4[exeFunc_index].function = thr_wait;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "2000";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+
+
+
+			//17 Action 13009: Neutralizer Heater Power Ref ramp (30s,1Hz) from 2W to 0W // Register 0x56 86 dec
+			temp_sequence4[exeFunc_index].function = thr_value_ramp;  // RAMP DOWN
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "86"; // Neutralizer Heater Power Ref register
+			temp_sequence4[exeFunc_index].thr_argv[2]= "0"; // GOAL of RAMP - 0W
+			temp_sequence4[exeFunc_index].thr_argv[3]= "30"; // ramp duration 30s
+			temp_sequence4[exeFunc_index].thr_argv[4]= "2"; // 2 Secons between set requests = 0.5Hz
+			temp_sequence4[exeFunc_index].thr_argv[5]= "\nAction 13009: Neutralizer Heater Power Ref ramp (30s,1Hz) from 2W to 0W\n ";
+			temp_sequence4[exeFunc_index].procedure_id = 2;
+
+
+
+			//18 wait
+			temp_sequence4[exeFunc_index].function = thr_wait;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "2000";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+
+
+			//19 Action 13010: Set Neutralizer Heater Current Ref 0A // Register 0x52 82
+			temp_sequence4[exeFunc_index].function = GeneralSetRequest_sequence;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "82"; //Neutralizer Mode
+			temp_sequence4[exeFunc_index].thr_argv[2]= "0";
+			temp_sequence4[exeFunc_index].thr_argv[5]= "\nAction 13010: Set Heutralizer Heater Current Ref 0A\n";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+
+			//20 wait
+			temp_sequence4[exeFunc_index].function = thr_wait;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "2000";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+
+
+			//21 Action 13011: Set Neutralizer Beam Current Ref 0mA // Register 0x5C 92
+			temp_sequence4[exeFunc_index].function = GeneralSetRequest_sequence;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "92";
+			temp_sequence4[exeFunc_index].thr_argv[2]= "0"; // 0.001 A
+			temp_sequence4[exeFunc_index].thr_argv[5]= "\nAction 13011: Set Neutralizer Beam Current Ref 0mA\n";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+
+			//22 wait
+			temp_sequence4[exeFunc_index].function = thr_wait;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "2000";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+
+
+
+			//23 Action 13012: Set Neutralizer Heater Power Ref 0W // Register 0x56 86
+			temp_sequence4[exeFunc_index].function = GeneralSetRequest_sequence;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "86";
+			temp_sequence4[exeFunc_index].thr_argv[2]= "0";
+			temp_sequence4[exeFunc_index].thr_argv[5]= "\nAction 13012: Set Neutralizer Heater Power Ref 0W\n";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+
+			//24 wait
+			temp_sequence4[exeFunc_index].function = thr_wait;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "2000";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+			//25 Action 13013: Set Neutralizer Bias Ref 0 // Register 0x4E hex 78 dec
+			temp_sequence4[exeFunc_index].function = GeneralSetRequest_sequence;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "78";
+			temp_sequence4[exeFunc_index].thr_argv[2]= "0";
+			temp_sequence4[exeFunc_index].thr_argv[5]= "\nAction 13013: Set Neutralizer Bias Ref 0\n";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+
+			//26 wait
+			temp_sequence4[exeFunc_index].function = thr_wait;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "2000";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			exeFunc_index++;
+
+
+			//27 Action 13014: Set Neutralizer Mode 0 // Register 0x4B hex 75 dec
+			temp_sequence4[exeFunc_index].function = GeneralSetRequest_sequence;
+			temp_sequence4[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			temp_sequence4[exeFunc_index].thr_argv[1]= "75"; //Neutralizer Mode
+			temp_sequence4[exeFunc_index].thr_argv[2]= "0";
+			temp_sequence4[exeFunc_index].thr_argv[5]= "\nAction 13014: Set Neutralizer Mode 0\n";
+			temp_sequence4[exeFunc_index].procedure_id = 0;
+			//exeFunc_index++;
+
+
+
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences = temp_sequence4; // save sequence
+			THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = false;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
+			exeFunc_index= 0;
 
 
 
@@ -644,18 +906,10 @@ void l4_thruster_main (void) {
 	// Initialised according as all other modules
 
 
-	// this way we obtain time ms time ticks
-	//obc_systime32_t timestamp= 	timGetSystime();
-	//char print_str[20];
-	//sprintf(print_str, "t = %d \n", timestamp);
-	//uint8_t len = strlen(print_str);
-	//deb_print_pure_debug((uint8_t *)print_str, len);
 
 
 
-
-/*
-	for (int i=0;i<=2;i++){ // for all preprogrammed sequences
+	for (int i=0;i<=3;i++){ // for all preprogrammed sequences
 
 		if (THR_HARDCODED_SEQUENCES[i].sequence_trigger ){ //if trigger for sequence is set to True - execute sequence
 			thr_execute_sequence(i);
@@ -663,7 +917,9 @@ void l4_thruster_main (void) {
 		}
 
 	}
-*/
+
+
+/*
 	if (THR_HARDCODED_SEQUENCES[0].sequence_trigger ){ //if trigger for sequence is set to True - execute sequence
 				thr_execute_sequence(0);
 
@@ -679,6 +935,9 @@ void l4_thruster_main (void) {
 				thr_execute_sequence(2);
 
 			}
+
+
+*/
 }
 
 
@@ -1295,7 +1554,7 @@ void thr_value_ramp(int argc, char *argv[]){
 
 			THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
 			THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
-			return;
+			break;
 		}
 
 
