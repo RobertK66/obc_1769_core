@@ -765,6 +765,7 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence4[exeFunc_index].thr_argv[4]= "2"; // 2 Secons between set requests = 0.5Hz
 			temp_sequence4[exeFunc_index].thr_argv[5]= "\nAction 13008: Neutralizer Heater Power Ref ramp (30s,1Hz) from 0W to 2W\n ";
 			temp_sequence4[exeFunc_index].procedure_id = 2;
+			exeFunc_index++;
 
 
 			//16 wait
@@ -786,6 +787,7 @@ void l4_thruster_init (void *dummy) {
 			temp_sequence4[exeFunc_index].thr_argv[4]= "2"; // 2 Secons between set requests = 0.5Hz
 			temp_sequence4[exeFunc_index].thr_argv[5]= "\nAction 13009: Neutralizer Heater Power Ref ramp (30s,1Hz) from 2W to 0W\n ";
 			temp_sequence4[exeFunc_index].procedure_id = 2;
+			exeFunc_index++;
 
 
 
