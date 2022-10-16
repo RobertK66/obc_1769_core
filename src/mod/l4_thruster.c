@@ -1043,8 +1043,8 @@ void l4_thruster_init (void *dummy) {
 			// Action 31010: Wait AND MONITOR / Register 0x0E  14
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait_and_monitor;
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "15000"; // Total wait duration [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "5000"; // dt between READ request for Reservoir temperature
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "3600000"; // Total wait duration [ms] 2.5h = 9 000 000ms
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "10000"; // dt between READ request for Reservoir temperature
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31010: Wait AND MONITOR\n";
 			//exeFunc_index++;
 
@@ -1636,6 +1636,12 @@ void thr_wait_and_monitor(int argc, char *argv[]){
 	 * So that thruster is ready to fire
 	 *
 	 * Module will monitor and log Reservoir Temperature Register 0x63  99
+	 *
+	 * uint32_t duration - [ms]total wait duration after reseivoir heater was turned on
+	 * uint32_t logging_dt - [ms] time after which READ requsts for temperature monitoring are being sent
+	 * uint32_t wait_for_read_request_proccess -[ms] delay to wait untill read request is proccessed
+	 *
+	 *
 	 */
 
 
@@ -1648,6 +1654,9 @@ void thr_wait_and_monitor(int argc, char *argv[]){
 	int len;
 	char *temp_argv[2];
 	int waiting_between_logging;
+
+	uint32_t wait_for_read_request_proccess = 3000; // WARNING ! Wait time for proccesing request [ms] should not be equal to logging dt [ms]
+	// Otherwise function newer exits
 
 
 	switch (THR_HARDCODED_SEQUENCES[procedure_id].substage_index){
@@ -1713,7 +1722,7 @@ void thr_wait_and_monitor(int argc, char *argv[]){
 		break;
 	case 2:
 
-		if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_substage) < 3000 ){ // Wait to proccess READ request
+		if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_substage) < wait_for_read_request_proccess ){ // Wait to proccess READ request
 						// do nothing
 					}
 		else{
