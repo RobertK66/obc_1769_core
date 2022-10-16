@@ -1686,6 +1686,7 @@ void thr_wait_and_monitor(int argc, char *argv[]){
 				len = strlen(print_str);
 				deb_print_pure_debug((uint8_t *)print_str, len);
 				THR_HARDCODED_SEQUENCES[procedure_id].execution_index++; // increase sequence execution index so that after wait - next module to be executed
+				THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
 
 				//*******assume that argv[5] is custom print message !!!!! WARNING I AM NOT SURE THAT THIS IS GOOD IDEA
 				len = strlen(argv[5]);
@@ -1712,11 +1713,11 @@ void thr_wait_and_monitor(int argc, char *argv[]){
 		break;
 	case 2:
 
-		if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_substage) < logging_dt ){
+		if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_substage) < 3000 ){ // Wait to proccess READ request
 						// do nothing
 					}
 		else{
-			THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_substage = (uint32_t)timGetSystime(); //save execution finish time of wait substage
+			//THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_substage = (uint32_t)timGetSystime(); //save execution finish time of wait substage
 
 			sprintf(print_str, "\nReservoir Temperature T= %.2f K\n", REGISTER_DATA[97]);
 			len = strlen(print_str);
