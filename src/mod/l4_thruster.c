@@ -45,6 +45,8 @@ void GeneralReadRequest_sequence(int argc, char *argv[]);
 void thr_execute_sequence();
 void thr_void(int argc, char *argv[]);
 void thr_value_ramp(int argc, char *argv[]);
+void thr_wait_and_monitor(int argc, char *argv[]);
+
 //MEM
 void thr_write_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
 void thr_write_mem();
@@ -68,6 +70,7 @@ typedef struct {
 	uint16_t execution_index; // current index of execution stack
 	uint32_t sequence_execution_begin; // timestamp at which sequence begin
 	uint32_t sequence_execution_stage; // timestamp at which stage is completed
+	uint32_t sequence_execution_substage; // timestamp at which substage is completed
 	bool sequence_trigger;
 	bool repeat;
 	bool pause;
@@ -1035,7 +1038,17 @@ void l4_thruster_init (void *dummy) {
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "14";
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "1";
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31008: Reservoir Heater Power Ref 6 W\n";
+			exeFunc_index++;
+
+			// Action 31010: Wait AND MONITOR / Register 0x0E  14
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait_and_monitor;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "15000"; // Total wait duration [ms]
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "5000"; // dt between READ request for Reservoir temperature
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31010: Wait AND MONITOR\n";
 			//exeFunc_index++;
+
+
 
 			THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
@@ -1613,6 +1626,118 @@ void thr_wait(int argc, char *argv[]){
 	}
 
 }
+
+
+void thr_wait_and_monitor(int argc, char *argv[]){
+	/*
+	 *
+	 * This module is use for Hot Standby Script Sequence
+	 * Module will wait untill Reservoir Temperature will heat up
+	 * So that thruster is ready to fire
+	 *
+	 * Module will monitor and log Reservoir Temperature Register 0x63  99
+	 */
+
+
+	LAST_STARTED_MODULE = 1108;
+	uint16_t procedure_id = atoi(argv[0]); // procedure_id is always fist index of argument array
+	uint32_t duration = atoi(argv[1]);
+	uint32_t logging_dt = atoi(argv[2]); //Time after which READ request is sent
+	uint32_t now_timestamp = (uint32_t)timGetSystime();
+	char print_str[200];
+	int len;
+	char *temp_argv[2];
+	int waiting_between_logging;
+
+
+	switch (THR_HARDCODED_SEQUENCES[procedure_id].substage_index){
+
+	case 0:
+
+		if ( ((now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage) % logging_dt ) == 0 ){
+				waiting_between_logging = (int)( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage)/1000 );
+
+				sprintf(print_str, "\n Waiting %d s \n",waiting_between_logging  );
+				len = strlen(print_str);
+				deb_print_pure_debug((uint8_t *)print_str, len);
+
+
+
+
+				//temp_argv[0]= "6";
+				//temp_argv[1]= "99"; // Reservoir Temperature
+				//GeneralReadRequest(2, temp_argv);
+
+				THR_HARDCODED_SEQUENCES[procedure_id].substage_index++; // increase substage to procede with READ request
+				THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_substage = (uint32_t)timGetSystime(); // save timestamp of substage completion
+				break;
+
+					}
+
+
+
+		if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage) < duration ){
+				// do nothing
+			}
+		else{
+				THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime(); //save execution finish time of wait stage
+
+				sprintf(print_str, "\nWait and Monitor Stage = %d Complete t = %d\n", THR_HARDCODED_SEQUENCES[procedure_id].execution_index,now_timestamp);
+				len = strlen(print_str);
+				deb_print_pure_debug((uint8_t *)print_str, len);
+				THR_HARDCODED_SEQUENCES[procedure_id].execution_index++; // increase sequence execution index so that after wait - next module to be executed
+
+				//*******assume that argv[5] is custom print message !!!!! WARNING I AM NOT SURE THAT THIS IS GOOD IDEA
+				len = strlen(argv[5]);
+				deb_print_pure_debug((uint8_t *)argv[5], len);
+				//// WARNING THIS BLOCK MIGHT BE NO GOOD *********
+			}
+
+
+
+
+		break;
+	case 1:
+		sprintf(print_str, "\n Sending READ Reservoir Temperature Request %d\n",now_timestamp );
+		len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len);
+
+		temp_argv[0]= "6";
+		temp_argv[1]= "97"; // Reservoir Temperature
+		GeneralReadRequest(2, temp_argv);
+
+		THR_HARDCODED_SEQUENCES[procedure_id].substage_index ++;
+		THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_substage = (uint32_t)timGetSystime();
+
+		break;
+	case 2:
+
+		if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_substage) < logging_dt ){
+						// do nothing
+					}
+		else{
+			THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_substage = (uint32_t)timGetSystime(); //save execution finish time of wait substage
+
+			sprintf(print_str, "\nReservoir Temperature T= %.2f K\n", REGISTER_DATA[97]);
+			len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, len);
+			THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
+
+
+			}
+
+
+		break;
+
+	}
+
+
+
+
+
+
+}
+
 
 void thr_void(int argc, char *argv[]){
 	LAST_STARTED_MODULE = 1109;
