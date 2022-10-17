@@ -1040,12 +1040,12 @@ void l4_thruster_init (void *dummy) {
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31008: Reservoir Heater Power Ref 6 W\n";
 			exeFunc_index++;
 
-			// Action 31010: Wait AND MONITOR / Register 0x0E  14
+			// Action 31010: Wait AND MONITOR / Register (Reservoir Temperature) 0x63 99
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait_and_monitor;
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "3600000"; // Total wait duration [ms] 2.5h = 9 000 000ms
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "10000"; // dt between READ request for Reservoir temperature
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[3] = "18"; // Register that is intended to be monitored
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[3] = "97"; // Register that is intended to be monitored Reservoir temp Ref
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31010: Wait AND MONITOR\n";
 			//exeFunc_index++;
 
@@ -1816,6 +1816,7 @@ void thr_wait_and_monitor(int argc, char *argv[]){
 	int len;
 	char *temp_argv[2];
 	int waiting_between_logging;
+	char argument1[50];
 
 	uint32_t wait_for_read_request_proccess = 3000; // WARNING ! Wait time for proccesing request [ms] should not be equal to logging dt [ms]
 	// Otherwise function newer exits
@@ -1870,15 +1871,15 @@ void thr_wait_and_monitor(int argc, char *argv[]){
 
 		break;
 	case 1:
-		sprintf(print_str, "\n Sending READ Reservoir Temperature Request %d\n",now_timestamp );
+		sprintf(print_str, "\n Sending READ [%d] Request %d\n",register_index, now_timestamp );
 		len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
 
 		temp_argv[0]= "6";
-		temp_argv[1]= "97"; // Reservoir Temperature
+		//temp_argv[1]= "97"; // Reservoir Temperature
 
-		//sprintf(argument2, "%d",register_index);
-		//temp_argv[1]= argument2;
+		sprintf(argument1, "%d",register_index);
+		temp_argv[1]= argument1;
 
 		GeneralReadRequest(2, temp_argv);
 
@@ -1894,7 +1895,7 @@ void thr_wait_and_monitor(int argc, char *argv[]){
 		else{
 			//THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_substage = (uint32_t)timGetSystime(); //save execution finish time of wait substage
 
-			sprintf(print_str, "\nReservoir Temperature T= %.2f K\n", REGISTER_DATA[97]);
+			sprintf(print_str, "\nMonitored [%d] Value = %.6f \n", register_index,REGISTER_DATA[register_index]);
 			len = strlen(print_str);
 			deb_print_pure_debug((uint8_t *)print_str, len);
 			THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
