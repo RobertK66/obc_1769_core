@@ -1218,11 +1218,12 @@ void l4_thruster_init (void *dummy) {
 			THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
 			exeFunc_index= 0;
 
-			// ******* SEQUENCE 6 ************* System Cold Test / Extractor voltage test /9-5
+			// ******* THIS SEQUENCE IS INTENTIONALY MEANT TO CAUSE HARD FAULT
 
 			exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
 			sequenc_id_char = "2";
 			sequence_id_int = 2;
+			wait_between_stages_str = "50";
 			//sprintf(sequenc_id_char, "%d",sequence_id_int);
 
 			// Action 14001: Set Extractor Mode 0 / Register 0x2D  45
@@ -1239,13 +1240,26 @@ void l4_thruster_init (void *dummy) {
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+			exeFunc_index++;
+
+			// Action 14001: Set Extractor Mode 0 / Register 0x2D  45
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "45";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 14001: Set Extractor Mode 0\n";
+			exeFunc_index++;
+
+			// Wait Between SET requests
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
 			//exeFunc_index++;
-
-
 
 			THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
 			THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = false;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = true; // sequence shall repeat by default.
 			THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
 			exeFunc_index= 0;
 
