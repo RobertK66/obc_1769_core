@@ -1403,9 +1403,9 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 	uint16_t uint16_payload_length = (payload_length_2 <<8 )| payload_length_1;
 
-	//sprintf(print_str, "\n Parse Request : Payload Length = %d \n",uint16_payload_length  );
-	//len_print = strlen(print_str);
-	//deb_print_pure_debug((uint8_t *)print_str, len_print);
+	sprintf(print_str, "\n Parse Request : Payload Length = %d \n",uint16_payload_length  );
+	len_print = strlen(print_str);
+	deb_print_pure_debug((uint8_t *)print_str, len_print);
 
 
 	/// after payload length is known - it is possible to parse remaining bytes into array
@@ -1510,14 +1510,14 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 		//if payload is more then 4 then we are reading multiple registers
 
-		sprintf(print_str, "\n Parse Request : Payload Length = %d \n",uint16_payload_length  );
-		len_print = strlen(print_str);
-		deb_print_pure_debug((uint8_t *)print_str, len_print);
+		//sprintf(print_str, "\n Parse Request : Payload Length = %d \n",uint16_payload_length  );
+		//len_print = strlen(print_str);
+		//deb_print_pure_debug((uint8_t *)print_str, len_print);
 
 
-		sprintf(print_str, "\n Reading Multiple Registers \n"  );
-		len_print = strlen(print_str);
-		deb_print_pure_debug((uint8_t *)print_str, len_print);
+		//sprintf(print_str, "\n Reading Multiple Registers \n"  );
+		//len_print = strlen(print_str);
+		//deb_print_pure_debug((uint8_t *)print_str, len_print);
 
 		// Lets say that READ REQUEST TO ALL REGISTERS/ READ MORE THEN ONE REGISTER function will set last address to a value
 		// of a first address that is intended to be accessed
@@ -1526,19 +1526,19 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 		double multiplier = CONVERSION_DOUBLE[next_register_index];
 		//uint8_t starting_register = LATEST_ACCESSED_REGISTER; // first time
 
-		sprintf(print_str, "\n Start RI= %d_RI_len=%d  Conversion_multiplier = %.2f \n",next_register_index,length_of_next_register,multiplier  );
-		len_print = strlen(print_str);
-		deb_print_pure_debug((uint8_t *)print_str, len_print);
+		///sprintf(print_str, "\n Start RI= %d_RI_len=%d  Conversion_multiplier = %.2f \n",next_register_index,length_of_next_register,multiplier  );
+		//len_print = strlen(print_str);
+		//deb_print_pure_debug((uint8_t *)print_str, len_print);
 
 		int i = 0;
 		while( i<101  ){ // Untill last usable register !  WARNING !!! CHECK LENGTH OF ReadAllRegistersRequest !! This might trigger infitite loop
 			// It will trigger infinite loop if thruser reply with length of message that is greaater then 5 and less then enough to cover 101 registers !
-			sprintf(print_str, "\nParse Iteration = %d length_of_next_register = %d \n", i,length_of_next_register);
-			len_print = strlen(print_str);
+			//sprintf(print_str, "\nParse Iteration = %d length_of_next_register = %d \n", i,length_of_next_register);
+			//len_print = strlen(print_str);
 			//deb_print_pure_debug((uint8_t *)print_str, len_print);
 
-			sprintf(print_str, "\n Next RI= %d Next_RI_len=%d  Conversion_multiplier = %.2f \n",next_register_index,length_of_next_register,multiplier  );
-			len_print = strlen(print_str);
+			//sprintf(print_str, "\n Next RI= %d Next_RI_len=%d  Conversion_multiplier = %.2f \n",next_register_index,length_of_next_register,multiplier  );
+			//len_print = strlen(print_str);
 			//deb_print_pure_debug((uint8_t *)print_str, len_print);
 
 			if(length_of_next_register ==1){
@@ -1550,8 +1550,8 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 				REGISTER_DATA[next_register_index]=ACTUAL_VALUE;
 				//next_register_index = next_register_index+1;
 
-				sprintf(print_str, "\n [%d] ACTUAL_VALUE= %.6f Conversion=%.6f  uint8_value =%d  \n",next_register_index,ACTUAL_VALUE,multiplier,VALUE_UINT8  );
-				len_print = strlen(print_str);
+				//sprintf(print_str, "\n [%d] ACTUAL_VALUE= %.6f Conversion=%.6f  uint8_value =%d  \n",next_register_index,ACTUAL_VALUE,multiplier,VALUE_UINT8  );
+				//len_print = strlen(print_str);
 				//deb_print_pure_debug((uint8_t *)print_str, len_print);
 
 				next_register_index = next_register_index+1;
@@ -1567,8 +1567,8 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 				ACTUAL_VALUE = (double)VALUE_UINT16 / multiplier;
 				REGISTER_DATA[next_register_index]=ACTUAL_VALUE;
 
-				sprintf(print_str, "\n [%d] ACTUAL_VALUE= %.6f Conversion=%.6f  uint16_value =%d  \n",next_register_index,ACTUAL_VALUE,multiplier,VALUE_UINT16  );
-				len_print = strlen(print_str);
+				//sprintf(print_str, "\n [%d] ACTUAL_VALUE= %.6f Conversion=%.6f  uint16_value =%d  \n",next_register_index,ACTUAL_VALUE,multiplier,VALUE_UINT16  );
+				//len_print = strlen(print_str);
 				//deb_print_pure_debug((uint8_t *)print_str, len_print);
 
 				next_register_index = next_register_index+2;
@@ -1578,8 +1578,8 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 			}
 
 			if(length_of_next_register==4){
-				sprintf(print_str, "\n [%d] Skip Fuse \n",next_register_index  );
-				len_print = strlen(print_str);
+				//sprintf(print_str, "\n [%d] Skip Fuse \n",next_register_index  );
+				//len_print = strlen(print_str);
 				//deb_print_pure_debug((uint8_t *)print_str, len_print);
 
 				next_register_index = next_register_index+4;
@@ -1589,8 +1589,8 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 			length_of_next_register = REGISTER_LENGTH[next_register_index];
 			multiplier = CONVERSION_DOUBLE[next_register_index];
 
-			sprintf(print_str, "\n Parse Iteration End: len_next_RI=%d   next_RI=[%d]  \n",length_of_next_register,next_register_index );
-			len_print = strlen(print_str);
+			//sprintf(print_str, "\n Parse Iteration End: len_next_RI=%d   next_RI=[%d]  \n",length_of_next_register,next_register_index );
+			//len_print = strlen(print_str);
 			//deb_print_pure_debug((uint8_t *)print_str, len_print);
 
 		}
