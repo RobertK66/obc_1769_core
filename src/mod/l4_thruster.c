@@ -47,6 +47,7 @@ void thr_void(int argc, char *argv[]);
 void thr_value_ramp(int argc, char *argv[]);
 void thr_wait_and_monitor(int argc, char *argv[]);
 
+
 //MEM
 void thr_write_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
 void thr_write_mem();
@@ -151,7 +152,7 @@ const uint8_t REGISTER_LENGTH[108] = {1, 1, 2, 0, 2, 0, 4, 0, 0, 0, 4, 0, 0, 0, 
 
 
 
-
+const char* REGISTER_NAME[5] = { "0 Firmware Version (major)","1 Firmware Version (minor)","2 Serial Number","4 None","5 Reset Cycle"	};
 
 
 
@@ -1380,6 +1381,19 @@ void ReadAllRegisters(int argc, char *argv[]){
 }
 
 
+void PrintAllRegisters(){
+	char print_str[200];
+	int len;
+	for (int i=0;i<=108;i++){
+
+		if (REGISTER_LENGTH != 0){
+			sprintf(print_str, "\n [%d] Value = %.6f \n",i, REGISTER_DATA[i]  );
+			len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, len);
+		}
+
+	}
+}
 
 
 
@@ -1594,7 +1608,6 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 			//deb_print_pure_debug((uint8_t *)print_str, len_print);
 
 		}
-
 	}
 
 

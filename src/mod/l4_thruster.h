@@ -45,6 +45,7 @@ void l4_debugPrintBuffer(uint8_t *buffer,int bufferlen);
 
 //// Thruster request manual functions
 void ReadAllRegisters(int argc, char *argv[]);
+void PrintAllRegisters();
 
 
 //////Thruster automated request functions
