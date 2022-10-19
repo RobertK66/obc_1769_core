@@ -47,6 +47,8 @@ void thr_void(int argc, char *argv[]);
 void thr_value_ramp(int argc, char *argv[]);
 void thr_wait_and_monitor(int argc, char *argv[]);
 
+void initialize_hardcoded_thr_sequences();
+
 
 //MEM
 void thr_write_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
@@ -182,276 +184,26 @@ int l4_thr_counter = 0; // counter for received bytes
 
 void l4_thruster_init (void *dummy) {
 
+	initialize_hardcoded_thr_sequences();
+
 
 	/// **************** PREPROGRAMM SEQUENCES HERE ****************
-	uint8_t exeFunc_index; // this is helper index to simplify HARDCODDING sequence manually.
-	int sequence_id_int;
-	char *wait_between_stages_str ="5000";
-	char* sequenc_id_char;
+	//uint8_t exeFunc_index; // this is helper index to simplify HARDCODDING sequence manually.
+	//int sequence_id_int;
+	//char *wait_between_stages_str ="5000";
+	//char* sequenc_id_char;
 
 
 
 
 
 	//Build argv array for execution sequence
-	exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
-	sequenc_id_char = "0";
-	sequence_id_int = 0;
+	//exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
+	//sequenc_id_char = "0";
+	//sequence_id_int = 0;
 
-	/*
-		static thr_sequences_t temp_sequence[MAX_EXECUTION_SEQUENCE_DEPTH];
-		//1 SET SI
-		temp_sequence[exeFunc_index].function = thr_wait;
-		temp_sequence[exeFunc_index].thr_argv[0]= sequenc_id_char; // FIRST ARGUMENT ALWAYS PROCES ID
-		temp_sequence[exeFunc_index].thr_argv[1]= "20";
-		temp_sequence[exeFunc_index].thr_argv[2]= "1500";
-		temp_sequence[exeFunc_index].procedure_id = 0;
-		exeFunc_index++; // helper for hardcodding
+/*
 
-
-
-		//2 wait
-		temp_sequence[exeFunc_index].function = thr_wait;
-		temp_sequence[exeFunc_index].thr_argv[0]= sequenc_id_char;
-		temp_sequence[exeFunc_index].thr_argv[1]= wait_between_stages_str;
-		temp_sequence[exeFunc_index].thr_argv[2]= "0";
-		temp_sequence[exeFunc_index].procedure_id = 0;
-		exeFunc_index++;
-
-		//3 READ SI
-		temp_sequence[exeFunc_index].function = GeneralSetRequest_sequence;
-		temp_sequence[exeFunc_index].thr_argv[0]= sequenc_id_char;
-		temp_sequence[exeFunc_index].thr_argv[1]= "20";
-		temp_sequence[exeFunc_index].thr_argv[2]= "3000";
-		temp_sequence[exeFunc_index].procedure_id = 0;
-		exeFunc_index++;
-
-		//4 wait
-		temp_sequence[exeFunc_index].function = thr_wait;
-		temp_sequence[exeFunc_index].thr_argv[0]= sequenc_id_char;
-		temp_sequence[exeFunc_index].thr_argv[1]= wait_between_stages_str;
-		temp_sequence[exeFunc_index].thr_argv[2]= "0";
-		temp_sequence[exeFunc_index].procedure_id = 0;
-		exeFunc_index++;
-
-		//5 SET
-		temp_sequence[exeFunc_index].function = GeneralReadRequest_sequence;
-		temp_sequence[exeFunc_index].thr_argv[0]= sequenc_id_char;
-		temp_sequence[exeFunc_index].thr_argv[1]= "20";
-		temp_sequence[exeFunc_index].thr_argv[2]= "1750";
-		temp_sequence[exeFunc_index].thr_argv[5]= "Custom message Read Specific impulse request ";
-		temp_sequence[exeFunc_index].procedure_id = 0;
-		exeFunc_index++;
-
-		//6 wait
-		temp_sequence[exeFunc_index].function = thr_wait;
-		temp_sequence[exeFunc_index].thr_argv[0]= sequenc_id_char;
-		temp_sequence[exeFunc_index].thr_argv[1]= "1000";
-		temp_sequence[exeFunc_index].thr_argv[2]= "0";
-		temp_sequence[exeFunc_index].procedure_id = 0;
-		exeFunc_index++;
-
-		//7 READ
-		temp_sequence[exeFunc_index].function = GeneralSetRequest_sequence;
-		temp_sequence[exeFunc_index].thr_argv[0]= sequenc_id_char;
-		temp_sequence[exeFunc_index].thr_argv[1]= "20";
-		temp_sequence[exeFunc_index].thr_argv[2]= "2500";
-		temp_sequence[exeFunc_index].procedure_id = 0;
-		exeFunc_index++;
-
-		//8 wait
-		temp_sequence[exeFunc_index].function = thr_wait;
-		temp_sequence[exeFunc_index].thr_argv[0]= sequenc_id_char;
-		temp_sequence[exeFunc_index].thr_argv[1]= wait_between_stages_str;
-		temp_sequence[exeFunc_index].thr_argv[2]= "0";
-		temp_sequence[7].procedure_id = 0;
-		exeFunc_index++;
-
-		//9 SET
-		temp_sequence[exeFunc_index].function = thr_void;
-		temp_sequence[exeFunc_index].thr_argv[0]= sequenc_id_char;
-		temp_sequence[exeFunc_index].thr_argv[1]= "20";
-		temp_sequence[exeFunc_index].thr_argv[2]= "2250";
-		temp_sequence[8].procedure_id = 0;
-		exeFunc_index++;
-
-		//10 wait
-		temp_sequence[exeFunc_index].function = thr_wait;
-		temp_sequence[exeFunc_index].thr_argv[0]= sequenc_id_char;
-		temp_sequence[exeFunc_index].thr_argv[1]= wait_between_stages_str;
-		temp_sequence[exeFunc_index].thr_argv[2]= "0";
-		temp_sequence[exeFunc_index].procedure_id = 0;
-		exeFunc_index++;
-
-		//11 READ
-		temp_sequence[exeFunc_index].function = GeneralReadRequest_sequence;
-		temp_sequence[exeFunc_index].thr_argv[0]= sequenc_id_char;
-		temp_sequence[exeFunc_index].thr_argv[1]= "20";
-		temp_sequence[exeFunc_index].thr_argv[2]= "0";
-		temp_sequence[exeFunc_index].procedure_id = 0;
-		exeFunc_index++;
-
-		//11 wait
-		temp_sequence[exeFunc_index].function = thr_wait;
-		temp_sequence[exeFunc_index].thr_argv[0]= sequenc_id_char;
-		temp_sequence[exeFunc_index].thr_argv[1]= wait_between_stages_str;
-		temp_sequence[exeFunc_index].thr_argv[2]= "0";
-		temp_sequence[11].procedure_id = 0;
-		exeFunc_index++;
-
-		//12 void
-		temp_sequence[exeFunc_index].function = thr_wait;
-		temp_sequence[exeFunc_index].thr_argv[0]= sequenc_id_char;
-		temp_sequence[exeFunc_index].thr_argv[1]= "1000";
-		temp_sequence[exeFunc_index].thr_argv[2]= "0";
-		temp_sequence[exeFunc_index].procedure_id = 0;
-		//exeFunc_index++; after last function - dont increase index
-
-
-		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences = temp_sequence; // save sequence
-		THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
-		THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
-		THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = false;
-		THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
-		exeFunc_index= 0;
-
-
-	// ******   SEQUENCE 2  *******System Cold Test/ Neutralizer Bias Test/ Table 9-3
-
-	exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
-	sequenc_id_char = "1";
-	sequence_id_int = 1;
-
-	static thr_sequences_t temp_sequence2[MAX_EXECUTION_SEQUENCE_DEPTH];
-
-
-
-				//1 Action 12001: Set Neutralizer Mode 0 // Register 0x4B hex 75 dec
-				temp_sequence2[exeFunc_index].function = GeneralSetRequest_sequence;
-				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= "75"; //Neutralizer Mode
-				temp_sequence2[exeFunc_index].thr_argv[2]= "0";
-				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12001: Set Neutralizer Mode 0\n";
-				temp_sequence2[exeFunc_index].procedure_id = 0;
-				exeFunc_index++;
-
-				//2 wait
-				temp_sequence2[exeFunc_index].function = thr_wait;
-				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= "2000";
-				temp_sequence2[exeFunc_index].procedure_id = 0;
-				exeFunc_index++;
-
-				//3 Action 12002: Set Neutralizer Bias Ref 1 // Register 0x4E hex 78 dec
-				temp_sequence2[exeFunc_index].function = GeneralSetRequest_sequence;
-				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= "78";
-				temp_sequence2[exeFunc_index].thr_argv[2]= "1";
-				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12002: Set Neutralizer Bias Ref 1\n";
-				temp_sequence2[exeFunc_index].procedure_id = 0;
-				exeFunc_index++;
-
-				//4 Wait Between Set Requests
-				temp_sequence2[exeFunc_index].function = thr_wait;
-				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= "2000";
-				temp_sequence2[exeFunc_index].procedure_id = 0;
-				exeFunc_index++;
-
-				//5 Action 12003: Set Neutralizer Mode 1 // Register 0x4B hex 75 dec
-				temp_sequence2[exeFunc_index].function = GeneralSetRequest_sequence;
-				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= "75"; //Neutralizer Mode
-				temp_sequence2[exeFunc_index].thr_argv[2]= "1";
-				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12003: Set Neutralizer Mode 0\n";
-				temp_sequence2[exeFunc_index].procedure_id = 0;
-				exeFunc_index++;
-
-
-
-				//6 Action 12004: Wait for 60s
-				temp_sequence2[exeFunc_index].function = thr_wait;
-				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= "10000";
-				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 10s\n";
-				temp_sequence2[exeFunc_index].procedure_id = 0;
-				exeFunc_index++;
-
-				//7 wait
-				temp_sequence2[exeFunc_index].function = thr_wait;
-				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= "10000";
-				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 20s\n";
-				temp_sequence2[exeFunc_index].procedure_id = 0;
-				exeFunc_index++;
-
-
-				//8 wait
-				temp_sequence2[exeFunc_index].function = thr_wait;
-				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= "10000";
-				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 30s\n";
-				temp_sequence2[exeFunc_index].procedure_id = 0;
-				exeFunc_index++;
-
-				//9 wait
-				temp_sequence2[exeFunc_index].function = thr_wait;
-				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= "10000";
-				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 40s\n";
-				temp_sequence2[exeFunc_index].procedure_id = 0;
-				exeFunc_index++;
-
-				//10 wait
-				temp_sequence2[exeFunc_index].function = thr_wait;
-				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= "10000";
-				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 50s\n";
-				temp_sequence2[exeFunc_index].procedure_id = 0;
-				exeFunc_index++;
-
-				//11 wait
-				temp_sequence2[exeFunc_index].function = thr_wait;
-				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= "10000";
-				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 60s\n";
-				temp_sequence2[exeFunc_index].procedure_id = 0;
-				exeFunc_index++;
-
-				//12 Action 12005: Set Neutralizer Bias Ref 1 // Register 0x4E hex 78 dec
-				temp_sequence2[exeFunc_index].function = GeneralSetRequest_sequence;
-				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= "78";
-				temp_sequence2[exeFunc_index].thr_argv[2]= "0";
-				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12005: Set Neutralizer Bias Ref 0\n";
-				temp_sequence2[exeFunc_index].procedure_id = 0;
-				exeFunc_index++;
-
-
-				//13 Wait between SET requests
-				temp_sequence2[exeFunc_index].function = thr_wait;
-				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= "2000";
-				temp_sequence2[exeFunc_index].procedure_id = 0;
-				exeFunc_index++;
-
-
-				//14 Action 12006: Set Neutralizer Mode 0 // Register 0x4B hex 75 dec
-				temp_sequence2[exeFunc_index].function = GeneralSetRequest_sequence;
-				temp_sequence2[exeFunc_index].thr_argv[0]= sequenc_id_char;
-				temp_sequence2[exeFunc_index].thr_argv[1]= "75"; //Neutralizer Mode
-				temp_sequence2[exeFunc_index].thr_argv[2]= "0";
-				temp_sequence2[exeFunc_index].thr_argv[5]= "\nAction 12001: Set Neutralizer Mode 0\n";
-				temp_sequence2[exeFunc_index].procedure_id = 0;
-				//exeFunc_index++;
-
-
-				THR_HARDCODED_SEQUENCES[sequence_id_int].sequences = temp_sequence2; // save sequence
-				THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
-				THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
-				THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = false;
-				THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
-				exeFunc_index= 0;
 
 
 
@@ -901,398 +653,6 @@ void l4_thruster_init (void *dummy) {
 
 */
 
-			// ******* SEQUENCE 0 ************* OPERATIONAL SCRIPTS /Hot Standby Script / 10-1
-
-			exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
-			sequenc_id_char = "0";
-			sequence_id_int = 0;
-			wait_between_stages_str = "2000";
-			//sprintf(sequenc_id_char, "%d",sequence_id_int);
-
-			// Action 31001:Set Operational Mode 0 / Register 0x0E  14
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "14";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31001:Set Operational Mode 0\n";
-			exeFunc_index++;
-
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-			// Action 31002: Set Emitter Mode 0 / Register 0x1E  30
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "30";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31002: Set Emitter Mode 0\n";
-			exeFunc_index++;
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-			// Action 31003:Set Extractor Mode 0 / Register 0x2D  45
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "45";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31003:Set Extractor Mode 0\n";
-			exeFunc_index++;
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-			// Action 31004: Set Neutralizer Mode 0 / Register 0x4B  75
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "75";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31004: Set Neutralizer Mode 0\n";
-			exeFunc_index++;
-
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-			// Action 31005: Set Temperature Mode 0 / Register 0x60  96
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "75";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31005: Set Temperature Mode 0\n";
-			exeFunc_index++;
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-			// Action 31006: Set Reservoire Heater Mode 0 / Register 0x3C  60
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "60";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31006: Set Reservoire Heater Mode 0\n";
-			exeFunc_index++;
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-			// Action 31007: Set Thrust Ref 0 N / Register 0x10  16
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "16";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31007: Set Thrust Ref 0 N\n";
-			exeFunc_index++;
-
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-			// Action 31008: Set Reservoir Heater Power Ref 6 W / Register 0x45  69
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "69";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "6";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31008: Set Reservoir Heater Power Ref 6 W\n";
-			exeFunc_index++;
-
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-			// Action 31009: Set Operational Mode 1 / Register 0x0E  14
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "14";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "1";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31008: Reservoir Heater Power Ref 6 W\n";
-			exeFunc_index++;
-
-			// Action 31010: Wait AND MONITOR / Register (Reservoir Temperature) 0x63 99
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait_and_monitor;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "3600000"; // Total wait duration [ms] 2.5h = 9 000 000ms
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "10000"; // dt between READ request for Reservoir temperature
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[3] = "97"; // Register that is intended to be monitored Reservoir temp Ref
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31010: Wait AND MONITOR\n";
-			//exeFunc_index++;
-
-
-
-			THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = false;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
-			exeFunc_index= 0;
-
-
-
-
-			// ******* SEQUENCE 2 ************* Operational Scripts / Thrust Maneuver /10-3
-
-			exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
-			sequenc_id_char = "1";
-			sequence_id_int = 1;
-			//sprintf(sequenc_id_char, "%d",sequence_id_int);
-
-			// Action 31301: Set Extractor Mode 0 / Register 0x2D  45
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "45";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31301: Set Extractor Mode 0\n";
-			exeFunc_index++;
-
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			//exeFunc_index++;
-
-			// Action 31302: Set Emitter Mode 0 / Register 0x1E  30
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "30";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31302: Set Emitter Mode 0\n";
-			exeFunc_index++;
-
-
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-
-			// Action 31303: Set Neutralizer Mode 0 / Register 0x4B  75
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "75";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31304: Set Neutralizer Mode 0\n";
-			exeFunc_index++;
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-			// Action 31304: Set Emitter Power Ref 30 W / Register 0x27  39
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "39";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "30"; // [W]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31304: Set Emitter Power Ref 30 W\n";
-			exeFunc_index++;
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-
-
-			//5 Action 31305: Set Neutralizer Filament Ref 1/2 // Register 0x4d 77
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "77";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "1";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 31305: Set Neutralizer Filament Ref 1\n";
-			exeFunc_index++;
-
-
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-			//5 Action 31306: Set Specific Impulse Ref 3000 s // Register 0x14 20
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "20";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "3000";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 31306: Set Specific Impulse Ref 3000 s\n";
-			exeFunc_index++;
-
-
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-
-
-
-			//17 Action 31307: Thrust Ref ramp (30s,1Hz) from INITIAL VALUE to 300 microN // Register 0x10 16 dec
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_value_ramp;  // RAMP DOWN
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "16"; // Neutralizer Heater Power Ref register
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "0.0003"; // GOAL of RAMP - 300 microN = 0.3 mN = 0.0003N
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[3]= "30"; // ramp duration 30s
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[4]= "2"; // 2 Secons between set requests = 0.5Hz
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 13009: Neutralizer Heater Power Ref ramp (30s,1Hz) from 2W to 0W\n ";
-			exeFunc_index++;
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-
-			// Action 31308: Wait AND MONITOR Thrust/ Register 0x12  18
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait_and_monitor;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "60000"; // Total wait duration [ms] 2.5h = 9 000 000ms
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "10000"; // dt between READ request
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[3] = "18"; // Register that is intended to be monitored
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31308: Wait AND MONITOR Thrust\n";
-			exeFunc_index++;
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-			//5 Action 31309: Set Thrust Ref 0 N // Register 0x10 16
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "16";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "0";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 31309: Set Thrust Ref 0 N\n";
-			//exeFunc_index++;
-
-			THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = false;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
-			exeFunc_index= 0;
-
-			// ******* SEQUENCE 3 / Operational Scripts /Cooldown Script / 10-4
-
-			exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
-			sequenc_id_char = "2";
-			sequence_id_int = 2;
-			wait_between_stages_str = "2000";
-
-			// Action 31401:Set Operational Mode 0 / Register 0x0E  14
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "14";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31401:Set Operational Mode 0\n";
-			exeFunc_index++;
-
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-			// Action 31402: Set Emitter Mode 0 / Register 0x1E  30
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "30";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31402: Set Emitter Mode 0\n";
-			exeFunc_index++;
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-
-			// Action 31404: Set Neutralizer Mode 0 / Register 0x4B  75
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "75";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31404: Set Neutralizer Mode 0\n";
-			exeFunc_index++;
-
-
-
-			// Wait Between SET requests
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
-			exeFunc_index++;
-
-
-
-
-			// Action 31404: Wait AND MONITOR Reservoir Temperature/ Register 0x63  99
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait_and_monitor;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "3600000"; // Total wait duration [ms] 1h = 3600 000[ms]
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "10000"; // dt between READ request
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[3] = "99"; // Register that is intended to be monitored
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31404: Wait AND MONITOR Reservoir Temperature\n";
-			exeFunc_index++;
-
-
-			THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
-			THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = false;
-			THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
-			exeFunc_index= 0;
 
 
 }
@@ -1300,15 +660,10 @@ void l4_thruster_init (void *dummy) {
 void l4_thruster_main (void) {
 	LAST_STARTED_MODULE = 11;
 
-	// TODO : I am not sure what to do here.
-	// Leaving it for now so that l4_thruster_module can be
-	// Initialised according as all other modules
 
 
 
-
-
-	for (int i=0;i<=3;i++){ // for all preprogrammed sequences
+	for (int i=0;i<=4;i++){ // for all preprogrammed sequences
 
 		if (THR_HARDCODED_SEQUENCES[i].sequence_trigger ){ //if trigger for sequence is set to True - execute sequence
 			thr_execute_sequence(i);
@@ -2485,3 +1840,705 @@ void mem_write_cmd(int argc, char *argv[]){
 
 }
 // ******************************************************************************
+
+
+
+void initialize_hardcoded_thr_sequences(){
+
+	/// **************** PREPROGRAMM SEQUENCES HERE ****************
+		uint8_t exeFunc_index; // this is helper index to simplify HARDCODDING sequence manually.
+		int sequence_id_int;
+		char *wait_between_stages_str ="5000";
+		char* sequenc_id_char;
+
+
+		// ******* SEQUENCE 0 ************* OPERATIONAL SCRIPTS /Hot Standby Script / 10-1
+
+		exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
+		sequenc_id_char = "0";
+		sequence_id_int = 0;
+		wait_between_stages_str = "2000";
+		//sprintf(sequenc_id_char, "%d",sequence_id_int);
+
+		// Action 31001:Set Operational Mode 0 / Register 0x0E  14
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "14";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31001:Set Operational Mode 0\n";
+		exeFunc_index++;
+
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+		// Action 31002: Set Emitter Mode 0 / Register 0x1E  30
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "30";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31002: Set Emitter Mode 0\n";
+		exeFunc_index++;
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+		// Action 31003:Set Extractor Mode 0 / Register 0x2D  45
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "45";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31003:Set Extractor Mode 0\n";
+		exeFunc_index++;
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+		// Action 31004: Set Neutralizer Mode 0 / Register 0x4B  75
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "75";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31004: Set Neutralizer Mode 0\n";
+		exeFunc_index++;
+
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+		// Action 31005: Set Temperature Mode 0 / Register 0x60  96
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "75";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31005: Set Temperature Mode 0\n";
+		exeFunc_index++;
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+		// Action 31006: Set Reservoire Heater Mode 0 / Register 0x3C  60
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "60";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31006: Set Reservoire Heater Mode 0\n";
+		exeFunc_index++;
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+		// Action 31007: Set Thrust Ref 0 N / Register 0x10  16
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "16";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31007: Set Thrust Ref 0 N\n";
+		exeFunc_index++;
+
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+		// Action 31008: Set Reservoir Heater Power Ref 6 W / Register 0x45  69
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "69";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "6";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31008: Set Reservoir Heater Power Ref 6 W\n";
+		exeFunc_index++;
+
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+		// Action 31009: Set Operational Mode 1 / Register 0x0E  14
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "14";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "1";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31008: Reservoir Heater Power Ref 6 W\n";
+		exeFunc_index++;
+
+		// Action 31010: Wait AND MONITOR / Register (Reservoir Temperature) 0x63 99
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait_and_monitor;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "3600000"; // Total wait duration [ms] 2.5h = 9 000 000ms
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "10000"; // dt between READ request for Reservoir temperature
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[3] = "97"; // Register that is intended to be monitored Reservoir temp Ref
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31010: Wait AND MONITOR\n";
+		//exeFunc_index++;
+
+
+
+		THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = false;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
+		exeFunc_index= 0;
+
+
+
+
+		// ******* SEQUENCE 2 ************* Operational Scripts / Thrust Maneuver /10-3
+
+		exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
+		sequenc_id_char = "1";
+		sequence_id_int = 1;
+		//sprintf(sequenc_id_char, "%d",sequence_id_int);
+
+		// Action 31301: Set Extractor Mode 0 / Register 0x2D  45
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "45";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31301: Set Extractor Mode 0\n";
+		exeFunc_index++;
+
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		//exeFunc_index++;
+
+		// Action 31302: Set Emitter Mode 0 / Register 0x1E  30
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "30";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31302: Set Emitter Mode 0\n";
+		exeFunc_index++;
+
+
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+
+		// Action 31303: Set Neutralizer Mode 0 / Register 0x4B  75
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "75";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31304: Set Neutralizer Mode 0\n";
+		exeFunc_index++;
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+		// Action 31304: Set Emitter Power Ref 30 W / Register 0x27  39
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "39";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "30"; // [W]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31304: Set Emitter Power Ref 30 W\n";
+		exeFunc_index++;
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+
+
+		//5 Action 31305: Set Neutralizer Filament Ref 1/2 // Register 0x4d 77
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "77";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "1";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 31305: Set Neutralizer Filament Ref 1\n";
+		exeFunc_index++;
+
+
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+		//5 Action 31306: Set Specific Impulse Ref 3000 s // Register 0x14 20
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "20";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "3000";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 31306: Set Specific Impulse Ref 3000 s\n";
+		exeFunc_index++;
+
+
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+
+
+
+		//17 Action 31307: Thrust Ref ramp (30s,1Hz) from INITIAL VALUE to 300 microN // Register 0x10 16 dec
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_value_ramp;  // RAMP DOWN
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "16"; // Neutralizer Heater Power Ref register
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "0.0003"; // GOAL of RAMP - 300 microN = 0.3 mN = 0.0003N
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[3]= "30"; // ramp duration 30s
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[4]= "2"; // 2 Secons between set requests = 0.5Hz
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 13009: Neutralizer Heater Power Ref ramp (30s,1Hz) from 2W to 0W\n ";
+		exeFunc_index++;
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+
+		// Action 31308: Wait AND MONITOR Thrust/ Register 0x12  18
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait_and_monitor;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "60000"; // Total wait duration [ms] 2.5h = 9 000 000ms
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "10000"; // dt between READ request
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[3] = "18"; // Register that is intended to be monitored
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31308: Wait AND MONITOR Thrust\n";
+		exeFunc_index++;
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+		//5 Action 31309: Set Thrust Ref 0 N // Register 0x10 16
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "16";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "0";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 31309: Set Thrust Ref 0 N\n";
+		//exeFunc_index++;
+
+		THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = false;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
+		exeFunc_index= 0;
+
+		// ******* SEQUENCE 3 / Operational Scripts /Cooldown Script / 10-4
+
+		exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
+		sequenc_id_char = "2";
+		sequence_id_int = 2;
+		wait_between_stages_str = "2000";
+
+		// Action 31401:Set Operational Mode 0 / Register 0x0E  14
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "14";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31401:Set Operational Mode 0\n";
+		exeFunc_index++;
+
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+		// Action 31402: Set Emitter Mode 0 / Register 0x1E  30
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "30";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31402: Set Emitter Mode 0\n";
+		exeFunc_index++;
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+
+		// Action 31404: Set Neutralizer Mode 0 / Register 0x4B  75
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "75";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "0";
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31404: Set Neutralizer Mode 0\n";
+		exeFunc_index++;
+
+
+
+		// Wait Between SET requests
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+		exeFunc_index++;
+
+
+
+
+		// Action 31404: Wait AND MONITOR Reservoir Temperature/ Register 0x63  99
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait_and_monitor;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = "3600000"; // Total wait duration [ms] 1h = 3600 000[ms]
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2] = "10000"; // dt between READ request
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[3] = "99"; // Register that is intended to be monitored
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nAction 31404: Wait AND MONITOR Reservoir Temperature\n";
+		exeFunc_index++;
+
+
+		THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+		THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = false;
+		THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
+		exeFunc_index= 0;
+
+
+		// ******   SEQUENCE 4  *******System Cold Test/ Neutralizer Bias Test/ Table 9-3
+
+		exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
+		sequenc_id_char = "3";
+		sequence_id_int = 3;
+		wait_between_stages_str = "2000";
+
+
+
+
+			//1 Action 12001: Set Neutralizer Mode 0 // Register 0x4B hex 75 dec
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "75"; //Neutralizer Mode
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "0";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12001: Set Neutralizer Mode 0\n";
+			exeFunc_index++;
+
+			// Wait Between SET requests
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+			exeFunc_index++;
+
+			//3 Action 12002: Set Neutralizer Bias Ref 1 // Register 0x4E hex 78 dec
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "78";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "1";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12002: Set Neutralizer Bias Ref 1\n";
+			exeFunc_index++;
+
+			// Wait Between SET requests
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+			exeFunc_index++;
+
+			//5 Action 12003: Set Neutralizer Mode 1 // Register 0x4B hex 75 dec
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "75"; //Neutralizer Mode
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "1";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12003: Set Neutralizer Mode 0\n";
+			exeFunc_index++;
+
+
+
+			//6 Action 12004: Wait for 60s
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "10000";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 10s\n";
+			exeFunc_index++;
+
+			//7 wait
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "10000";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 20s\n";
+			exeFunc_index++;
+
+
+			//8 wait
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "10000";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 30s\n";
+			exeFunc_index++;
+
+			//9 wait
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "10000";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 40s\n";
+			exeFunc_index++;
+
+			//10 wait
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "10000";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 50s\n";
+			exeFunc_index++;
+
+			//11 wait
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "10000";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 60s\n";
+			exeFunc_index++;
+
+					//12 Action 12005: Set Neutralizer Bias Ref 1 // Register 0x4E hex 78 dec
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "78";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "0";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12005: Set Neutralizer Bias Ref 0\n";
+			exeFunc_index++;
+
+
+			//13 Wait between SET requests
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "2000";
+			exeFunc_index++;
+
+
+			//14 Action 12006: Set Neutralizer Mode 0 // Register 0x4B hex 75 dec
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "75"; //Neutralizer Mode
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "0";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12001: Set Neutralizer Mode 0\n";
+			//exeFunc_index++;
+
+			THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = false;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
+			exeFunc_index= 0;
+
+
+			//////////// ******** SEQUENCE 3*************** SYSTEM COLD TEST/ Heater Ramp Test/ Table 9-2
+
+			exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
+			sequenc_id_char = "4";
+			sequence_id_int = 4;
+			wait_between_stages_str = "2000";
+
+			//0 Action 11001: Set Heater Mode 0  / Register 0x3C hex   60 dec
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "60";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "0";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 11001: Heater Mode set 0 \n";
+			exeFunc_index++;
+
+			//11 wait
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "10000";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 60s\n";
+			exeFunc_index++;
+
+			//2 Action 1102: Set Heater Voltage Ref 12v / Register 0x3D 61 dec
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;  // Set request
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char; //procedure id HARDCODED
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "61"; // Reservoir Heater Voltage Ref register
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "12"; //  Set to 12V
+			exeFunc_index++;
+
+
+			//11 wait
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "10000";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 60s\n";
+			exeFunc_index++;
+
+			//4 Action 1103: Set Heater Current Ref 1.5A / Register 0x41 65 dec
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;  // Set request
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char; //procedure id HARDCODED
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "65"; // Reservoir Heater Current Ref register
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "1.5"; //  Set to 1.5 A
+			exeFunc_index++;
+
+
+			//11 wait
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "10000";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 60s\n";
+			exeFunc_index++;
+
+			//6 Action 1104: Set Heater Power Ref 0W / Register 0x45 69 dec
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;  // Set request
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char; //procedure id HARDCODED
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "69"; // Reservoir Heater Power Ref register
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "0"; //  Set to 0 W
+			exeFunc_index++;
+
+			//11 wait
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "10000";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 60s\n";
+			exeFunc_index++;
+
+			//8 Action 11005: Set Heater Mode 1  / Register 0x3C hex   60 dec
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char; // OBC sequence id
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "60"; // Reservoir heater mode register
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "1"; // Heater mode value
+
+			//11 wait
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "10000";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 60s\n";
+			exeFunc_index++;
+
+			//10 Action 11006: Heater Power Ref ramp (30s,1Hz) from 0W to 10W // Register 0x45 69 dec
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_value_ramp;  // RAMP UP
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char; //procedure id HARDCODED
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "69"; // Heater Power Ref register
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "10"; // GOAL of RAMP - manually set to 3000s
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[3]= "30"; // ramp duration 30s
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[4]= "2"; // 1 Secons between set requests = 1Hz
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 11006: Heater Power Ref ramp (30s,1Hz) from 0W to 10W\n ";
+			exeFunc_index++;
+
+			//11 wait
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "10000";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 60s\n";
+			exeFunc_index++;
+
+			//11 Action 11007: Heater Power Ref ramp (30s,1Hz) from 10W to 0W // Register 0x45 69 dec
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_value_ramp;  // RAMP UP
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char; //procedure id HARDCODED
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "69"; // Heater Power Ref register
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "0"; // GOAL of RAMP - manually set to 3000s
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[3]= "30"; // ramp duration 30s
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[4]= "2"; // 1 Secons between set requests = 1Hz
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 11007: Heater Power Ref ramp (30s,1Hz) from 10W to 0W\n ";
+			exeFunc_index++;
+
+			//11 wait
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "10000";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 60s\n";
+			exeFunc_index++;
+
+			//13 Action 1108: Set Heater Voltage Ref 0V / Register 0x3D 61 dec
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;  // Set request
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char; //procedure id HARDCODED
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "61"; // Reservoir Heater Voltage Ref register
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "0"; //  Set to 0V
+			exeFunc_index++;
+
+			//11 wait
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "10000";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 60s\n";
+			exeFunc_index++;
+
+			//15 Action 1109: Set Heater Current Ref 0A / Register 0x41 65 dec
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;  // Set request
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char; //procedure id HARDCODED
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "65"; // Reservoir Heater Current Ref register
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "0"; //  Set to 0 A
+			exeFunc_index++;
+
+			//11 wait
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "10000";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 60s\n";
+			exeFunc_index++;
+
+			//17 Action 11010: Set Heater Mode 0  / Register 0x3C hex   60 dec
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char; // OBC sequence id
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "60"; // Reservoir heater mode register
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "0"; // Heater mode value
+			exeFunc_index++;
+
+			//11 wait
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "10000";
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5]= "\nAction 12004: Waiting 60s\n";
+			exeFunc_index++;
+
+			//19 Action 11011: Set Heater Power Ref 6 W / Register 0x45 65 dec
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;  // Set request
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char; //procedure id HARDCODED
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1]= "69"; // Reservoir Heater Power Ref register
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[2]= "6"; //  Set to 6 W
+			//exeFunc_index++;
+
+
+			THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+			THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = false;
+			THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
+			exeFunc_index= 0;
+
+
+
+}
