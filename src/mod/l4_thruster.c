@@ -1544,8 +1544,10 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 		//len_print = strlen(print_str);
 		//deb_print_pure_debug((uint8_t *)print_str, len_print);
 
-		int i = 0;
-		while( i<101  ){ // Untill last usable register !  WARNING !!! CHECK LENGTH OF ReadAllRegistersRequest !! This might trigger infitite loop
+		int i = 0; // i referres to position in received_datavector, not register_index. Starting i is always 0.
+		uint32_t parse_start_time = (uint32_t)timGetSystime();
+		uint32_t current_time;
+		while( next_register_index<108 ){ // Untill last usable register !  WARNING !!! CHECK LENGTH OF ReadAllRegistersRequest !! This might trigger infitite loop
 			// It will trigger infinite loop if thruser reply with length of message that is greaater then 5 and less then enough to cover 101 registers !
 			//sprintf(print_str, "\nParse Iteration = %d length_of_next_register = %d \n", i,length_of_next_register);
 			//len_print = strlen(print_str);
@@ -1554,6 +1556,30 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 			//sprintf(print_str, "\n Next RI= %d Next_RI_len=%d  Conversion_multiplier = %.2f \n",next_register_index,length_of_next_register,multiplier  );
 			//len_print = strlen(print_str);
 			//deb_print_pure_debug((uint8_t *)print_str, len_print);
+			current_time = (uint32_t)timGetSystime();
+
+			if((current_time - parse_start_time)> 100){
+				/*
+				 *
+				 * This is exit condition to prevent infinite loop.
+				 * In case thruster replies less bytes then expected - index will never reach exit condition.
+				 * To prevent this we introduce break after 100ms delay
+				 *
+				 * This is not the most elegant solution. But it is assumed that ReadAllRegisters will request amount of bytes
+				 * enough to cover all REGISTER_DATA. Thus in normal operation proccess time exceeded limit warning should never occure
+				 *
+				 */
+
+				sprintf(print_str, "\nParse WARNING: Process time exceeded limit   next_register_index = %d  \n",next_register_index  );
+				len_print = strlen(print_str);
+				deb_print_pure_debug((uint8_t *)print_str, len_print);
+				current_time = (uint32_t)timGetSystime();
+
+
+
+				break;
+			}
+
 
 			if(length_of_next_register ==1){
 
