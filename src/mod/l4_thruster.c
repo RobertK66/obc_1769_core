@@ -65,7 +65,6 @@ typedef struct {
 	void (*function)(int argc, char *argv[]);
 	uint16_t procedure_id;
 } thr_sequences_t;
-//thr_sequences_t THR_SEQUENCES[MAX_EXECUTION_SEQUENCE_DEPTH]; // array of argv for sequence execution stack
 
 typedef struct {
 	thr_sequences_t sequences[MAX_EXECUTION_SEQUENCE_DEPTH];
@@ -83,9 +82,6 @@ typedef struct {
 
 }thr_hardcoded_sequences_t;
 thr_hardcoded_sequences_t THR_HARDCODED_SEQUENCES[MAX_HARDCODED_SEQUENCES];
-
-// Array of function pointers
-//void (*THR_EXECUTION_SEQUENCE[MAX_EXECUTION_SEQUENCE_DEPTH])(int argc, char *argv[]); // sequence execution stack (array of function pointers)
 
 
 
@@ -153,7 +149,7 @@ const uint8_t REGISTER_LENGTH[108] = {1, 1, 2, 0, 2, 0, 4, 0, 0, 0, 4, 0, 0, 0, 
 
 
 
-
+// TODO: Fill the array with REGISTER_NAMES so that logging messages will contain name of accessed register allong with  [register_index]
 const char* REGISTER_NAME[5] = { "0 Firmware Version (major)","1 Firmware Version (minor)","2 Serial Number","4 None","5 Reset Cycle"	};
 
 
@@ -164,8 +160,8 @@ const uint8_t DEVICE = 0xff;
 
 
 const uint8_t MSGTYPE[8]={0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08};
-// 0 - OK
-// 1 - ERROR
+// 0 - ERROR
+// 1 - OK
 // 2- READ
 // 3 - WRITE
 // 4 - DATA
@@ -302,7 +298,6 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 	uint8_t payload_length_2 = received_buffer[5];
 
 	// Combine payload length bytes into uint16_t
-
 	uint16_t uint16_payload_length = (payload_length_2 <<8 )| payload_length_1;
 
 	if (message_type == 1){
@@ -314,9 +309,7 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 	}
 
 
-
 	/// after payload length is known - it is possible to parse remaining bytes into array
-
 	uint8_t received_data[uint16_payload_length];
 
 	for(int i=0;i<uint16_payload_length;i++){
@@ -342,14 +335,11 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 		// if calculated checksum is equal to received then message is considered validated.
 		// Set flag that represent that latest received message was validated
 		READ_REQUEST_OK_FLAG = 1;
-		//printf("\n CHECKSUMM OK \n");
 
 	}
 	else{
 		// incorrect checksumm - message should not be proccessed
 		READ_REQUEST_OK_FLAG = 0;
-
-		//printf("INCORRECT CHECKSUM \n");
 		return;
 
 	}
@@ -364,9 +354,6 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 		// if payload length is only 1 byte
 		VALUE_UINT8 = received_data[0];
 		// then obviously return type is uint8. And array of received_data would be of a single element.
-		//printf("\n RECEIVED VALID MESSAGE VALUE_UINT8 = %d \n",VALUE_UINT8);
-
-
 		// Now after we received correct value. We need to apply conversion multuplier again and convert uint8/uint16 value into double.
 		//Store double in array representing REAL values of thruster registers
 
@@ -390,12 +377,8 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 		//if payload length is 2 bytes, then return value should be stored as uint16_t
 		VALUE_UINT16 = (received_data[1] <<8 )| received_data[0];
-		//printf("\n RECEIVED VALID MESSAGE VALUE_UINT16 = %d \n ",VALUE_UINT16);
-
 		double multiplier = CONVERSION_DOUBLE[LATEST_ACCESSED_REGISTER];
 		ACTUAL_VALUE = (double)VALUE_UINT16 / multiplier;
-
-		//printf("\n After conversion multiplier ACTUAL VALUE = %f \n",ACTUAL_VALUE);
 		REGISTER_DATA[LATEST_ACCESSED_REGISTER]=ACTUAL_VALUE;
 
 		sprintf(print_str, "\n Parse Read Request: [%d] ACTUAL_VALUE= %.6f \n",LATEST_ACCESSED_REGISTER,ACTUAL_VALUE );
@@ -406,6 +389,9 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 	}
 
 	if(uint16_payload_length ==4){
+		//TODO: Implement parser for fuse status. Fuses to be stored as uint32_t variable.
+		// This TODO is for later design iteration : Thruster test validation, and monitoring loop.
+		// Monitoring module for space craft operational variables would be implemented at next design stage.
 
 		//if payload length is 4 (fuses) then return value should be stored with uint32_t
 		//uint32_t i32 = v4[0] | (v4[1] << 8) | (v4[2] << 16) | (v4[3] << 24);
@@ -475,13 +461,10 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 
 			if(length_of_next_register ==1){
-
-				//printf("\n-1------------------Next Register Index = %d",next_register_index);
 				VALUE_UINT8 = received_data[i];
 				multiplier = CONVERSION_DOUBLE[next_register_index];
 				ACTUAL_VALUE = (double)VALUE_UINT8 / multiplier;
 				REGISTER_DATA[next_register_index]=ACTUAL_VALUE;
-				//next_register_index = next_register_index+1;
 
 				//sprintf(print_str, "\n [%d] ACTUAL_VALUE= %.6f Conversion=%.6f  uint8_value =%d  \n",next_register_index,ACTUAL_VALUE,multiplier,VALUE_UINT8  );
 				//len_print = strlen(print_str);
@@ -493,8 +476,6 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 			}
 
 			if(length_of_next_register==2){
-
-				//printf("\n 2------------Next Register Index = %d \n",next_register_index);
 				VALUE_UINT16 = (received_data[i+1] <<8 )| received_data[i]; // here problem / Compiles value out of wrong bytes
 				double multiplier = CONVERSION_DOUBLE[next_register_index];
 				ACTUAL_VALUE = (double)VALUE_UINT16 / multiplier;
@@ -511,6 +492,7 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 			}
 
 			if(length_of_next_register==4){
+
 				//sprintf(print_str, "\n [%d] Skip Fuse \n",next_register_index  );
 				//len_print = strlen(print_str);
 				//deb_print_pure_debug((uint8_t *)print_str, len_print);
@@ -557,10 +539,9 @@ void GeneralSetRequest_sequence(int argc, char *argv[]){
 	int len = strlen(print_str);
 	deb_print_pure_debug((uint8_t *)print_str, len);
 
-	//*******assume that argv[5] is custom print message !!!!! WARNING I AM NOT SURE THAT THIS IS GOOD IDEA
+	//*******assume that argv[5] is custom print message
 	len = strlen(argv[5]);
 	deb_print_pure_debug((uint8_t *)argv[5], len);
-	//// WARNING THIS BLOCK MIGHT BE NO GOOD *********
 
 
 	THR_HARDCODED_SEQUENCES[procedure_id].execution_index++;
@@ -613,13 +594,13 @@ void GeneralSetRequest(int argc, char *argv[]){
 	request[0] = SENDER_ADRESS;
 	request[1] = DEVICE;
 	request[2] = MSGTYPE[3]; // WRITE -3
-	request[3] = 0x00; //checksumm
+	request[3] = 0x00; //checksum
 
 
 	//////Payload length
 	if (length_of_register ==1){
 		// if register that is intended to be set is one byte
-		// then length of payload is register addres(1) + data(1)= 2 bytes
+		// then length of payload is register address(1) + data(1)= 2 bytes
 		request[4] = 2; //
 	}
 
@@ -692,10 +673,8 @@ void GeneralReadRequest_sequence(int argc, char *argv[]){
 	int len = strlen(print_str);
 	deb_print_pure_debug((uint8_t *)print_str, len);
 
-	//*******assume that argv[5] is custom print message !!!!! WARNING I AM NOT SURE THAT THIS IS GOOD IDEA
 	len = strlen(argv[5]);
-	deb_print_pure_debug((uint8_t *)argv[5], len);
-	//// WARNING THIS BLOCK MIGHT BE NO GOOD *********
+	deb_print_pure_debug((uint8_t *)argv[5], len); //assume that argv[5] is custom print message
 
 
 	THR_HARDCODED_SEQUENCES[procedure_id].execution_index++;
@@ -708,7 +687,7 @@ void GeneralReadRequest_sequence(int argc, char *argv[]){
 void GeneralReadRequest(int argc, char *argv[]){
 	LAST_STARTED_MODULE = 1107;
 
-		// FIRST ARGUMENT SHOUD BE int VALUE OF REGISTER THAT WOULD BE READ FROM
+		// FIRST ARGUMENT SHOUD BE uint8_t VALUE OF REGISTER THAT WOULD BE READ FROM
 		uint8_t access_register = atoi(argv[1]);
 		uint8_t length_of_register = REGISTER_LENGTH[access_register];
 
@@ -753,7 +732,7 @@ void thr_wait(int argc, char *argv[]){
 	 *
 	 * duration is required input from argv
 	 *
-	 * function will do nothing untill difference between current and previous timestamps is less then duration
+	 * function will do nothing until difference between current and previous timestamps is less then duration
 	 *
 	 * THR_EXECUTION_INDEX points to next action in the execution sequence stack.
 	 * THR_EXECUTION INDEX is increased after current timestamp increased above designed wait duration
@@ -777,10 +756,9 @@ void thr_wait(int argc, char *argv[]){
 		deb_print_pure_debug((uint8_t *)print_str, len);
 		THR_HARDCODED_SEQUENCES[procedure_id].execution_index++; // increase sequence execution index so that after wait - next module to be executed
 
-		//*******assume that argv[5] is custom print message !!!!! WARNING I AM NOT SURE THAT THIS IS GOOD IDEA
+
 		len = strlen(argv[5]);
-		deb_print_pure_debug((uint8_t *)argv[5], len);
-		//// WARNING THIS BLOCK MIGHT BE NO GOOD *********
+		deb_print_pure_debug((uint8_t *)argv[5], len); // assume that argv[5] is custom print message
 	}
 
 }
@@ -790,14 +768,14 @@ void thr_wait_and_monitor(int argc, char *argv[]){
 	/*
 	 *
 	 * This module is use for Hot Standby Script Sequence
-	 * Module will wait untill Reservoir Temperature will heat up
+	 * Module will wait until Reservoir Temperature will heat up
 	 * So that thruster is ready to fire
 	 *
 	 * Module will monitor and log Reservoir Temperature Register 0x63  99
 	 *
-	 * uint32_t duration - [ms]total wait duration after reseivoir heater was turned on
-	 * uint32_t logging_dt - [ms] time after which READ requsts for temperature monitoring are being sent
-	 * uint32_t wait_for_read_request_proccess -[ms] delay to wait untill read request is proccessed
+	 * uint32_t duration - [ms]total wait duration after reservoir heater was turned on
+	 * uint32_t logging_dt - [ms] time after which READ requests for temperature monitoring are being sent
+	 * uint32_t wait_for_read_request_proccess -[ms] delay to wait until read request is processed
 	 *
 	 *
 	 */
@@ -815,8 +793,8 @@ void thr_wait_and_monitor(int argc, char *argv[]){
 	int waiting_between_logging;
 	char argument1[50];
 
-	uint32_t wait_for_read_request_proccess = 3000; // WARNING ! Wait time for proccesing request [ms] should not be equal to logging dt [ms]
-	// Otherwise function newer exits
+	uint32_t wait_for_read_request_proccess = 3000; // WARNING ! Wait time for processing request [ms] should not be equal to logging dt [ms]
+	// Otherwise function never exits
 
 
 	switch (THR_HARDCODED_SEQUENCES[procedure_id].substage_index){
@@ -829,13 +807,6 @@ void thr_wait_and_monitor(int argc, char *argv[]){
 				sprintf(print_str, "\n Waiting %d s \n",waiting_between_logging  );
 				len = strlen(print_str);
 				deb_print_pure_debug((uint8_t *)print_str, len);
-
-
-
-
-				//temp_argv[0]= "6";
-				//temp_argv[1]= "99"; // Reservoir Temperature
-				//GeneralReadRequest(2, temp_argv);
 
 				THR_HARDCODED_SEQUENCES[procedure_id].substage_index++; // increase substage to procede with READ request
 				THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_substage = (uint32_t)timGetSystime(); // save timestamp of substage completion
@@ -857,10 +828,9 @@ void thr_wait_and_monitor(int argc, char *argv[]){
 				THR_HARDCODED_SEQUENCES[procedure_id].execution_index++; // increase sequence execution index so that after wait - next module to be executed
 				THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
 
-				//*******assume that argv[5] is custom print message !!!!! WARNING I AM NOT SURE THAT THIS IS GOOD IDEA
+				// assume that argv[5] is custom print message
 				len = strlen(argv[5]);
 				deb_print_pure_debug((uint8_t *)argv[5], len);
-				//// WARNING THIS BLOCK MIGHT BE NO GOOD *********
 			}
 
 
@@ -873,7 +843,6 @@ void thr_wait_and_monitor(int argc, char *argv[]){
 		deb_print_pure_debug((uint8_t *)print_str, len);
 
 		temp_argv[0]= "6";
-		//temp_argv[1]= "97"; // Reservoir Temperature
 
 		sprintf(argument1, "%d",register_index);
 		temp_argv[1]= argument1;
@@ -891,13 +860,10 @@ void thr_wait_and_monitor(int argc, char *argv[]){
 					}
 		else{
 			//THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_substage = (uint32_t)timGetSystime(); //save execution finish time of wait substage
-
 			sprintf(print_str, "\nMonitored [%d] Value = %.6f \n", register_index,REGISTER_DATA[register_index]);
 			len = strlen(print_str);
 			deb_print_pure_debug((uint8_t *)print_str, len);
 			THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
-
-
 			}
 
 
@@ -934,8 +900,6 @@ void thr_value_ramp(int argc, char *argv[]){
 	 * When hardcoding sequences - lets stick with enpulsion ramp requirments
 	 */
 
-	//int substage_index =0;
-
 	uint16_t procedure_id = atoi(argv[0]); // procedure_id is always fist index of argument array
 	uint8_t register_index = atoi(argv[1]); // first argument is register index at which SET ramp would be implemented
 	double goal = atof((const char*)argv[2]); // goal to which value should be set
@@ -951,7 +915,6 @@ void thr_value_ramp(int argc, char *argv[]){
 	double value_step;
 
 	char *temp_argv[3];
-	//char argument1[1];
 	char argument2[50];
 	char argument3[50]; //7 //length of array should always be more then maximum characters for set value !!!!!
 
@@ -966,14 +929,13 @@ void thr_value_ramp(int argc, char *argv[]){
 		len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
 
-		//*******assume that argv[5] is custom print message !!!!! WARNING I AM NOT SURE THAT THIS IS GOOD IDEA
+		// assume that argv[5] is custom print message
 		len = strlen(argv[5]);
 		deb_print_pure_debug((uint8_t *)argv[5], len);
-		//// WARNING THIS BLOCK MIGHT BE NO GOOD *********
 
 		THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
 		break;
-	case 1: // wait for some time while proccess request is executing
+	case 1: // wait for some time while process request is executing
 		now_timestamp = (uint32_t)timGetSystime();
 		if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage) <= 5000 ){
 					// do nothing
@@ -983,17 +945,11 @@ void thr_value_ramp(int argc, char *argv[]){
 		else if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage) > 5000 ){
 			THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime(); //save execution finish time of wait stage
 			THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
-			//sprintf(print_str, "\nWaiting to proccess initial READ reques\n");
-			//len = strlen(print_str);
-			//deb_print_pure_debug((uint8_t *)print_str, len);
 			return;
 
 		}
 		break;
 	case 2: // now we are sure that read request was proccessed - read initial value
-		//initial_value = REGISTER_DATA[register_index];
-		//sprintf(initial_value_string,"%.2f",REGISTER_DATA[register_index]);
-		//THR_HARDCODED_SEQUENCES[procedure_id].sequences[THR_HARDCODED_SEQUENCES[procedure_id].execution_index].thr_argv[5] = initial_value_string;
 		THR_HARDCODED_SEQUENCES[procedure_id].ramp_initial_value = REGISTER_DATA[register_index];
 		THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
 		sprintf(print_str, "\nInitial value save value = %.5f\n",THR_HARDCODED_SEQUENCES[procedure_id].ramp_initial_value);
@@ -1045,7 +1001,7 @@ void thr_value_ramp(int argc, char *argv[]){
 
 
 		sprintf(print_str, "\nSTEP = %.2f\n",value_step);
-		if (register_index == 16){sprintf(print_str, "\nSTEP = %.7f\n",value_step);    } // for Thrust ramp we need to print goal with 5 decimal precesion
+		if (register_index == 16){sprintf(print_str, "\nSTEP = %.7f\n",value_step);    } // for Thrust ramp we need to print goal with 5 decimal precession
 		len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
 
@@ -1070,8 +1026,6 @@ void thr_value_ramp(int argc, char *argv[]){
 
 		GeneralSetRequest(3, temp_argv);
 
-
-
 		THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
 		THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
 
@@ -1083,7 +1037,6 @@ void thr_value_ramp(int argc, char *argv[]){
 		}
 		else{
 			THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime(); //save execution finish time of wait stage
-			//substage_index++;
 			THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
 			sprintf(print_str, "\nWaiting after SET RAMP\n");
 			len = strlen(print_str);
@@ -1160,7 +1113,7 @@ void thr_execute_sequence_cmd(int argc, char *argv[]){
 
 	switch(action){
 
-	case 0: // start sequenece
+	case 0: // start sequence
 
 		THR_HARDCODED_SEQUENCES[procedure_id].sequence_trigger = true;
 		THR_HARDCODED_SEQUENCES[procedure_id].execution_index = 0;
@@ -1243,7 +1196,7 @@ void thr_execute_sequence(int procedure_id){
 	LAST_STARTED_MODULE = 1111;
 	/*
 	 *
-	 * Executes pregrogrammed sequence  defined in THR_EXECUTION_SEQUENCE function pointer array
+	 * Executes preprogrammed sequence  defined in THR_EXECUTION_SEQUENCE function pointer array
 	 * THR_SEQUENCES array of argv to be input into THR_EXECUTION_SEQUENCE
 	 */
 
@@ -1262,8 +1215,6 @@ void thr_execute_sequence(int procedure_id){
 			}
 
 	if (THR_HARDCODED_SEQUENCES[procedure_id].execution_index > THR_HARDCODED_SEQUENCES[procedure_id].length){
-		LAST_STARTED_MODULE = 11110; //DEBUG
-
 		char print_str[200];
 		sprintf(print_str, "\nSequence complete\n");
 		int len = strlen(print_str);
@@ -1288,14 +1239,9 @@ void thr_execute_sequence(int procedure_id){
 
 	else{
 		void (*f)(int argc, char *argv[]);
-
-		//f = THR_SEQUENCES[THR_EXECUTION_INDEX].function;
-		//f(3,THR_SEQUENCES[THR_EXECUTION_INDEX].thr_argv);
-		LAST_STARTED_MODULE = 10002; //DEBUG
 		f = THR_HARDCODED_SEQUENCES[procedure_id].sequences[THR_HARDCODED_SEQUENCES[procedure_id].execution_index].function;
 		LAST_STARTED_MODULE = THR_HARDCODED_SEQUENCES[procedure_id].execution_index; //DEBUG
 		f(3,THR_HARDCODED_SEQUENCES[procedure_id].sequences[THR_HARDCODED_SEQUENCES[procedure_id].execution_index].thr_argv);
-		LAST_STARTED_MODULE = 10004; //DEBUG
 	}
 
 
@@ -1396,7 +1342,7 @@ void initialize_hardcoded_thr_sequences(){
 		sequenc_id_char = "0";
 		sequence_id_int = 0;
 		wait_between_stages_str = "2000";
-		//sprintf(sequenc_id_char, "%d",sequence_id_int);
+		//sprintf(sequenc_id_char, "%d",sequence_id_int); // for this to work sequence_id_char[50] have to be initialized as array instead of pointer
 
 		// Action 31001:Set Operational Mode 0 / Register 0x0E  14
 		THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = GeneralSetRequest_sequence;
