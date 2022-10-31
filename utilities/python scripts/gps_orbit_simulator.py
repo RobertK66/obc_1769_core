@@ -47,6 +47,17 @@ def datetime_to_utc(yy,mon,dd,hh,mm,ss):
 	date_string = str(dd)+str(mon)+str(yy)
 	return utc_string,date_string
 
+def nmea_checksum(st):
+	# How to calculate NMEA checksum :
+	# https://electronics.stackexchange.com/questions/214278/generating-hexadecimal-checksum-for-a-nmea-pmtk-message
+	i = 0
+	checksum = 0
+	while i < len(st):
+   		checksum ^= ord(st[i])
+   		i+= 1
+	#print ("%02X"%checksum)
+	return checksum
+
 def compile_RMC(yy,mon,dd,hh,mm,ss,lat,lon,alt):
 	# reference
 	# https://orolia.com/manuals/VSP/Content/NC_and_SS/Com/Topics/APPENDIX/NMEA_RMCmess.htm
@@ -85,10 +96,17 @@ def compile_RMC(yy,mon,dd,hh,mm,ss,lat,lon,alt):
 	nmea_lon_string = lon[0]+lon_mmdotmm
 	#print(nmea_lon_string)
 
-	full_RMC_string = "$GPRMC,"+utc_string+","+Status+","+nmea_lat_string+","+N_or_S+","+nmea_lon_string+','+E_or_W+",,"+date_string+",,A,*6A"
+	check_sum_string ="GPRMC,"+utc_string+","+Status+","+nmea_lat_string+","+N_or_S+","+nmea_lon_string+','+E_or_W+",,"+date_string+",,A"
+	check_sum = nmea_checksum(check_sum_string)
+
+	#full_RMC_string = "$GPRMC,"+utc_string+","+Status+","+nmea_lat_string+","+N_or_S+","+nmea_lon_string+','+E_or_W+",,"+date_string+",,A,*6A"
+	full_RMC_string = "$GPRMC,"+utc_string+","+Status+","+nmea_lat_string+","+N_or_S+","+nmea_lon_string+','+E_or_W+",,"+date_string+",,A*"+"%02X"%check_sum
 	print(full_RMC_string)
-	ser.write(str.encode(full_RMC_string))
+
+	ser.write(str.encode(full_RMC_string,'UTF-8'))
+	#ser.write(bytes(full_RMC_string, encoding="raw_unicode_escape"))
 	ser.write(bytearray(b'\x0a')) # new line byte 0x0a
+
 
 
 TLE = get_tle(NORAD_CATNR)
@@ -127,9 +145,9 @@ compile_RMC(2022,10,10,12,24,0,"-01:40:03.8","-05:47:57.0","486763.25")
 #print(utc_timestamp,date_string)
 """
 
-SIMULATION_DURATION = 100 # seconds  
+SIMULATION_DURATION = 1000 # seconds  
 SIMULATION_dt = 1 #  set manualy so that duration/dt is integer 
-ACCELERATION_FACTOR = 5 # should be integer
+ACCELERATION_FACTOR = 1 # should be integer
 
 
 simulation_time =  0
@@ -159,4 +177,10 @@ while real_timestamp<= starting_timestamp+SIMULATION_DURATION:
 	#print("Real time ="+str(real_timestamp))
 	print("current time "+str(yy)+"y "+str(mon)+" mon "+str(dd)+" day "+str(hh)+" h "+str(mm)+" min "+str(ss)+" s")
 	compile_RMC(yy,mon,dd,hh,mm,ss,lat,lon,alt)
+
+	example_nmea= "$GPGGA,123519.00,4807.038,N,01131.000,E,1,08,0.9,545.4,M,-164.0,M,,,,*47"
+	ser.write(str.encode(example_nmea,'UTF-8'))
+	ser.write(bytearray(b'\x0a')) # new line byte 0x0a
+	print(example_nmea)
+	
 	time.sleep(SIMULATION_dt)
