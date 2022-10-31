@@ -34,6 +34,8 @@ typedef struct __attribute__((packed)) {
 	char		fix;
 	uint32_t	utcTimeSec;
 	uint16_t	utcTimeMs;
+	double lat;
+	double lon;
 } gps_ggamsg_t;
 
 typedef struct __attribute__((packed)) {
@@ -205,11 +207,39 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 	} else if (strncmp(&msg[2], "GGA", 3)==0) {
 		// xxGGA Message shows essential fix data
 		processed = true;
-//		gps_ggamsg_t ggamsg;
-//		ggamsg.talker = msg[1];					// 'P' for GPS, 'L' for GLONASS, 'N' for 'generic' method?
-//		ggamsg.fix = argv[6][0];				// '0' invalid, '1' GNSS fix, '2' DGPS fix, ...
-//		ggamsg.utcTimeSec = atoi(argv[1]);		// argv[1] is format 'hhmmss.sss' -> to int gives hhmmss as integer
-//		ggamsg.utcTimeMs = atoi(&(argv[1][7])); // argv[1] is format 'hhmmss.sss' -> to int from position [1][7] gives ms as integer
+		char temp_lat_dd[2];
+		gps_ggamsg_t ggamsg;
+		ggamsg.talker = msg[1];					// 'P' for GPS, 'L' for GLONASS, 'N' for 'generic' method?
+		ggamsg.fix = argv[6][0];				// '0' invalid, '1' GNSS fix, '2' DGPS fix, ...
+		ggamsg.utcTimeSec = atoi(argv[1]);		// argv[1] is format 'hhmmss.sss' -> to int gives hhmmss as integer
+		ggamsg.utcTimeMs = atoi(&(argv[1][7])); // argv[1] is format 'hhmmss.sss' -> to int from position [1][7] gives ms as integer
+
+		//parse latitude and longitude // Inpur of NMEA string is DDMM.MMM  format
+
+		temp_lat_dd[0] = argv[2][0];
+		temp_lat_dd[1] = argv[2][1];
+
+		double lat_dd = atof(temp_lat_dd);
+
+
+
+		char temp_mmdotmmm[6];
+		temp_mmdotmmm[0] =argv[2][2];
+		temp_mmdotmmm[1] =argv[2][3];
+		temp_mmdotmmm[2] = (char)0x2e; // 0x2e ="."
+		temp_mmdotmmm[3] = argv[2][5];
+		temp_mmdotmmm[4] = argv[2][6];
+		temp_mmdotmmm[5] = argv[2][7];
+
+		double lat_mm = atof(temp_mmdotmmm);
+
+		ggamsg.lat = lat_dd + lat_mm/60; // decimal degrees
+
+
+		int r =4;
+
+
+
 //		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_GGA, &ggamsg, sizeof(ggamsg));
 
 
