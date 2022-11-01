@@ -42,8 +42,23 @@ def fixed_date_with_dt_lat_lon_alt(yy,mon,dd,hh,mm,ss,dt):
 	return tle_rec.sublat,tle_rec.sublong,tle_rec.elevation #  DMS
 
 def datetime_to_utc(yy,mon,dd,hh,mm,ss):
-	# for RMC message
-	utc_string = str(hh)+str(mm)+str(ss)+".00"
+	# for RMC and GGA message
+	if hh<=9:
+		hh_str = "0"+str(hh)
+	else:
+		hh_str = str(hh)
+	
+	if mm<=9:
+		mm_str = "0"+str(mm)
+	else:
+		mm_str = str(mm)
+	
+	if ss<=9:
+		ss_str = "0"+str(ss)
+	else:
+		ss_str = str(ss)
+
+	utc_string = hh_str+mm_str+ss_str+".00"
 	date_string = str(dd)+str(mon)+str(yy)
 	return utc_string,date_string
 
@@ -107,7 +122,64 @@ def compile_RMC(yy,mon,dd,hh,mm,ss,lat,lon,alt):
 	#ser.write(bytes(full_RMC_string, encoding="raw_unicode_escape"))
 	ser.write(bytearray(b'\x0a')) # new line byte 0x0a
 
+def compile_GGA(yy,mon,dd,hh,mm,ss,lat,lon,alt):
+	# reference
+	# https://orolia.com/manuals/VSP/Content/NC_and_SS/Com/Topics/APPENDIX/NMEA_GGAmess.htm
+	# $GPGGA,123519.00,4807.038,N,01131.000,E,1,08,0.9,545.4,M,-164.0,M,,,,*47
+	utc_string,date_string = datetime_to_utc(yy,mon,dd,hh,mm,ss)
+	Fix_Quality = "1,"
+	number_of_satelites ="08,"
+	hdop = "0.9," # Horizontal Dilution of Precision
+	altitude_above_mean_sea_level = str(alt)+",M," # metersunit
+	height_of_geoid_above_msl = "25.000,M,"
+	N_or_S = None
+	E_or_W = None
 
+	lat = str(lat). split(":") # convert to string and split by :
+	if float(lat[0])>=0:
+		N_or_S = 'N'
+	elif float(lat[0])<0:
+		N_or_S = 'S'
+		#lat[0] = str(abs(int(lat[0]) ))
+		lat[0]=lat[0].replace('-','')
+
+	lat_min = float(lat[1])
+	lat_sec = float(lat[2])
+	lat_mmdotmm = lat_min + lat_sec/60 # Latitude (in DDMM.MMM format)
+	lat_mmdotmm = "{:.3f}".format(round(lat_mmdotmm, 3))
+	nmea_lat_string = lat[0]+lat_mmdotmm
+	#print(nmea_lat_string)
+
+	lon = str(lon). split(":") # convert to string and split by :
+	if float(lon[0])>=0:
+		E_or_W = 'E'
+	elif float(lon[0])<0:
+		E_or_W = 'W'
+		#lon[0] = str(abs(int(lon[0]) ))
+		lon[0]=lon[0].replace('-','')
+
+	lon_min = float(lon[1])
+	lon_sec = float(lon[2])
+	lon_mmdotmm = lon_min + lon_sec/60 # Latitude (in DDMM.MMM format)
+	lon_mmdotmm = "{:.3f}".format(round(lon_mmdotmm, 3))
+	nmea_lon_string = lon[0]+lon_mmdotmm
+	#print(nmea_lon_string)
+
+	# $GPGGA,123519.00,4807.038,N,01131.000,E,1,08,0.9,545.4,M,-164.0,M,,,,*47
+
+	check_sum_string = ("GPGGA,"+utc_string+","+nmea_lat_string+","+N_or_S+","+nmea_lon_string+
+		','+E_or_W+","+Fix_Quality+number_of_satelites+hdop+altitude_above_mean_sea_level+
+		height_of_geoid_above_msl+",,,")
+	check_sum = nmea_checksum(check_sum_string)
+
+	full_GGA_string = ("$GPGGA,"+utc_string+","+nmea_lat_string+","+N_or_S+","+nmea_lon_string+
+		','+E_or_W+","+Fix_Quality+number_of_satelites+hdop+altitude_above_mean_sea_level+
+		height_of_geoid_above_msl+",,,*"+"%02X"%check_sum)
+	print(full_GGA_string)
+
+	ser.write(str.encode(full_GGA_string,'UTF-8'))
+	ser.write(bytes(full_GGA_string, encoding="raw_unicode_escape"))
+	ser.write(bytearray(b'\x0a')) # new line byte 0x0a
 
 TLE = get_tle(NORAD_CATNR)
 tle_rec = ephem.readtle(TLE[0],TLE[1],TLE[2]) # feed tle lines to create compute object
@@ -177,18 +249,17 @@ while real_timestamp<= starting_timestamp+SIMULATION_DURATION:
 	#print("Real time ="+str(real_timestamp))
 	print("current time "+str(yy)+"y "+str(mon)+" mon "+str(dd)+" day "+str(hh)+" h "+str(mm)+" min "+str(ss)+" s")
 	compile_RMC(yy,mon,dd,hh,mm,ss,lat,lon,alt)
-
-	example_nmea= "$GPGGA,123519.55,4807.038,S,01131.000,E,1,08,0.9,545.4,M,-164.0,M,,,,*47"
-	ser.write(str.encode(example_nmea,'UTF-8'))
-	ser.write(bytearray(b'\x0a')) # new line byte 0x0a
-	print(example_nmea)
-
-
+	compile_GGA(yy,mon,dd,hh,mm,ss,lat,lon,alt)
 	
+	#example_nmea= "$GPGGA,123519.55,4807.038,S,01131.000,E,1,08,0.9,545.4,M,-164.0,M,,,,*47"
+	#ser.write(str.encode(example_nmea,'UTF-8'))
+	#ser.write(bytearray(b'\x0a')) # new line byte 0x0a
+	#print(example_nmea)
 
-	example_nmea= "$GPGGA,172814.0,3723.46587704,N,12202.26957864,E,2,6,1.2,18.893,M,-25.669,M,2.0 0031*4F"
-	ser.write(str.encode(example_nmea,'UTF-8'))
-	ser.write(bytearray(b'\x0a')) # new line byte 0x0a
-	print(example_nmea)
+
+	#example_nmea= "$GPGGA,172814.0,3723.46587704,N,12202.26957864,E,2,6,1.2,18.893,M,-25.669,M,2.0 0031*4F"
+	#ser.write(str.encode(example_nmea,'UTF-8'))
+	#ser.write(bytearray(b'\x0a')) # new line byte 0x0a
+	#print(example_nmea)
 	
 	time.sleep(SIMULATION_dt)

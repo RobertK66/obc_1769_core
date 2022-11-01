@@ -310,7 +310,7 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 
 
 		//////////debug
-		sprintf(print_str, "\n Received GNSS data : lat= %.4f lon=%.4f alt = %.2f [m] \n", ggamsg.lat, ggamsg.lon, ggamsg.alt );
+		sprintf(print_str, "\n Received GGA data : lat= %.6f lon=%.6f alt = %.2f [m] \n", ggamsg.lat, ggamsg.lon, ggamsg.alt );
 		print_len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, print_len);
 
