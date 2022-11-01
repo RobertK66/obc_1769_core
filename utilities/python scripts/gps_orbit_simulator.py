@@ -115,7 +115,7 @@ def compile_RMC(yy,mon,dd,hh,mm,ss,lat,lon,alt):
 	check_sum = nmea_checksum(check_sum_string)
 
 	#full_RMC_string = "$GPRMC,"+utc_string+","+Status+","+nmea_lat_string+","+N_or_S+","+nmea_lon_string+','+E_or_W+",,"+date_string+",,A,*6A"
-	full_RMC_string = "$GPRMC,"+utc_string+","+Status+","+nmea_lat_string+","+N_or_S+","+nmea_lon_string+','+E_or_W+",,"+date_string+",,A*"+"%02X"%check_sum
+	full_RMC_string = "$GPRMC,"+utc_string+","+Status+","+nmea_lat_string+","+N_or_S+","+nmea_lon_string+','+E_or_W+",,,"+date_string+",,A*"+"%02X"%check_sum
 	print(full_RMC_string)
 
 	ser.write(str.encode(full_RMC_string,'UTF-8'))
