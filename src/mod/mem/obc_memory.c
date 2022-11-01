@@ -16,6 +16,7 @@
 #include <mod/ado_sdcard.h>
 
 #include "../tim/obc_time.h"
+#include "../modules_globals.h"
 
 #define C_MEM_BLOCK0_MARKER (0x1B1B1CEB)
 #define C_MEM_PAGE0_MARKER (0x1A1B1CEB)
@@ -266,6 +267,7 @@ void memSendEventOperational() {
 }
 
 void memMain(void) {
+	LAST_STARTED_MODULE = 7;
 	if(memWaitLoops>0) {
 		memWaitLoops--;
 	}

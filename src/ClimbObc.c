@@ -30,6 +30,8 @@
 //#include "radtest/radtest.h"
 #include "mod/thr/thr.h"
 #include "mod/l4_thruster.h"
+#include "mod/modules_globals.h"
+
 
 
 #if BA_BOARD == BA_OM13085_EM2T

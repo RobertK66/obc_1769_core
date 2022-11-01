@@ -19,6 +19,8 @@ The escaped data is Xored by 0x20.
 */
 #include "l2_debug_com.h"
 
+#include "modules_globals.h"
+uint16_t LAST_STARTED_MODULE;
 #include <string.h>
 #include <ado_uart.h>
 
@@ -67,6 +69,7 @@ void _deb_init (LPC_USART_T *pUart) {
 }
 
 void deb_main (void) {
+	LAST_STARTED_MODULE = 1;
 	int32_t stat = Chip_UART_ReadLineStatus(deb_Uart);
 	if (stat & UART_LSR_RDR) {
 		int ch = (int)Chip_UART_ReadByte(deb_Uart);
@@ -85,6 +88,7 @@ void deb_main (void) {
 }
 
 void deb_processLine(void) {
+	LAST_STARTED_MODULE = 101;
 	if (deb_CommandAvailable) {
 		// Polling error. Nobody got the previous Command out of buffer yet!
 		// Signal 'Command Overrun'-Event
@@ -100,6 +104,7 @@ void deb_processLine(void) {
 
 
 bool deb_getCommandIfAvailable(DEB_L2_CMD_T *pRetVal){
+	LAST_STARTED_MODULE = 102;
 	bool cmdAvailable = false;
 	if (deb_CommandAvailable) {
 		// copy the CommandLine into struct. This is for data to stay available with polling Caller as long as he wants to use it !!!!
@@ -144,6 +149,7 @@ bool deb_getCommandIfAvailable(DEB_L2_CMD_T *pRetVal){
 
 
 void deb_CopyAndEscapeData(uint8_t *data, uint16_t len) {
+	LAST_STARTED_MODULE = 103;
 	int i = 0;
 	bool inEscape = false;
 	while (deb_txFrames.headTxByteIdx != deb_txFrames.currentTxByteIdx) {
@@ -171,6 +177,7 @@ void deb_CopyAndEscapeData(uint8_t *data, uint16_t len) {
 
 
 bool deb_sendEventFrame(event_id_t eventId, uint8_t *data, uint16_t len) {
+	LAST_STARTED_MODULE = 104;
 	bool ok;
 	// block irq while handling buffers
 	Chip_UART_IntDisable(deb_Uart, UART_IER_THREINT);
@@ -211,6 +218,7 @@ bool deb_sendEventFrame(event_id_t eventId, uint8_t *data, uint16_t len) {
 
 
 bool    deb_print_pure_debug(uint8_t *data, uint16_t len) {
+	LAST_STARTED_MODULE = 105;
 	bool ok;
 	// block irq while handling buffers
 	Chip_UART_IntDisable(deb_Uart, UART_IER_THREINT);
@@ -329,6 +337,7 @@ bool    deb_print_pure_debug(uint8_t *data, uint16_t len) {
 
 
 void deb_uartIRQ(LPC_USART_T *pUART) {
+	LAST_STARTED_MODULE = 106;
 	if (pUART->IER & UART_IER_THREINT) {
 		int nextChar;
 		switch (deb_txState) {
