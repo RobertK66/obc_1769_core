@@ -34,8 +34,9 @@ typedef struct __attribute__((packed)) {
 	char		fix;
 	uint32_t	utcTimeSec;
 	uint16_t	utcTimeMs;
-	double lat;
-	double lon;
+	double lat; // decimal degree format
+	double lon; // decimal degree
+	double alt; // meters
 } gps_ggamsg_t;
 
 typedef struct __attribute__((packed)) {
@@ -176,6 +177,10 @@ void gpsUartIRQ(LPC_USART_T *pUART) {
 bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 	bool processed = false;
 	char msg[8];
+
+	char print_str[200];
+	int print_len;
+
 	strncpy(msg, argv[0], 8);
 
 	if (strncmp(msg, "PMTK",4)==0) {
@@ -207,23 +212,31 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 	} else if (strncmp(&msg[2], "GGA", 3)==0) {
 		// xxGGA Message shows essential fix data
 		processed = true;
-		char temp_lat_dd[2];
+		char temp_dd[2]; //string containing   DD part of latitude neglecting MM.MMM part in DDMM.MMM
+		char temp_mmdotmmm[6]; // string containing   MM.MMM part of latitude neglecting DD part in DDMM.MMM
+		double latlon_dd;
+		double latlon_mm;
+
+
 		gps_ggamsg_t ggamsg;
 		ggamsg.talker = msg[1];					// 'P' for GPS, 'L' for GLONASS, 'N' for 'generic' method?
 		ggamsg.fix = argv[6][0];				// '0' invalid, '1' GNSS fix, '2' DGPS fix, ...
 		ggamsg.utcTimeSec = atoi(argv[1]);		// argv[1] is format 'hhmmss.sss' -> to int gives hhmmss as integer
 		ggamsg.utcTimeMs = atoi(&(argv[1][7])); // argv[1] is format 'hhmmss.sss' -> to int from position [1][7] gives ms as integer
 
-		//parse latitude and longitude // Inpur of NMEA string is DDMM.MMM  format
+		// Parse latitude and longitude // Inpur of NMEA string is DDMM.MMM  format
+		// Note ! Some GGA are DDMM.MMM others are DDMM.MMMMMMM
+		// Since we dont have a GNSS device defined currently - I do parser for DDMM.MMM  which should work with DDMM.MMMMMMM also
+		// parsing for additional .___MMMM can be easily added later if device will supply constant format.
 
-		temp_lat_dd[0] = argv[2][0];
-		temp_lat_dd[1] = argv[2][1];
+		// example_nmea= "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893,M,-25.669,M,2.0 0031*4F"
 
-		double lat_dd = atof(temp_lat_dd);
+		temp_dd[0] = argv[2][0];
+		temp_dd[1] = argv[2][1];
+
+		latlon_dd = atof(temp_dd); // convert char to double
 
 
-
-		char temp_mmdotmmm[6];
 		temp_mmdotmmm[0] =argv[2][2];
 		temp_mmdotmmm[1] =argv[2][3];
 		temp_mmdotmmm[2] = (char)0x2e; // 0x2e ="."
@@ -231,9 +244,74 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 		temp_mmdotmmm[4] = argv[2][6];
 		temp_mmdotmmm[5] = argv[2][7];
 
-		double lat_mm = atof(temp_mmdotmmm);
+		latlon_mm = atof(temp_mmdotmmm); // convert char to double
 
-		ggamsg.lat = lat_dd + lat_mm/60; // decimal degrees
+		ggamsg.lat = latlon_dd + latlon_mm/60; // format is decimal degrees not dd mm ss
+
+		if (strncmp(argv[3], "N", 1)==0){
+			// if N - do nothing decimal degrees are already positive
+		}
+		if (strncmp(argv[3], "S", 1)==0){
+			ggamsg.lat = (-1)*ggamsg.lat;
+				}
+
+
+		// Longitude parser // the same // assume DDMM.MMM format (which will work with DDMM.MMMMMMM messages also)
+
+		temp_dd[0] = argv[4][0];
+		temp_dd[1] = argv[4][1];
+
+
+
+		temp_mmdotmmm[0] =argv[4][2];
+		temp_mmdotmmm[1] =argv[4][3];
+		temp_mmdotmmm[2] = (char)0x2e; // 0x2e ="."
+		temp_mmdotmmm[3] = argv[4][5];
+		temp_mmdotmmm[4] = argv[4][6];
+		temp_mmdotmmm[5] = argv[4][7];
+
+		latlon_dd = atof(temp_dd); // convert char to double
+		latlon_mm = atof(temp_mmdotmmm); // convert char to double
+
+		ggamsg.lon = latlon_dd + latlon_mm/60; // format is decimal degrees not dd mm ss
+
+		if (strncmp(argv[5], "E", 1)==0){
+			// if N - do nothing decimal degrees are already positive
+		}
+		if (strncmp(argv[5], "W", 1)==0){
+			ggamsg.lon = (-1)*ggamsg.lon;
+		}
+
+
+		// Parse altitude
+
+		double alt = atof(argv[9]); // altitude above mean sea level
+		if (strncmp(argv[10], "M", 1)==0){
+			// unit is already in meters !
+			ggamsg.alt = alt;
+		}
+		else{
+			// WARNING ! Assume that unit output will change during on orbit operation
+			// Is this possible that output unit can change ?
+			// if so ! we have to convert unit to meters and store it.
+
+			// Check which other units device can possibly output !
+			// For each possible unit do the conversion to meters (or other unit that we would like to use)
+
+		}
+
+
+
+
+		//////////debug
+		sprintf(print_str, "\n Received GNSS data : lat= %.4f lon=%.4f alt = %.2f [m] \n", ggamsg.lat, ggamsg.lon, ggamsg.alt );
+		print_len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, print_len);
+
+
+
+
+		//  check if N or S
 
 
 		int r =4;
@@ -423,7 +501,7 @@ void gpsProcessRxByte(uint8_t rxByte) {
 		} else {
 			SysEvent(MODULE_ID_GPS, EVENT_ERROR, EID_GPS_CRCERROR, NULL, 0);
 			gpsRxStatus = GPS_RX_IDLE;
-			gpsRxStatus = GPS_RX_CHCKSUM2; // WARNING ! I manually add it to skip checksum check !
+			//gpsRxStatus = GPS_RX_CHCKSUM2; // WARNING ! I manually add it to skip checksum check !
 		}
 		break;
 	}
@@ -457,31 +535,31 @@ void gpsProcessRxByte(uint8_t rxByte) {
 
 	case GPS_RX_LF:
 
-		if (rxByte == 0x0a) { // JEVGENI Note : We never reach this point !
+		if (rxByte == 0x0a) {
 			// ok the message is finally good here.
 			if (!gpsProcessNmeaMessage(gpsFieldCnt, gpsNmeaMessage)) {
 				//SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_RAW, gpsRxBuffer, gpsRxIdx);
 				// pure print of full received NMEA message
 
 				//////////debug
-				sprintf(print_str, "\n Proccessing NMEA FAILED \n" );
-				len = strlen(print_str);
-				deb_print_pure_debug((uint8_t *)print_str, len);
-				deb_print_pure_debug(gpsRxBuffer, gpsRxIdx); //if processing failed ?
-				sprintf(print_str, "\n" );
-				len = strlen(print_str);
-				deb_print_pure_debug((uint8_t *)print_str, len);
+				//sprintf(print_str, "\n Proccessing NMEA FAILED \n" );
+				//len = strlen(print_str);
+				//deb_print_pure_debug((uint8_t *)print_str, len);
+				//deb_print_pure_debug(gpsRxBuffer, gpsRxIdx); //if processing failed ?
+				//sprintf(print_str, "\n" );
+				//len = strlen(print_str);
+				//deb_print_pure_debug((uint8_t *)print_str, len);
 				//debug end
 			}
 			else{
 				//////////debug
-				sprintf(print_str, "\n Proccessing NMEA Success \n");
-				len = strlen(print_str);
-				deb_print_pure_debug((uint8_t *)print_str, len);
-				deb_print_pure_debug(gpsRxBuffer, gpsRxIdx); //if next byte is not LF
-				sprintf(print_str, "\n" );
-				len = strlen(print_str);
-				deb_print_pure_debug((uint8_t *)print_str, len);
+				//sprintf(print_str, "\n Proccessing NMEA Success \n");
+				//len = strlen(print_str);
+				//deb_print_pure_debug((uint8_t *)print_str, len);
+				//deb_print_pure_debug(gpsRxBuffer, gpsRxIdx); //if next byte is not LF
+				//sprintf(print_str, "\n" );
+				//len = strlen(print_str);
+				//deb_print_pure_debug((uint8_t *)print_str, len);
 				//debug end
 
 			}
