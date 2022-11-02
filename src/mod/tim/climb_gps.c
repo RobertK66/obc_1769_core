@@ -291,10 +291,14 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 
 		// Parse altitude
 
-		double alt = atof(argv[9]); // altitude above mean sea level
+		//double alt = atof(argv[9]); // altitude above mean sea level
+		ggamsg.alt = atof(argv[9]); // altitude above mean sea level
 		if (strncmp(argv[10], "M", 1)==0){
 			// unit is already in meters !
-			ggamsg.alt = alt;
+			//////////debug
+			sprintf(print_str, "\n Altitude is m unit \n" );
+			print_len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, print_len);
 		}
 		else{
 			// WARNING ! Assume that unit output will change during on orbit operation
@@ -303,6 +307,11 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 
 			// Check which other units device can possibly output !
 			// For each possible unit do the conversion to meters (or other unit that we would like to use)
+
+			//////////debug
+			sprintf(print_str, "\n Wrong Altitude unit \n" );
+			print_len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, print_len);
 
 		}
 
@@ -313,18 +322,7 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 		sprintf(print_str, "\n Received GGA data : lat= %.6f lon=%.6f alt = %.2f [m] \n", ggamsg.lat, ggamsg.lon, ggamsg.alt );
 		print_len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, print_len);
-
-
-
-
-		//  check if N or S
-
-
-		int r =4;
-
-
-
-//		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_GGA, &ggamsg, sizeof(ggamsg));
+		//SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_GGA, &ggamsg, sizeof(ggamsg));
 
 
 	} else if (strncmp(&msg[2], "GSA", 3)==0) {
