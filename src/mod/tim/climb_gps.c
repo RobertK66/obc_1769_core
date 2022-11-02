@@ -290,15 +290,9 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 
 
 		// Parse altitude
-
-		//double alt = atof(argv[9]); // altitude above mean sea level
 		ggamsg.alt = atof(argv[9]); // altitude above mean sea level
 		if (strncmp(argv[10], "M", 1)==0){
 			// unit is already in meters !
-			//////////debug
-			sprintf(print_str, "\n Altitude is m unit \n" );
-			print_len = strlen(print_str);
-			deb_print_pure_debug((uint8_t *)print_str, print_len);
 		}
 		else{
 			// WARNING ! Assume that unit output will change during on orbit operation
@@ -308,14 +302,7 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 			// Check which other units device can possibly output !
 			// For each possible unit do the conversion to meters (or other unit that we would like to use)
 
-			//////////debug
-			sprintf(print_str, "\n Wrong Altitude unit \n" );
-			print_len = strlen(print_str);
-			deb_print_pure_debug((uint8_t *)print_str, print_len);
-
 		}
-
-
 
 
 		//////////debug
