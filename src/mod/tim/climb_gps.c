@@ -345,6 +345,12 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 	} else if (strncmp(&msg[2], "RMC", 3)==0) {
 		// xxRMC Message shows minimum recommended position data
 		processed = true;
+		//////////debug
+		sprintf(print_str, "\n Starting RMC proccessing \n" );
+		print_len = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, print_len);
+
+
 		if (argv[2][0] == 'A') {
 			// valid fix
 			uint32_t time = atoi(argv[1]);		// argv[1] is format 'hhmmss.sss' -> to int gives hhmmss as integer
@@ -449,6 +455,7 @@ typedef enum {
 
 static uint8_t gpsRxChecksum;
 static uint8_t gpsRxBuffer[GPS_NMEA_MAXBYTES];
+static uint8_t gpsRxBuffer_pureMessage[GPS_NMEA_MAXBYTES];
 static char* gpsNmeaMessage[GPS_NMEA_MAXFIELDS];
 
 static uint8_t gpsRxIdx = 0;
@@ -481,7 +488,7 @@ void gpsProcessRxByte(uint8_t rxByte) {
 	case GPS_RX_DATA:
 		if (rxByte == '*') {
 			gpsRxStatus = GPS_RX_CHCKSUM1; //This was in original function
-			gpsRxStatus = GPS_RX_LF; // With this I will just skip CHECKSUM check and wait for LF
+			//gpsRxStatus = GPS_RX_LF; // With this I will just skip CHECKSUM check and wait for LF
 		} else {
 			gpsRxChecksum ^= rxByte;
 			if (rxByte == ',') {
@@ -494,6 +501,7 @@ void gpsProcessRxByte(uint8_t rxByte) {
 				}
 			}
 			gpsRxBuffer[gpsRxIdx++] = rxByte;
+			gpsRxBuffer_pureMessage[gpsRxIdx] = rxByte;
 			if (gpsRxIdx>=GPS_NMEA_MAXBYTES) {
 				SysEvent(MODULE_ID_GPS, EVENT_ERROR, EID_GPS_RXBYTEBUFFERFULL, NULL, 0);
 				gpsRxStatus = GPS_RX_IDLE;
@@ -513,7 +521,7 @@ void gpsProcessRxByte(uint8_t rxByte) {
 		} else {
 			SysEvent(MODULE_ID_GPS, EVENT_ERROR, EID_GPS_CRCERROR, NULL, 0);
 			gpsRxStatus = GPS_RX_IDLE;
-			//gpsRxStatus = GPS_RX_CHCKSUM2; // WARNING ! I manually add it to skip checksum check !
+			gpsRxStatus = GPS_RX_CHCKSUM2; // WARNING ! I manually add it to skip checksum check !
 		}
 		break;
 	}

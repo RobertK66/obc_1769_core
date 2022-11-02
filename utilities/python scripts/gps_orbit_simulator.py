@@ -111,16 +111,15 @@ def compile_RMC(yy,mon,dd,hh,mm,ss,lat,lon,alt):
 	nmea_lon_string = lon[0]+lon_mmdotmm
 	#print(nmea_lon_string)
 
-	check_sum_string ="GPRMC,"+utc_string+","+Status+","+nmea_lat_string+","+N_or_S+","+nmea_lon_string+','+E_or_W+",,"+date_string+",,A"
+	check_sum_string ="GPRMC,"+utc_string+","+Status+","+nmea_lat_string+","+N_or_S+","+nmea_lon_string+','+E_or_W+",,,"+date_string+",,A"
 	check_sum = nmea_checksum(check_sum_string)
 
-	#full_RMC_string = "$GPRMC,"+utc_string+","+Status+","+nmea_lat_string+","+N_or_S+","+nmea_lon_string+','+E_or_W+",,"+date_string+",,A,*6A"
 	full_RMC_string = "$GPRMC,"+utc_string+","+Status+","+nmea_lat_string+","+N_or_S+","+nmea_lon_string+','+E_or_W+",,,"+date_string+",,A*"+"%02X"%check_sum
 	print(full_RMC_string)
 
 	ser.write(str.encode(full_RMC_string,'UTF-8'))
 	#ser.write(bytes(full_RMC_string, encoding="raw_unicode_escape"))
-	ser.write(bytearray(b'\x0a')) # new line byte 0x0a
+	ser.write(bytearray(b'\x0d\x0a')) # CR and LF 0x0a
 
 def compile_GGA(yy,mon,dd,hh,mm,ss,lat,lon,alt):
 	# reference
@@ -178,8 +177,8 @@ def compile_GGA(yy,mon,dd,hh,mm,ss,lat,lon,alt):
 	print(full_GGA_string)
 
 	ser.write(str.encode(full_GGA_string,'UTF-8'))
-	ser.write(bytes(full_GGA_string, encoding="raw_unicode_escape"))
-	ser.write(bytearray(b'\x0a')) # new line byte 0x0a
+	#ser.write(bytes(full_GGA_string, encoding="raw_unicode_escape"))
+	ser.write(bytearray(b'\x0d\x0a')) # CR and LF 0x0a
 
 TLE = get_tle(NORAD_CATNR)
 tle_rec = ephem.readtle(TLE[0],TLE[1],TLE[2]) # feed tle lines to create compute object
@@ -248,18 +247,24 @@ while real_timestamp<= starting_timestamp+SIMULATION_DURATION:
 	print("Simulation time ="+str(simulation_time))
 	#print("Real time ="+str(real_timestamp))
 	print("current time "+str(yy)+"y "+str(mon)+" mon "+str(dd)+" day "+str(hh)+" h "+str(mm)+" min "+str(ss)+" s")
-	compile_RMC(yy,mon,dd,hh,mm,ss,lat,lon,alt)
-	compile_GGA(yy,mon,dd,hh,mm,ss,lat,lon,alt)
 	
-	#example_nmea= "$GPGGA,123519.55,4807.038,S,01131.000,E,1,08,0.9,545.4,M,-164.0,M,,,,*47"
+	compile_RMC(yy,mon,dd,hh,mm,ss,lat,lon,alt)
+	#ser.write(bytearray(b'\x0d\x0a')) # CR and LF 0x0a
+	compile_GGA(yy,mon,dd,hh,mm,ss,lat,lon,alt)
+	#ser.write(bytearray(b'\x0d\x0a')) # CR and LF 0x0a
+	
+
+
+	#example_nmea= "$GPGGA,123519.55,4807.038,S,01131.000,E,1,08,0.9,545.4,M,-164.0,M,,,,*61"
 	#ser.write(str.encode(example_nmea,'UTF-8'))
-	#ser.write(bytearray(b'\x0a')) # new line byte 0x0a
+	#ser.write(bytearray(b'\x0d\x0a')) # CR and LF 0x0a
 	#print(example_nmea)
 
 
-	#example_nmea= "$GPGGA,172814.0,3723.46587704,N,12202.26957864,E,2,6,1.2,18.893,M,-25.669,M,2.0 0031*4F"
+
+	#example_nmea= "$GPGGA,172814.0,3723.46587704,N,12202.26957864,E,2,6,1.2,18.893,M,-25.669,M,2.0 0031*51"
 	#ser.write(str.encode(example_nmea,'UTF-8'))
-	#ser.write(bytearray(b'\x0a')) # new line byte 0x0a
+	#ser.write(bytearray(b'\x0d\x0a')) # CR and LF 0x0a
 	#print(example_nmea)
 	
 	time.sleep(SIMULATION_dt)
