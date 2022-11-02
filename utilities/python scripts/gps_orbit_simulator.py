@@ -249,12 +249,8 @@ while real_timestamp<= starting_timestamp+SIMULATION_DURATION:
 	print("current time "+str(yy)+"y "+str(mon)+" mon "+str(dd)+" day "+str(hh)+" h "+str(mm)+" min "+str(ss)+" s")
 	
 	compile_RMC(yy,mon,dd,hh,mm,ss,lat,lon,alt)
-	#ser.write(bytearray(b'\x0d\x0a')) # CR and LF 0x0a
 	compile_GGA(yy,mon,dd,hh,mm,ss,lat,lon,alt)
-	#ser.write(bytearray(b'\x0d\x0a')) # CR and LF 0x0a
 	
-
-
 	#example_nmea= "$GPGGA,123519.55,4807.038,S,01131.000,E,1,08,0.9,545.4,M,-164.0,M,,,,*61"
 	#ser.write(str.encode(example_nmea,'UTF-8'))
 	#ser.write(bytearray(b'\x0d\x0a')) # CR and LF 0x0a
