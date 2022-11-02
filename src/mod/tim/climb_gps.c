@@ -455,7 +455,6 @@ typedef enum {
 
 static uint8_t gpsRxChecksum;
 static uint8_t gpsRxBuffer[GPS_NMEA_MAXBYTES];
-static uint8_t gpsRxBuffer_pureMessage[GPS_NMEA_MAXBYTES];
 static char* gpsNmeaMessage[GPS_NMEA_MAXFIELDS];
 
 static uint8_t gpsRxIdx = 0;
@@ -501,7 +500,6 @@ void gpsProcessRxByte(uint8_t rxByte) {
 				}
 			}
 			gpsRxBuffer[gpsRxIdx++] = rxByte;
-			gpsRxBuffer_pureMessage[gpsRxIdx] = rxByte;
 			if (gpsRxIdx>=GPS_NMEA_MAXBYTES) {
 				SysEvent(MODULE_ID_GPS, EVENT_ERROR, EID_GPS_RXBYTEBUFFERFULL, NULL, 0);
 				gpsRxStatus = GPS_RX_IDLE;
@@ -521,7 +519,7 @@ void gpsProcessRxByte(uint8_t rxByte) {
 		} else {
 			SysEvent(MODULE_ID_GPS, EVENT_ERROR, EID_GPS_CRCERROR, NULL, 0);
 			gpsRxStatus = GPS_RX_IDLE;
-			gpsRxStatus = GPS_RX_CHCKSUM2; // WARNING ! I manually add it to skip checksum check !
+			//gpsRxStatus = GPS_RX_CHCKSUM2; // WARNING ! I manually add it to skip checksum check !
 		}
 		break;
 	}
