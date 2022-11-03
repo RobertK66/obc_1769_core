@@ -58,8 +58,21 @@ def datetime_to_utc(yy,mon,dd,hh,mm,ss):
 	else:
 		ss_str = str(ss)
 
-	utc_string = hh_str+mm_str+ss_str+".00"
-	date_string = str(dd)+str(mon)+str(yy)
+
+	if dd<=9:
+		dd_str = "0"+str(dd)
+	else:
+		dd_str = str(dd)
+	
+	if mon<=9:
+		mon_str = "0"+str(mon)
+	else:
+		mon_str = str(mon)
+
+	yy = yy%1000 # remainder. Will not work if year is more than 10 000 or less then 1000
+	yy_str = str(yy)
+	utc_string = hh_str+mm_str+ss_str+".000"
+	date_string = dd_str+mon_str+yy_str
 	return utc_string,date_string
 
 def nmea_checksum(st):
