@@ -100,7 +100,9 @@ static const app_command_t Commands[] = {
 		{ '5' , ReadAllRegisters },
 		{ '6' , GeneralReadRequest },
 		{ '7' , GeneralSetRequest },
-		{ 'k' , PSU_datavector_request }
+		{ 'k' , PSU_datavector_request },
+		{ 'b' , old_pegasys_PSU_request_cmd }
+
 };
 
 

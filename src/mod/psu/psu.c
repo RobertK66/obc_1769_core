@@ -27,47 +27,8 @@ static I2C_Data PSU_transmit_register_msg; // create structure that will contain
 uint8_t PSU_receive_buff[PSU_BUFFER_LENGTH]; // Buffer that will keep datavector replied by PSU. Length of buffer defines amount of received bytes. MAX =86
 uint8_t PSU_register_request[1]; // PSU starting access register This should be GLOBAL variable
 
-/*
-typedef struct {
-
-	// 5V voltage and current
-	uint16_t v5_i1;
-	uint16_t v5_i2;
-	uint16_t v5_v1;
-	uint16_t v5_v2;
-
-	//3V voltage and current
-	uint16_t v3_i1;
-	uint16_t v3_i2;
-	uint16_t v3_v1;
-	uint16_t v3_v2;
-
-	// Edge Temperature
-	uint16_t tEdge_temp;
-	//Center Temperature
-	uint16_t tCenter_temp;
-
-	// HV VI data
-	uint16_t hv_i1;
-	uint16_t hv_i2;
-
-	uint16_t hv_v1;
-	uint16_t hv_v2;
-
-	// Battery 1V data
-	uint16_t viBat1_i1;
-	uint16_t viBat1_i2;
-
-	// I dont like it ....
-	// If PSU team change names, positions, etc..
-	// Then OBC team would need to redesign whole structure again
-
-	// And as far as I know - They will redesign PSU ...
-
-
-} psu_data_t;
-
-*/
+eps_hk_data_t HK_DATA_PSU;
+eps_hk_data_t eps_hk_data;
 
 
 // So instead of structure with defined names of variables - lets use
@@ -297,6 +258,8 @@ void psu_main() { // in main we check for active read jobs
 
 
 
+
+
 }// end main
 
 
@@ -319,9 +282,17 @@ void i2c_Proccess_Received_Buffer(I2C_Data i2cJob, uint8_t *i2c_buffer,uint8_t i
 
 					// do stuff with received buffer
 					//print received buffer
+					//i2c_buffer = &(HK_DATA_PSU.i_pv2_5v);
+
 					deb_print_pure_debug(i2c_buffer, i2c_buffer_len);
 
 					PSU_ParseDataVector(i2c_buffer,i2c_buffer_len);
+
+
+
+
+
+
 
 				} // end if no errors
 
@@ -349,7 +320,7 @@ void PSU_datavector_request(int argc, char *argv[]){
 		readInProgress = true;
 
 
-		PSU_register_request[0] = 0; // index of STARTING register at PSU datavector that is desired to be read from
+		PSU_register_request[0] = 2; // index of STARTING register at PSU datavector that is desired to be read from
 
 		PSU_transmit_register_msg.tx_data=PSU_register_request;
 		PSU_transmit_register_msg.tx_size = sizeof(PSU_register_request)/sizeof(uint8_t);
@@ -368,8 +339,140 @@ void PSU_datavector_request(int argc, char *argv[]){
 
 		i2c_message.rx_size = sizeof(PSU_receive_buff)/sizeof(uint8_t);
 		i2c_message.rx_data = PSU_receive_buff;
+		//or
+		//i2c_message.rx_data = (uint8_t *) &(HK_DATA_PSU.i_pv2_5v);
 
-		i2c_add_job(&i2c_message); // add job ??? and message is transmitted ? // unused wariable warning
+
+		i2c_add_job(&i2c_message);
 
 
+		//*************** Now we  try pegasys request code ********************
+
+		eps_housekeeping_data_read(1);// this will add another job which will read houskeeping data from block 1
+
+
+}
+
+
+
+void old_pegasys_PSU_request_cmd(int argc, char *argv[]){
+
+	/*
+	 *
+	 * Sends I2C read request to PSU using old pegasys function
+	 * usage : b <block_nr>
+	 * block_nr is {1,2,3,4}
+	 *
+	 * Blocks are defined in psu.h typedef struct eps_hk_data_s
+	 */
+
+	uint8_t block_nr = atoi(argv[1]);
+	eps_housekeeping_data_read(block_nr);
+
+}
+
+
+//void eps_housekeeping_data_read(uint8_t cc, uint8_t block)
+void eps_housekeeping_data_read( uint8_t block)
+{
+	/* Return all housekeeping data of the EPS. */
+	static I2C_Data job_tx =
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 };
+	static I2C_Data job_rx =
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 };
+	static uint8_t tx[1];
+
+	if (job_rx.job_done != 1)
+	{
+		/* Old job not finished - prevent job data from being  - please slow down
+		if (cc == CC1)
+		{
+			obc_error_counters.i2c0_error_counter++;
+		}
+		else
+		{
+			obc_error_counters.i2c2_error_counter++;
+		}*/
+
+		eps_hk_data.data_valid = 0;
+		job_rx.job_done = 1; // Set for next call
+		job_rx.error = I2C_ERROR_JOB_NOT_FINISHED; // Set error to mark values old
+		return;
+	}
+
+	if (job_rx.error != I2C_ERROR_NO_ERROR || job_tx.error != I2C_ERROR_NO_ERROR)
+	{
+		/* Transmission error */
+		eps_hk_data.data_valid = 0;
+	}
+	else
+	{
+		eps_hk_data.data_valid = 1;
+	}
+
+	/*
+	if (cc == CC1)
+	{
+		job_tx.device = LPC_I2C0;
+		job_rx.device = LPC_I2C0;
+	}
+	else
+	{
+		job_tx.device = LPC_I2C2;
+		job_rx.device = LPC_I2C2;
+	}
+	*/
+	job_tx.device = LPC_I2C2;
+	job_rx.device = LPC_I2C2;
+
+	switch (block)
+	{
+	case 1:
+		tx[0] = 0;
+		job_rx.rx_data = (uint8_t *) &(eps_hk_data.i_pv2_5v);
+		break;
+
+	case 2:
+		tx[0] = 16;
+		job_rx.rx_data = (uint8_t *) &(eps_hk_data.temp_bat1_sw);
+		break;
+
+	case 3:
+		tx[0] = 32;
+		job_rx.rx_data = (uint8_t *) &(eps_hk_data.v_5v_out);
+		break;
+
+	case 4:
+		tx[0] = 48;
+		job_rx.rx_data = &(eps_hk_data.status_1);
+		break;
+
+	default:
+		return;
+	}
+	job_tx.adress = I2C_ADR_EPS;
+	job_tx.tx_data = tx;
+	job_tx.tx_size = 1;
+	job_tx.rx_size = 0;
+
+	i2c_add_job(&job_tx);
+
+	job_rx.adress = I2C_ADR_EPS;
+	job_rx.tx_data = NULL;
+	job_rx.tx_size = 0;
+	job_rx.rx_size = 16; // block size is always 16 bytes
+
+	if (i2c_add_job(&job_rx))
+	{
+		/*
+		if (cc == CC1)
+		{
+			obc_error_counters.i2c0_error_counter++;
+		}
+		else
+		{
+			obc_error_counters.i2c2_error_counter++;
+		}
+		*/
+	}
 }
