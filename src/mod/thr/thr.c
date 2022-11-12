@@ -400,8 +400,10 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 
 	/// after payload length is known - it is possible to parse remaining bytes into array
-	uint8_t received_data[uint16_payload_length];
+	uint8_t *received_data;
+	received_data = &received_buffer[6]; // copy data
 
+	/*
 	for(int i=0;i<uint16_payload_length;i++){
 		//printf("\n i=%d",i);
 
@@ -411,6 +413,7 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 
 	}
+	*/
 
 	// Now as payload length is know. We can extract remaining bytes from received_buffer, and calculate checksum to verify the received message
 
