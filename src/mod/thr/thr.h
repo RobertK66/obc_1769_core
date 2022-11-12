@@ -40,7 +40,7 @@ extern const double CONVERSION_DOUBLE[108];
 
 
 
-typedef struct thr_variables_t{
+typedef struct thr_register_data_t{
 
 	// Structure is declared if we ever intend to store register values as a user friendly name
 	// TODO: Decide if we do it this way. If yes - update ParseReadRequest() function to set data into this structure
@@ -108,9 +108,9 @@ uint16_t temperature_housing;
 uint16_t temperature_board;
 uint16_t temperature_thermopile;
 uint16_t temperature_calibration;
-}thr_variables_t;
+}__attribute__((packed)) thr_register_data_t;
 
-
+extern thr_register_data_t THR_REGISTER_DATA;
 
 #define	THR_VERSION_MAJOR_REG 			0
 #define	THR_VERSION_MINOR_REG 			1

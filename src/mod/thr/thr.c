@@ -17,6 +17,7 @@
 #include "../tim/obc_time.h"
 //uint16_t LAST_STARTED_MODULE;
 
+thr_register_data_t THR_REGISTER_DATA;
 
 int l4_thr_ExpectedReceiveBuffer = 7;  // this is important variable that defines NEXT expected thruster reply buffer size.
 // Every request function has defined known length of reply.  This will take lot of time to investigate how many bytes are replied by each request.
@@ -493,6 +494,12 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 
 	if(uint16_payload_length >5){
+
+
+		//******************************* NEW CODE ********************8
+
+		memcpy(&THR_REGISTER_DATA.version_major,&received_data[0],uint16_payload_length);
+		// ********************************NEW IMPLEMENTATION *********************
 
 		//if payload is more then 4 then we are reading multiple registers
 
