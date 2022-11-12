@@ -17,6 +17,8 @@
 #include "../tim/obc_time.h"
 //uint16_t LAST_STARTED_MODULE;
 
+void WriteThrRegDataStruct(uint8_t value_uint8, uint16_t value_uint16, uint32_t value_uint32, uint8_t register_index);
+
 thr_register_data_t THR_REGISTER_DATA;
 
 int l4_thr_ExpectedReceiveBuffer = 7;  // this is important variable that defines NEXT expected thruster reply buffer size.
@@ -445,6 +447,9 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 	if(uint16_payload_length ==1){
 
+		//void WriteThrRegDataStruct(uint8_t value_uint8, uint16_t value_uint16, uint32_t value_uint32, uint8_t register_index)
+		WriteThrRegDataStruct(received_data[0],0,0,LATEST_ACCESSED_REGISTER);
+
 		// if payload length is only 1 byte
 		VALUE_UINT8 = received_data[0];
 		// then obviously return type is uint8. And array of received_data would be of a single element.
@@ -471,6 +476,11 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 		//if payload length is 2 bytes, then return value should be stored as uint16_t
 		VALUE_UINT16 = (received_data[1] <<8 )| received_data[0];
+
+		uint16_t temp_value_uint16 = (received_data[1] <<8 )| received_data[0];
+		WriteThrRegDataStruct(0,temp_value_uint16,0,LATEST_ACCESSED_REGISTER);
+
+
 		double multiplier = CONVERSION_DOUBLE[LATEST_ACCESSED_REGISTER];
 		ACTUAL_VALUE = (double)VALUE_UINT16 / multiplier;
 		REGISTER_DATA[LATEST_ACCESSED_REGISTER]=ACTUAL_VALUE;
@@ -489,6 +499,8 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 		//if payload length is 4 (fuses) then return value should be stored with uint32_t
 		//uint32_t i32 = v4[0] | (v4[1] << 8) | (v4[2] << 16) | (v4[3] << 24);
+		uint32_t temp_value_uint32 = received_data[0] | (received_data[1] << 8) | (received_data[2] << 16) | (received_data[3] << 24);
+		WriteThrRegDataStruct(0,0,temp_value_uint32,LATEST_ACCESSED_REGISTER);
 
 	}
 
@@ -777,4 +789,207 @@ void GeneralReadRequest(int argc, char *argv[]){
 		TYPE_OF_LAST_REQUEST = 0x03;
 		LATEST_ACCESSED_REGISTER = access_register;
 }
+
+
+
+void WriteThrRegDataStruct(uint8_t value_uint8, uint16_t value_uint16, uint32_t value_uint32, uint8_t register_index){
+	//:\n\t\t\tTHR_REGISTER_DATA. = value_uint16;\n\t\t\tbreak;
+
+switch (register_index){
+
+case THR_VERSION_MAJOR_REG:
+		THR_REGISTER_DATA.version_major = value_uint8;
+		break;
+case THR_VERSION_MINOR_REG:
+		THR_REGISTER_DATA.version_minor = value_uint16;
+		break;
+case THR_SERIAL_REG:
+		THR_REGISTER_DATA.serial = value_uint16;
+		break;
+case THR_CYCLES_REG:
+		THR_REGISTER_DATA.cycles = value_uint16;
+		break;
+case THR_FUSE_MASK_REG:
+		THR_REGISTER_DATA.fuse_mask = value_uint32;
+		break;
+case THR_FUSE_STATUS_REG:
+		THR_REGISTER_DATA.fuse_status = value_uint32;
+		break;
+case THR_MODE_REG:
+		THR_REGISTER_DATA.mode = value_uint8;
+		break;
+case THR_STATUS_REG:
+		THR_REGISTER_DATA.status = value_uint8;
+		break;
+case THR_THRUST_REF_REG:
+		THR_REGISTER_DATA.thrust_ref = value_uint16;
+		break;
+case THR_THRUST_REG:
+		THR_REGISTER_DATA.thrust = value_uint16;
+		break;
+case THR_SPECIFIC_IMPULSE_REF_REG:
+		THR_REGISTER_DATA.specific_impulse_ref = value_uint16;
+		break;
+case THR_SPECIFIC_IMPULSE_REG:
+		THR_REGISTER_DATA.specific_impulse = value_uint16;
+		break;
+case THR_BUS_VOLTAGE_REG:
+		THR_REGISTER_DATA.bus_voltage = value_uint16;
+		break;
+case THR_DRIVER_VOLTAGE_REG:
+		THR_REGISTER_DATA.driver_voltage = value_uint16;
+		break;
+case THR_BUS_CURRENT_REG:
+		THR_REGISTER_DATA.bus_current = value_uint16;
+		break;
+case THR_EMITTER_MODE_REG:
+		THR_REGISTER_DATA.emitter_mode = value_uint8;
+		break;
+case THR_EMITTER_VOLTAGE_REF_REG:
+		THR_REGISTER_DATA.emitter_voltage_ref = value_uint16;
+		break;
+case THR_EMITTER_VOLTAGE_REG:
+		THR_REGISTER_DATA.emitter_voltage = value_uint16;
+		break;
+case THR_EMITTER_CURRENT_REF_REG:
+		THR_REGISTER_DATA.emitter_current_ref = value_uint16;
+		break;
+case THR_EMITTER_CURRENT_REG:
+		THR_REGISTER_DATA.emitter_current = value_uint16;
+		break;
+case THR_EMITTER_POWER_REF_REG:
+		THR_REGISTER_DATA.emitter_power_ref = value_uint16;
+		break;
+case THR_EMITTER_POWER_REG:
+		THR_REGISTER_DATA.emitter_power = value_uint16;
+		break;
+case THR_EMITTER_DUTY_CYCLE_REF_REG:
+		THR_REGISTER_DATA.emitter_duty_cycle_ref = value_uint8;
+		break;
+case THR_EMITTER_DUTY_CYCLE_REG:
+		THR_REGISTER_DATA.emitter_duty_cycle = value_uint8;
+		break;
+case THR_EXTRACTOR_MODE_REG:
+		THR_REGISTER_DATA.extractor_mode = value_uint8;
+		break;
+case THR_EXTRACTOR_VOLTAGE_REF_REG:
+		THR_REGISTER_DATA.extractor_voltage_ref = value_uint16;
+		break;
+case THR_EXTRACTOR_VOLTAGE_REG:
+		THR_REGISTER_DATA.extractor_voltage = value_uint16;
+		break;
+case THR_EXTRACTOR_CURRENT_REF_REG:
+		THR_REGISTER_DATA.extractor_current_ref = value_uint16;
+		break;
+case THR_EXTRACTOR_CURRENT_REG:
+		THR_REGISTER_DATA.extractor_current = value_uint16;
+		break;
+case THR_EXTRACTOR_POWER_REF_REG:
+		THR_REGISTER_DATA.extractor_power_ref = value_uint16;
+		break;
+case THR_EXTRACTOR_POWER_REG:
+		THR_REGISTER_DATA.extractor_power = value_uint16;
+		break;
+case THR_EXTRACTOR_DUTY_CYCLE_REF_REG:
+		THR_REGISTER_DATA.extractor_duty_cycle_ref = value_uint8;
+		break;
+case THR_EXTRACTOR_DUTY_CYCLE_REG:
+		THR_REGISTER_DATA.extractor_duty_cycle = value_uint8;
+		break;
+case THR_HEATER_MODE_REG:
+		THR_REGISTER_DATA.heater_mode = value_uint8;
+		break;
+case THR_HEATER_VOLTAGE_REF_REG:
+		THR_REGISTER_DATA.heater_voltage_ref = value_uint16;
+		break;
+case THR_HEATER_VOLTAGE_REG:
+		THR_REGISTER_DATA.heater_voltage = value_uint16;
+		break;
+case THR_HEATER_CURRENT_REF_REG:
+		THR_REGISTER_DATA.heater_current_ref = value_uint16;
+		break;
+case THR_HEATER_CURRENT_REG:
+		THR_REGISTER_DATA.heater_current = value_uint16;
+		break;
+case THR_HEATER_POWER_REF_REG:
+		THR_REGISTER_DATA.heater_power_ref = value_uint16;
+		break;
+case THR_HEATER_POWER_REG:
+		THR_REGISTER_DATA.heater_power = value_uint16;
+		break;
+case THR_HEATER_DUTY_CYCLE_REF_REG:
+		THR_REGISTER_DATA.heater_duty_cycle_ref = value_uint8;
+		break;
+case THR_HEATER_DUTY_CYCLE_REG:
+		THR_REGISTER_DATA.heater_duty_cycle = value_uint8;
+		break;
+case THR_NEUTRALIZER_MODE_REG:
+		THR_REGISTER_DATA.neutralizer_mode = value_uint8;
+		break;
+case THR_NEUTRALIZER_FILAMENT_REF_REG:
+		THR_REGISTER_DATA.neutralizer_filament_ref = value_uint8;
+		break;
+case THR_NEUTRALIZER_FILAMENT_REG:
+		THR_REGISTER_DATA.neutralizer_filament = value_uint8;
+		break;
+case THR_NEUTRALIZER_BIAS_REF_REG:
+		THR_REGISTER_DATA.neutralizer_bias_ref = value_uint8;
+		break;
+case THR_NEUTRALIZER_BIAS_REG:
+		THR_REGISTER_DATA.neutralizer_bias = value_uint8;
+		break;
+case THR_NEUTRALIZER_BIAS_VOLTAGE_REG:
+		THR_REGISTER_DATA.neutralizer_bias_voltage = value_uint16;
+		break;
+case THR_NEUTRALIZER_CURRENT_REF_REG:
+		THR_REGISTER_DATA.neutralizer_current_ref = value_uint16;
+		break;
+case THR_NEUTRALIZER_CURRENT_REG:
+		THR_REGISTER_DATA.neutralizer_current = value_uint16;
+		break;
+case THR_NEUTRALIZER_POWER_REF_REG:
+		THR_REGISTER_DATA.neutralizer_power_ref = value_uint16;
+		break;
+case THR_NEUTRALIZER_POWER_REG:
+		THR_REGISTER_DATA.neutralizer_power = value_uint16;
+		break;
+case THR_NEUTRALIZER_DUTY_CYCLE_REF_REG:
+		THR_REGISTER_DATA.neutralizer_duty_cycle_ref = value_uint8;
+		break;
+case THR_NEUTRALIZER_DUTY_CYCLE_REG:
+		THR_REGISTER_DATA.neutralizer_duty_cycle = value_uint8;
+		break;
+case THR_NEUTRALIZER_BEAM_CURRENT_REF_REG:
+		THR_REGISTER_DATA.neutralizer_beam_current_ref = value_uint16;
+		break;
+case THR_NEUTRALIZER_BEAM_CURRENT_REG:
+		THR_REGISTER_DATA.neutralizer_beam_current = value_uint16;
+		break;
+case THR_TEMPERATURE_MODE_REG:
+		THR_REGISTER_DATA.temperature_mode = value_uint8;
+		break;
+case THR_TEMPERATURE_RESERVOIR_REF_REG:
+		THR_REGISTER_DATA.temperature_reservoir_ref = value_uint16;
+		break;
+case THR_TEMPERATURE_RESERVOIR_REG:
+		THR_REGISTER_DATA.temperature_reservoir = value_uint16;
+		break;
+case THR_TEMPERATURE_HOUSING_REG:
+		THR_REGISTER_DATA.temperature_housing = value_uint16;
+		break;
+case THR_TEMPERATURE_BOARD_REG:
+		THR_REGISTER_DATA.temperature_board = value_uint16;
+		break;
+//case THR_TEMPERATURE_THERMOPILE_REG:
+//		THR_REGISTER_DATA.thermopile = value_uint16;
+//		break;
+//case THR_TEMPERATURE_CALIBRATION_REG:
+//		THR_REGISTER_DATA.calibration = value_uint16;
+//		break;
+
+			}
+
+}
+
+
 
