@@ -508,7 +508,11 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 	}
 
 
-	if(uint16_payload_length >5 && uint16_payload_length <=sizeof(thr_register_data_t)){
+	if( uint16_payload_length >5 ){
+
+		//sprintf(print_str, "\n size of register datastruct: [%d] \n",sizeof(thr_register_data_t) );
+		//len_print = strlen(print_str);
+		//deb_print_pure_debug((uint8_t *)print_str, len_print);
 
 
 		//******************************* NEW CODE ********************8
