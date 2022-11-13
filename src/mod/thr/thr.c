@@ -440,6 +440,8 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 		//void WriteThrRegDataStruct(uint8_t value_uint8, uint16_t value_uint16, uint32_t value_uint32, uint8_t register_index)
 		WriteThrRegDataStruct(received_data[0],0,0,LATEST_ACCESSED_REGISTER);
 
+
+		/******************************************************************************
 		// if payload length is only 1 byte
 		VALUE_UINT8 = received_data[0];
 		// then obviously return type is uint8. And array of received_data would be of a single element.
@@ -460,6 +462,7 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 		len_print = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len_print);
 
+		***************************************************************************/
 
 		sprintf(print_str, "\n Parse Read Request 2: [%d] ACTUAL_VALUE= %.6f \n",LATEST_ACCESSED_REGISTER,ReadThrRegData(LATEST_ACCESSED_REGISTER) );
 		len_print = strlen(print_str);

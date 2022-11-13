@@ -378,7 +378,7 @@ void thr_value_ramp(int argc, char *argv[]){
 
 	uint16_t procedure_id = atoi(argv[0]); // procedure_id is always fist index of argument array
 	uint8_t register_index = atoi(argv[1]); // first argument is register index at which SET ramp would be implemented
-	double goal = atof((const char*)argv[2]); // goal to which value should be set
+	double goal = atof(argv[2]); // goal to which value should be set
 	uint32_t ramp_duration = atoi(argv[3]); // time through which value should be changed from initial to goal
 	uint32_t ramp_dt = atoi(argv[4]); // wait between SET / Converted to (ms)
 	double initial_value;
@@ -399,7 +399,8 @@ void thr_value_ramp(int argc, char *argv[]){
 	switch (THR_HARDCODED_SEQUENCES[procedure_id].substage_index){
 
 	case 0:// first we make read request to desired register in order to obtain initial register value
-		GeneralReadRequest(argc,argv); // make sure that argv[1] is register index
+		//GeneralReadRequest(argc,argv); // make sure that argv[1] is register index
+		ReadAllRegisters(argc,argv);
 
 		sprintf(print_str, "\nWInitial read Request Sent\n");
 		len = strlen(print_str);
@@ -542,7 +543,7 @@ void thr_value_ramp(int argc, char *argv[]){
 
 		if (value_step > 0){
 			//if (REGISTER_DATA[register_index] >= goal){
-			if (ReadThrRegData(register_index) >= goal){
+			if (ReadThrRegData(register_index) >= goal*0.99){ // more then 99% of goal - WARNING THIS IS DANGEROUS
 
 				// GOAL REACHED// EXIT FUNCTION
 				THR_HARDCODED_SEQUENCES[procedure_id].execution_index ++;
@@ -559,7 +560,7 @@ void thr_value_ramp(int argc, char *argv[]){
 		if(value_step <0){
 
 			//if (REGISTER_DATA[register_index] <= goal){
-			if (ReadThrRegData(register_index) <= goal){
+			if (ReadThrRegData(register_index) <= goal*1.01){ //goal*1.01 (with 101% error) this is dangerous !
 							// GOAL REACHED// EXIT FUNCTION
 							THR_HARDCODED_SEQUENCES[procedure_id].execution_index ++;
 							THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
@@ -572,6 +573,16 @@ void thr_value_ramp(int argc, char *argv[]){
 						}
 
 
+
+		}
+		if(value_step == 0){
+
+			//warning unexpected.
+			THR_HARDCODED_SEQUENCES[procedure_id].execution_index ++;
+			THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
+			sprintf(print_str, "\nExit condition valuestep=0\n");
+			len = strlen(print_str);
+			deb_print_pure_debug((uint8_t *)print_str, len);
 
 		}
 
