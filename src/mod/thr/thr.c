@@ -18,6 +18,7 @@
 //uint16_t LAST_STARTED_MODULE;
 
 void WriteThrRegDataStruct(uint8_t value_uint8, uint16_t value_uint16, uint32_t value_uint32, uint8_t register_index);
+double ReadThrRegData(uint8_t register_index);
 
 thr_register_data_t THR_REGISTER_DATA;
 
@@ -486,6 +487,11 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 		REGISTER_DATA[LATEST_ACCESSED_REGISTER]=ACTUAL_VALUE;
 
 		sprintf(print_str, "\n Parse Read Request: [%d] ACTUAL_VALUE= %.6f \n",LATEST_ACCESSED_REGISTER,ACTUAL_VALUE );
+		len_print = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len_print);
+
+		//ReadThrRegData(LATEST_ACCESSED_REGISTER)
+		sprintf(print_str, "\n Parse Read Request 2: [%d] ACTUAL_VALUE= %.6f \n",LATEST_ACCESSED_REGISTER,ReadThrRegData(LATEST_ACCESSED_REGISTER) );
 		len_print = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len_print);
 
