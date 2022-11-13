@@ -992,4 +992,202 @@ case THR_TEMPERATURE_BOARD_REG:
 }
 
 
+double ReadThrRegData(uint8_t register_index){
 
+	double ret;
+
+switch (register_index){
+
+case THR_VERSION_MAJOR_REG:
+		ret = (double)THR_REGISTER_DATA.version_major /1;
+		break;
+case THR_VERSION_MINOR_REG:
+		ret = (double)THR_REGISTER_DATA.version_minor/1;
+		break;
+case THR_SERIAL_REG:
+		ret = (double)THR_REGISTER_DATA.serial/1;
+		break;
+case THR_CYCLES_REG:
+		ret = (double)THR_REGISTER_DATA.cycles/1;
+		break;
+case THR_FUSE_MASK_REG:
+		ret = (double)THR_REGISTER_DATA.fuse_mask/1;
+		break;
+case THR_FUSE_STATUS_REG:
+		ret = (double)THR_REGISTER_DATA.fuse_status/1;
+		break;
+case THR_MODE_REG:
+		ret = (double)THR_REGISTER_DATA.mode/1;
+		break;
+case THR_STATUS_REG:
+		ret = (double)THR_REGISTER_DATA.status/1;
+		break;
+case THR_THRUST_REF_REG:
+		ret = (double)THR_REGISTER_DATA.thrust_ref/10000000.0;
+		break;
+case THR_THRUST_REG:
+		ret = (double)THR_REGISTER_DATA.thrust/10000000.0;
+		break;
+case THR_SPECIFIC_IMPULSE_REF_REG:
+		ret = (double)THR_REGISTER_DATA.specific_impulse_ref/1;
+		break;
+case THR_SPECIFIC_IMPULSE_REG:
+		ret = (double)THR_REGISTER_DATA.specific_impulse /1;
+		break;
+case THR_BUS_VOLTAGE_REG:
+		ret = (double)THR_REGISTER_DATA.bus_voltage /1000.0;
+		break;
+case THR_DRIVER_VOLTAGE_REG:
+		ret = (double)THR_REGISTER_DATA.driver_voltage /1000.0;
+		break;
+case THR_BUS_CURRENT_REG:
+		ret = (double)THR_REGISTER_DATA.bus_current /10000.0;
+		break;
+case THR_EMITTER_MODE_REG:
+		ret = (double)THR_REGISTER_DATA.emitter_mode /1.0;
+		break;
+case THR_EMITTER_VOLTAGE_REF_REG:
+		ret = (double)THR_REGISTER_DATA.emitter_voltage_ref /1.0;
+		break;
+case THR_EMITTER_VOLTAGE_REG:
+		ret = (double)THR_REGISTER_DATA.emitter_voltage /1;
+		break;
+case THR_EMITTER_CURRENT_REF_REG:
+		ret = (double)THR_REGISTER_DATA.emitter_current_ref /10000000.0;
+		break;
+case THR_EMITTER_CURRENT_REG:
+		ret = (double)THR_REGISTER_DATA.emitter_current /10000000.0;
+		break;
+case THR_EMITTER_POWER_REF_REG:
+		ret = (double)THR_REGISTER_DATA.emitter_power_ref /1000.0;
+		break;
+case THR_EMITTER_POWER_REG:
+		ret = (double)THR_REGISTER_DATA.emitter_power /1000.0;
+		break;
+case THR_EMITTER_DUTY_CYCLE_REF_REG:
+		ret = (double)THR_REGISTER_DATA.emitter_duty_cycle_ref /2.5499999999999874;
+		break;
+case THR_EMITTER_DUTY_CYCLE_REG:
+		ret = (double)THR_REGISTER_DATA.emitter_duty_cycle / 2.5499999999999874;
+		break;
+case THR_EXTRACTOR_MODE_REG:
+		ret = (double)THR_REGISTER_DATA.extractor_mode /1.0;
+		break;
+case THR_EXTRACTOR_VOLTAGE_REF_REG:
+		ret = (double)THR_REGISTER_DATA.extractor_voltage_ref /1.0;
+		break;
+case THR_EXTRACTOR_VOLTAGE_REG:
+		ret = (double)THR_REGISTER_DATA.extractor_voltage /1.0;
+		break;
+case THR_EXTRACTOR_CURRENT_REF_REG:
+		ret = (double)THR_REGISTER_DATA.extractor_current_ref /100000000.0;
+		break;
+case THR_EXTRACTOR_CURRENT_REG:
+		ret = (double)THR_REGISTER_DATA.extractor_current / 100000000.0;
+		break;
+case THR_EXTRACTOR_POWER_REF_REG:
+		ret = (double)THR_REGISTER_DATA.extractor_power_ref /10000.0;
+		break;
+case THR_EXTRACTOR_POWER_REG:
+		ret = (double)THR_REGISTER_DATA.extractor_power / 10000.0;
+		break;
+case THR_EXTRACTOR_DUTY_CYCLE_REF_REG:
+		ret = (double)THR_REGISTER_DATA.extractor_duty_cycle_ref /2.5499999999999874;
+		break;
+case THR_EXTRACTOR_DUTY_CYCLE_REG:
+		ret = (double)THR_REGISTER_DATA.extractor_duty_cycle / 2.5499999999999874;
+		break;
+case THR_HEATER_MODE_REG:
+		ret = (double)THR_REGISTER_DATA.heater_mode / 1.0;
+		break;
+case THR_HEATER_VOLTAGE_REF_REG:
+		ret = (double)THR_REGISTER_DATA.heater_voltage_ref / 1000.0;
+		break;
+case THR_HEATER_VOLTAGE_REG:
+		ret = (double)THR_REGISTER_DATA.heater_voltage / 1000.0;
+		break;
+case THR_HEATER_CURRENT_REF_REG:
+		ret = (double)THR_REGISTER_DATA.heater_current_ref / 10000.0;
+		break;
+case THR_HEATER_CURRENT_REG:
+		ret = (double)THR_REGISTER_DATA.heater_current / 10000.0;
+		break;
+case THR_HEATER_POWER_REF_REG:
+		ret = (double)THR_REGISTER_DATA.heater_power_ref / 1000.0;
+		break;
+case THR_HEATER_POWER_REG:
+		ret = (double)THR_REGISTER_DATA.heater_power / 1000.0;
+		break;
+case THR_HEATER_DUTY_CYCLE_REF_REG:
+		ret = (double)THR_REGISTER_DATA.heater_duty_cycle_ref / 2.5499999999999874;
+		break;
+case THR_HEATER_DUTY_CYCLE_REG:
+		ret = (double)THR_REGISTER_DATA.heater_duty_cycle / 2.5499999999999874;
+		break;
+case THR_NEUTRALIZER_MODE_REG:
+		ret = (double)THR_REGISTER_DATA.neutralizer_mode / 1.0;
+		break;
+case THR_NEUTRALIZER_FILAMENT_REF_REG:
+		ret = (double)THR_REGISTER_DATA.neutralizer_filament_ref / 1.0;
+		break;
+case THR_NEUTRALIZER_FILAMENT_REG:
+		ret = (double)THR_REGISTER_DATA.neutralizer_filament /1.0;
+		break;
+case THR_NEUTRALIZER_BIAS_REF_REG:
+		ret = (double)THR_REGISTER_DATA.neutralizer_bias_ref / 1.0;
+		break;
+case THR_NEUTRALIZER_BIAS_REG:
+		ret = (double)THR_REGISTER_DATA.neutralizer_bias / 1.0;
+		break;
+case THR_NEUTRALIZER_BIAS_VOLTAGE_REG:
+		ret = (double)THR_REGISTER_DATA.neutralizer_bias_voltage / 100.0;
+		break;
+case THR_NEUTRALIZER_CURRENT_REF_REG:
+		ret = (double)THR_REGISTER_DATA.neutralizer_current_ref / 10000.0;
+		break;
+case THR_NEUTRALIZER_CURRENT_REG:
+		ret = (double)THR_REGISTER_DATA.neutralizer_current / 10000.0;
+		break;
+case THR_NEUTRALIZER_POWER_REF_REG:
+		ret = (double)THR_REGISTER_DATA.neutralizer_power_ref / 1000.0;
+		break;
+case THR_NEUTRALIZER_POWER_REG:
+		ret = (double)THR_REGISTER_DATA.neutralizer_power / 1000.0;
+		break;
+case THR_NEUTRALIZER_DUTY_CYCLE_REF_REG:
+		ret = (double)THR_REGISTER_DATA.neutralizer_duty_cycle_ref / 2.5499999999999874;
+		break;
+case THR_NEUTRALIZER_DUTY_CYCLE_REG:
+		ret = (double)THR_REGISTER_DATA.neutralizer_duty_cycle  / 2.5499999999999874;
+		break;
+case THR_NEUTRALIZER_BEAM_CURRENT_REF_REG:
+		ret = (double)THR_REGISTER_DATA.neutralizer_beam_current_ref / 10000000.0;
+		break;
+case THR_NEUTRALIZER_BEAM_CURRENT_REG:
+		ret = (double)THR_REGISTER_DATA.neutralizer_beam_current / 10000000.0;
+		break;
+case THR_TEMPERATURE_MODE_REG:
+		ret = (double)THR_REGISTER_DATA.temperature_mode / 1.0;
+		break;
+case THR_TEMPERATURE_RESERVOIR_REF_REG:
+		ret = (double)THR_REGISTER_DATA.temperature_reservoir_ref / 100.0;
+		break;
+case THR_TEMPERATURE_RESERVOIR_REG:
+		ret = (double)THR_REGISTER_DATA.temperature_reservoir / 100.0;
+		break;
+case THR_TEMPERATURE_HOUSING_REG:
+		ret = (double)THR_REGISTER_DATA.temperature_housing / 100.0;
+		break;
+case THR_TEMPERATURE_BOARD_REG:
+		ret = (double)THR_REGISTER_DATA.temperature_board / 100.0;
+		break;
+//case THR_TEMPERATURE_THERMOPILE_REG:
+//		THR_REGISTER_DATA.thermopile / 1000.0;
+//		break;
+//case THR_TEMPERATURE_CALIBRATION_REG:
+//		THR_REGISTER_DATA.calibration / 1.0;
+//		break;
+
+			}
+			return ret;
+}
