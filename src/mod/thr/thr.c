@@ -473,19 +473,19 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 	if(uint16_payload_length ==2){
 
 		//if payload length is 2 bytes, then return value should be stored as uint16_t
-		VALUE_UINT16 = (received_data[1] <<8 )| received_data[0];
+		//VALUE_UINT16 = (received_data[1] <<8 )| received_data[0];
 
 		uint16_t temp_value_uint16 = (received_data[1] <<8 )| received_data[0];
 		WriteThrRegDataStruct(0,temp_value_uint16,0,LATEST_ACCESSED_REGISTER);
 
 
-		double multiplier = CONVERSION_DOUBLE[LATEST_ACCESSED_REGISTER];
-		ACTUAL_VALUE = (double)VALUE_UINT16 / multiplier;
-		REGISTER_DATA[LATEST_ACCESSED_REGISTER]=ACTUAL_VALUE;
+		//double multiplier = CONVERSION_DOUBLE[LATEST_ACCESSED_REGISTER];
+		//ACTUAL_VALUE = (double)VALUE_UINT16 / multiplier;
+		//REGISTER_DATA[LATEST_ACCESSED_REGISTER]=ACTUAL_VALUE;
 
-		sprintf(print_str, "\n Parse Read Request: [%d] ACTUAL_VALUE= %.6f \n",LATEST_ACCESSED_REGISTER,ACTUAL_VALUE );
-		len_print = strlen(print_str);
-		deb_print_pure_debug((uint8_t *)print_str, len_print);
+		//sprintf(print_str, "\n Parse Read Request: [%d] ACTUAL_VALUE= %.6f \n",LATEST_ACCESSED_REGISTER,ACTUAL_VALUE );
+		//len_print = strlen(print_str);
+		//deb_print_pure_debug((uint8_t *)print_str, len_print);
 
 		//ReadThrRegData(LATEST_ACCESSED_REGISTER)
 		sprintf(print_str, "\n Parse Read Request 2: [%d] ACTUAL_VALUE= %.6f \n",LATEST_ACCESSED_REGISTER,ReadThrRegData(LATEST_ACCESSED_REGISTER) );
@@ -508,12 +508,12 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 	}
 
 
-	if(uint16_payload_length >5){
+	if(uint16_payload_length >5 && uint16_payload_length <=sizeof(thr_register_data_t)){
 
 
 		//******************************* NEW CODE ********************8
 
-		memcpy(&THR_REGISTER_DATA.version_major,&received_data[0],uint16_payload_length);
+		memcpy(&THR_REGISTER_DATA.version_major,&received_data[0],sizeof(thr_register_data_t));
 		// ********************************NEW IMPLEMENTATION *********************
 
 		/*
