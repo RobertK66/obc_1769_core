@@ -16,12 +16,12 @@
 // Variables below will store value returned by read single register request
 // Output from READ SINGLE REGISTER can be a variable of either 1,2 or 4 bytes long.
 // Those global variables will represent LATEST RECEIVED VALUE returned by READ SINGLE REGISTER request
-extern uint8_t VALUE_UINT8;
-extern uint16_t VALUE_UINT16;
-extern uint32_t VALUE_UINT32;
+//extern uint8_t VALUE_UINT8;
+//extern uint16_t VALUE_UINT16;
+//extern uint32_t VALUE_UINT32;
 extern uint8_t READ_REQUEST_OK_FLAG;  // if checksum of parsed message was verified, then message is considered valid. Corresponding flag is set to 1
 extern uint8_t LATEST_ACCESSED_REGISTER; // Latest register to which SET or READ request have been made
-extern double ACTUAL_VALUE; // //ACTUAL VALUE represents real physical value returned by READ SINGLE REGISTER REQUEST
+//extern double ACTUAL_VALUE; // //ACTUAL VALUE represents real physical value returned by READ SINGLE REGISTER REQUEST
 //ACTUAL VALUE represents real physical value returned by READ SINGLE REGISTER REQUEST
 extern uint8_t TYPE_OF_LAST_REQUEST;
 extern const uint16_t CONVERSION[108];
@@ -30,7 +30,7 @@ extern const uint8_t DEVICE;
 extern const uint8_t MSGTYPE[8];
 
 // REGISTER_DATA will store physical values after READ request
-extern double REGISTER_DATA[108];
+//extern double REGISTER_DATA[108];
 extern const uint8_t REGISTER_LENGTH[108];
 extern const double CONVERSION_DOUBLE[108];
 
