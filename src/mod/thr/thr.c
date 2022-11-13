@@ -17,8 +17,7 @@
 #include "../tim/obc_time.h"
 //uint16_t LAST_STARTED_MODULE;
 
-void WriteThrRegDataStruct(uint8_t value_uint8, uint16_t value_uint16, uint32_t value_uint32, uint8_t register_index);
-double ReadThrRegData(uint8_t register_index);
+
 
 thr_register_data_t THR_REGISTER_DATA;
 
@@ -407,17 +406,7 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 	uint8_t *received_data;
 	received_data = &received_buffer[6]; // copy data
 
-	/*
-	for(int i=0;i<uint16_payload_length;i++){
-		//printf("\n i=%d",i);
 
-		received_data[i]=received_buffer[6+i]; //first 6 bytes of received buffer is header.
-		//7th byte of received buffer is first byte of received data
-
-
-
-	}
-	*/
 
 	// Now as payload length is know. We can extract remaining bytes from received_buffer, and calculate checksum to verify the received message
 
@@ -471,6 +460,11 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 		len_print = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len_print);
 
+
+		sprintf(print_str, "\n Parse Read Request 2: [%d] ACTUAL_VALUE= %.6f \n",LATEST_ACCESSED_REGISTER,ReadThrRegData(LATEST_ACCESSED_REGISTER) );
+		len_print = strlen(print_str);
+		deb_print_pure_debug((uint8_t *)print_str, len_print);
+
 	}
 
 	if(uint16_payload_length ==2){
@@ -519,6 +513,8 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 		memcpy(&THR_REGISTER_DATA.version_major,&received_data[0],uint16_payload_length);
 		// ********************************NEW IMPLEMENTATION *********************
 
+		/*
+
 		//if payload is more then 4 then we are reading multiple registers
 
 		//sprintf(print_str, "\n Parse Request : Payload Length = %d \n",uint16_payload_length  );
@@ -556,16 +552,18 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 			current_time = (uint32_t)timGetSystime();
 
 			if((current_time - parse_start_time)> 100){
-				/*
-				 *
-				 * This is exit condition to prevent infinite loop.
-				 * In case thruster replies less bytes then expected - index will never reach exit condition.
-				 * To prevent this we introduce break after 100ms delay
-				 *
-				 * This is not the most elegant solution. But it is assumed that ReadAllRegisters will request amount of bytes
-				 * enough to cover all REGISTER_DATA. Thus in normal operation proccess time exceeded limit warning should never occure
-				 *
-				 */
+				//
+				 //
+				// * This is exit condition to prevent infinite loop.
+				// * In case thruster replies less bytes then expected - index will never reach exit condition.
+				// * To prevent this we introduce break after 100ms delay
+				// *
+				 // This is not the most elegant solution. But it is assumed that ReadAllRegisters will request amount of bytes
+				// * enough to cover all REGISTER_DATA. Thus in normal operation proccess time exceeded limit warning should never occure
+				// *
+
+
+
 
 				sprintf(print_str, "\nParse WARNING: Process time exceeded limit   next_register_index = %d  \n",next_register_index  );
 				len_print = strlen(print_str);
@@ -627,7 +625,8 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 			//deb_print_pure_debug((uint8_t *)print_str, len_print);
 
 		}
-	}
+
+	*/}
 
 
 
@@ -996,6 +995,216 @@ case THR_TEMPERATURE_BOARD_REG:
 			}
 
 }
+
+
+
+
+
+
+
+void SetEncodedThrRegValue(double value, uint8_t register_index){
+	//:\n\t\t\tTHR_REGISTER_DATA. = value_uint16;\n\t\t\tbreak;
+
+
+
+
+switch (register_index){
+
+case THR_VERSION_MAJOR_REG:
+		THR_REGISTER_DATA.version_major = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_VERSION_MINOR_REG:
+		THR_REGISTER_DATA.version_minor = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_SERIAL_REG:
+		THR_REGISTER_DATA.serial = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_CYCLES_REG:
+		THR_REGISTER_DATA.cycles = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_FUSE_MASK_REG:
+		THR_REGISTER_DATA.fuse_mask = (uint32_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_FUSE_STATUS_REG:
+		THR_REGISTER_DATA.fuse_status = (uint32_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_MODE_REG:
+		THR_REGISTER_DATA.mode = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_STATUS_REG:
+		THR_REGISTER_DATA.status = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_THRUST_REF_REG:
+		THR_REGISTER_DATA.thrust_ref = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_THRUST_REG:
+		THR_REGISTER_DATA.thrust = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_SPECIFIC_IMPULSE_REF_REG:
+		THR_REGISTER_DATA.specific_impulse_ref = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_SPECIFIC_IMPULSE_REG:
+		THR_REGISTER_DATA.specific_impulse = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_BUS_VOLTAGE_REG:
+		THR_REGISTER_DATA.bus_voltage = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_DRIVER_VOLTAGE_REG:
+		THR_REGISTER_DATA.driver_voltage = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_BUS_CURRENT_REG:
+		THR_REGISTER_DATA.bus_current = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EMITTER_MODE_REG:
+		THR_REGISTER_DATA.emitter_mode = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EMITTER_VOLTAGE_REF_REG:
+		THR_REGISTER_DATA.emitter_voltage_ref = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EMITTER_VOLTAGE_REG:
+		THR_REGISTER_DATA.emitter_voltage = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EMITTER_CURRENT_REF_REG:
+		THR_REGISTER_DATA.emitter_current_ref = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EMITTER_CURRENT_REG:
+		THR_REGISTER_DATA.emitter_current = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EMITTER_POWER_REF_REG:
+		THR_REGISTER_DATA.emitter_power_ref = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EMITTER_POWER_REG:
+		THR_REGISTER_DATA.emitter_power = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EMITTER_DUTY_CYCLE_REF_REG:
+		THR_REGISTER_DATA.emitter_duty_cycle_ref = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EMITTER_DUTY_CYCLE_REG:
+		THR_REGISTER_DATA.emitter_duty_cycle = (uint8_t)( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EXTRACTOR_MODE_REG:
+		THR_REGISTER_DATA.extractor_mode = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EXTRACTOR_VOLTAGE_REF_REG:
+		THR_REGISTER_DATA.extractor_voltage_ref = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EXTRACTOR_VOLTAGE_REG:
+		THR_REGISTER_DATA.extractor_voltage = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EXTRACTOR_CURRENT_REF_REG:
+		THR_REGISTER_DATA.extractor_current_ref = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EXTRACTOR_CURRENT_REG:
+		THR_REGISTER_DATA.extractor_current = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EXTRACTOR_POWER_REF_REG:
+		THR_REGISTER_DATA.extractor_power_ref = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EXTRACTOR_POWER_REG:
+		THR_REGISTER_DATA.extractor_power = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EXTRACTOR_DUTY_CYCLE_REF_REG:
+		THR_REGISTER_DATA.extractor_duty_cycle_ref = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_EXTRACTOR_DUTY_CYCLE_REG:
+		THR_REGISTER_DATA.extractor_duty_cycle = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_HEATER_MODE_REG:
+		THR_REGISTER_DATA.heater_mode = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_HEATER_VOLTAGE_REF_REG:
+		THR_REGISTER_DATA.heater_voltage_ref = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_HEATER_VOLTAGE_REG:
+		THR_REGISTER_DATA.heater_voltage = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_HEATER_CURRENT_REF_REG:
+		THR_REGISTER_DATA.heater_current_ref = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_HEATER_CURRENT_REG:
+		THR_REGISTER_DATA.heater_current = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_HEATER_POWER_REF_REG:
+		THR_REGISTER_DATA.heater_power_ref = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_HEATER_POWER_REG:
+		THR_REGISTER_DATA.heater_power = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_HEATER_DUTY_CYCLE_REF_REG:
+		THR_REGISTER_DATA.heater_duty_cycle_ref = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_HEATER_DUTY_CYCLE_REG:
+		THR_REGISTER_DATA.heater_duty_cycle = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_NEUTRALIZER_MODE_REG:
+		THR_REGISTER_DATA.neutralizer_mode = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_NEUTRALIZER_FILAMENT_REF_REG:
+		THR_REGISTER_DATA.neutralizer_filament_ref = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_NEUTRALIZER_FILAMENT_REG:
+		THR_REGISTER_DATA.neutralizer_filament = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_NEUTRALIZER_BIAS_REF_REG:
+		THR_REGISTER_DATA.neutralizer_bias_ref = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_NEUTRALIZER_BIAS_REG:
+		THR_REGISTER_DATA.neutralizer_bias = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_NEUTRALIZER_BIAS_VOLTAGE_REG:
+		THR_REGISTER_DATA.neutralizer_bias_voltage = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_NEUTRALIZER_CURRENT_REF_REG:
+		THR_REGISTER_DATA.neutralizer_current_ref = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_NEUTRALIZER_CURRENT_REG:
+		THR_REGISTER_DATA.neutralizer_current = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_NEUTRALIZER_POWER_REF_REG:
+		THR_REGISTER_DATA.neutralizer_power_ref = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_NEUTRALIZER_POWER_REG:
+		THR_REGISTER_DATA.neutralizer_power = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_NEUTRALIZER_DUTY_CYCLE_REF_REG:
+		THR_REGISTER_DATA.neutralizer_duty_cycle_ref = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_NEUTRALIZER_DUTY_CYCLE_REG:
+		THR_REGISTER_DATA.neutralizer_duty_cycle = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_NEUTRALIZER_BEAM_CURRENT_REF_REG:
+		THR_REGISTER_DATA.neutralizer_beam_current_ref = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_NEUTRALIZER_BEAM_CURRENT_REG:
+		THR_REGISTER_DATA.neutralizer_beam_current = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_TEMPERATURE_MODE_REG:
+		THR_REGISTER_DATA.temperature_mode = (uint8_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_TEMPERATURE_RESERVOIR_REF_REG:
+		THR_REGISTER_DATA.temperature_reservoir_ref = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_TEMPERATURE_RESERVOIR_REG:
+		THR_REGISTER_DATA.temperature_reservoir = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_TEMPERATURE_HOUSING_REG:
+		THR_REGISTER_DATA.temperature_housing = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+case THR_TEMPERATURE_BOARD_REG:
+		THR_REGISTER_DATA.temperature_board = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+		break;
+//case THR_TEMPERATURE_THERMOPILE_REG:
+//		THR_REGISTER_DATA.thermopile = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+//		break;
+//case THR_TEMPERATURE_CALIBRATION_REG:
+//		THR_REGISTER_DATA.calibration = (uint16_t) ( value * CONVERSION_DOUBLE[register_index]);
+//		break;
+
+			}
+
+}
+
+
 
 
 double ReadThrRegData(uint8_t register_index){

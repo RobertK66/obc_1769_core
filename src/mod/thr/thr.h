@@ -199,6 +199,10 @@ void ParseReadRequest(uint8_t* received_buffer,int len);
 void ReadAllRegisters(int argc, char *argv[]);
 void PrintAllRegisters();
 
+void WriteThrRegDataStruct(uint8_t value_uint8, uint16_t value_uint16, uint32_t value_uint32, uint8_t register_index);
+double ReadThrRegData(uint8_t register_index);
+void SetEncodedThrRegValue(double value, uint8_t register_index);
+
 
 
 #endif /* MOD_TIM_CLIMB_GPS_H_ */

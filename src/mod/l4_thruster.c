@@ -330,9 +330,15 @@ void thr_wait_and_monitor(int argc, char *argv[]){
 					}
 		else{
 			//THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_substage = (uint32_t)timGetSystime(); //save execution finish time of wait substage
-			sprintf(print_str, "\nMonitored [%d] Value = %.6f \n", register_index,REGISTER_DATA[register_index]);
+
+			//sprintf(print_str, "\nMonitored [%d] Value = %.6f \n", register_index,REGISTER_DATA[register_index]);
+			//len = strlen(print_str);
+			//deb_print_pure_debug((uint8_t *)print_str, len);
+
+			sprintf(print_str, "\nMonitored 2 [%d] Value = %.6f \n", register_index,ReadThrRegData(register_index));
 			len = strlen(print_str);
 			deb_print_pure_debug((uint8_t *)print_str, len);
+
 			THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
 			}
 
@@ -420,7 +426,8 @@ void thr_value_ramp(int argc, char *argv[]){
 		}
 		break;
 	case 2: // now we are sure that read request was proccessed - read initial value
-		THR_HARDCODED_SEQUENCES[procedure_id].ramp_initial_value = REGISTER_DATA[register_index];
+		//THR_HARDCODED_SEQUENCES[procedure_id].ramp_initial_value = REGISTER_DATA[register_index];
+		THR_HARDCODED_SEQUENCES[procedure_id].ramp_initial_value = ReadThrRegData(register_index);
 		THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
 		sprintf(print_str, "\nInitial value save value = %.5f\n",THR_HARDCODED_SEQUENCES[procedure_id].ramp_initial_value);
 		len = strlen(print_str);
@@ -430,12 +437,17 @@ void thr_value_ramp(int argc, char *argv[]){
 
 		initial_value  = THR_HARDCODED_SEQUENCES[procedure_id].ramp_initial_value;
 		value_step = (goal -initial_value)/ramp_iterations;
-		REGISTER_DATA[register_index] = REGISTER_DATA[register_index] +value_step;
+		//REGISTER_DATA[register_index] = REGISTER_DATA[register_index] +value_step;
+		SetEncodedThrRegValue((ReadThrRegData(register_index)  +value_step ), register_index); // I have some doubts here that it is efficient
+		// maybe make global variable instead of running a function two times ?
 
-		if ((REGISTER_DATA[register_index] >= goal && value_step >0)    || (REGISTER_DATA[register_index] <= goal && value_step <0 )    ){
+		//if ((REGISTER_DATA[register_index] >= goal && value_step >0)    || (REGISTER_DATA[register_index] <= goal && value_step <0 )    ){
+		if ((ReadThrRegData(register_index) >= goal && value_step >0)    || (ReadThrRegData(register_index) <= goal && value_step <0 )    ){ //TODO again this is stupid
+		//two runs of the same function with the same result in if condition - stupid.
 			// GOAL REACHED// EXIT FUNCTION
 
-			sprintf(print_str, "\nWarning ! OVER THE GOAL %.5f \n",REGISTER_DATA[register_index]);
+			//sprintf(print_str, "\nWarning ! OVER THE GOAL %.5f \n",REGISTER_DATA[register_index]);
+			sprintf(print_str, "\nWarning ! OVER THE GOAL %.5f \n",ReadThrRegData(register_index)); // THIRD RUN OF SAME FUNC WITH SAME RESULT ! STUPID
 			len = strlen(print_str);
 			deb_print_pure_debug((uint8_t *)print_str, len);
 
@@ -452,9 +464,11 @@ void thr_value_ramp(int argc, char *argv[]){
 
 			//sprintf(temp_argv[2], "%.2f",REGISTER_DATA[register_index]+value_step);
 			GeneralSetRequest(3, temp_argv);
-			REGISTER_DATA[register_index] = goal;
+			//REGISTER_DATA[register_index] = goal;
+			SetEncodedThrRegValue(goal, register_index); //Todo - check if it is stupid. Instead of assignment operation we run function ......
 
-			sprintf(print_str, "\nValue corrected according to goal %.5f \n",REGISTER_DATA[register_index]);
+			//sprintf(print_str, "\nValue corrected according to goal %.5f \n",REGISTER_DATA[register_index]);
+			sprintf(print_str, "\nValue corrected according to goal %.5f \n",ReadThrRegData(register_index)); //TODO remove
 			len = strlen(print_str);
 			deb_print_pure_debug((uint8_t *)print_str, len);
 
@@ -484,13 +498,17 @@ void thr_value_ramp(int argc, char *argv[]){
 		//sprintf(argument3, "%.2f",goal);
 		//temp_argv[2]= argument3;
 
-		sprintf(argument3, "%.2f",REGISTER_DATA[register_index]+value_step);
+		//sprintf(argument3, "%.2f",REGISTER_DATA[register_index]+value_step);
+		sprintf(argument3, "%.2f",ReadThrRegData(register_index)+value_step);
 		temp_argv[2]= argument3;
 
-		if (register_index == 16){sprintf(argument3, "%.5f",REGISTER_DATA[register_index]+value_step); temp_argv[2]= argument3;     } // for Thrust ramp we need to print goal with 5 decimal precesion
+		//if (register_index == 16){sprintf(argument3, "%.5f",REGISTER_DATA[register_index]+value_step); temp_argv[2]= argument3;     } // for Thrust ramp we need to print goal with 5 decimal precesion
+		if (register_index == 16){sprintf(argument3, "%.5f",ReadThrRegData(register_index)+value_step); temp_argv[2]= argument3;     } // for Thrust ramp we need to print goal with 5 decimal precesion
 
 		//sprintf(temp_argv[2], "%.2f",REGISTER_DATA[register_index]+value_step); // this also works
-		sprintf(print_str, "\nSET RAMP value = %.5f\n",REGISTER_DATA[register_index]);
+
+		//sprintf(print_str, "\nSET RAMP value = %.5f\n",REGISTER_DATA[register_index]);
+		sprintf(print_str, "\nSET RAMP value = %.5f\n",ReadThrRegData(register_index));
 		len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
 
@@ -523,7 +541,9 @@ void thr_value_ramp(int argc, char *argv[]){
 		value_step = (goal -initial_value)/ramp_iterations;
 
 		if (value_step > 0){
-			if (REGISTER_DATA[register_index] >= goal){
+			//if (REGISTER_DATA[register_index] >= goal){
+			if (ReadThrRegData(register_index) >= goal){
+
 				// GOAL REACHED// EXIT FUNCTION
 				THR_HARDCODED_SEQUENCES[procedure_id].execution_index ++;
 				THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
@@ -538,7 +558,8 @@ void thr_value_ramp(int argc, char *argv[]){
 
 		if(value_step <0){
 
-			if (REGISTER_DATA[register_index] <= goal){
+			//if (REGISTER_DATA[register_index] <= goal){
+			if (ReadThrRegData(register_index) <= goal){
 							// GOAL REACHED// EXIT FUNCTION
 							THR_HARDCODED_SEQUENCES[procedure_id].execution_index ++;
 							THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
