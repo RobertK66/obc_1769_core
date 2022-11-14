@@ -52,11 +52,11 @@ typedef struct  {
 
 void thr_wait(int argc, char *argv[]);
 
-void l4_GeneralSetRequest(l4_stage_arguments_t stage_args);
-void l4_GeneralSetRequest_sequence(l4_stage_arguments_t stage_args);
+void l4_GeneralSetRequest(l4_stage_arguments_t *stage_args);
+void l4_GeneralSetRequest_sequence(l4_stage_arguments_t *stage_args);
 
-void l4_GeneralReadRequest(l4_stage_arguments_t stage_args);
-void l4_GeneralReadRequest_sequence(l4_stage_arguments_t stage_args);
+void l4_GeneralReadRequest(l4_stage_arguments_t *stage_args);
+void l4_GeneralReadRequest_sequence(l4_stage_arguments_t *stage_args);
 
 
 void thr_execute_sequence();
@@ -76,17 +76,16 @@ void thr_read_mem();
 void thr_read_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
 uint8_t MMRAM_READ_BUFFER[6];
 
-#define MAX_EXECUTION_SEQUENCE_DEPTH 20 // Maximum size of execution sequence stack
-#define MAX_HARDCODED_SEQUENCES 5 // Maximum number of preprogrammed sequences
+#define MAX_EXECUTION_SEQUENCE_DEPTH 50 // Maximum size of execution sequence stack
+#define MAX_HARDCODED_SEQUENCES 8 // Maximum number of preprogrammed sequences
 
 
 
 
 typedef struct {
-	//char *thr_argv[6];
-	void (*function)(l4_stage_arguments_t stage_arguments);
+	void (*function)(l4_stage_arguments_t *stage_arguments);
 	uint16_t procedure_id;
-	l4_stage_arguments_t stage_args;
+	l4_stage_arguments_t *stage_args;
 } thr_sequences_t;
 
 typedef struct {
@@ -155,7 +154,7 @@ void l4_thruster_main (void) {
 
 
 //void l4_GeneralReadRequest(l4_stage_arguments_t stage_args)
-void l4_GeneralSetRequest_sequence(l4_stage_arguments_t stage_args){
+void l4_GeneralSetRequest_sequence(l4_stage_arguments_t *stage_args){
 	LAST_STARTED_MODULE = 1104;
 	/*
 	 * _sequence is a wrapper arround General  thruster registor Read/Set request functions
@@ -167,7 +166,7 @@ void l4_GeneralSetRequest_sequence(l4_stage_arguments_t stage_args){
 	 *
 	 * after completion of sequence - timestamp is recorded
 	 */
-	uint16_t procedure_id = stage_args.sequence_id; // procedure_id is always fist index of argument array
+	uint16_t procedure_id = stage_args->sequence_id; // procedure_id is always fist index of argument array
 	l4_GeneralSetRequest(stage_args);
 
 	char print_str[200];
@@ -189,9 +188,9 @@ void l4_GeneralSetRequest_sequence(l4_stage_arguments_t stage_args){
 
 
 
-void l4_GeneralReadRequest_sequence(l4_stage_arguments_t stage_args){
+void l4_GeneralReadRequest_sequence(l4_stage_arguments_t *stage_args){
 	LAST_STARTED_MODULE = 1106;
-	uint16_t procedure_id = stage_args.sequence_id; // procedure_id is always fist index of argument array
+	uint16_t procedure_id = stage_args->sequence_id; // procedure_id is always fist index of argument array
 	l4_GeneralReadRequest(stage_args);
 
 	char print_str[200];
@@ -761,7 +760,7 @@ void thr_execute_sequence(int procedure_id){
 	}
 
 	else{
-		void (*f)(l4_stage_arguments_t stage_arguments);
+		void (*f)(l4_stage_arguments_t *stage_arguments);
 		f = THR_HARDCODED_SEQUENCES[procedure_id].sequences[THR_HARDCODED_SEQUENCES[procedure_id].execution_index].function;
 		LAST_STARTED_MODULE = THR_HARDCODED_SEQUENCES[procedure_id].execution_index; //DEBUG
 		f(THR_HARDCODED_SEQUENCES[procedure_id].sequences[THR_HARDCODED_SEQUENCES[procedure_id].execution_index].stage_args);
@@ -848,15 +847,33 @@ void mem_write_cmd(int argc, char *argv[]){
 }
 // ******************************************************************************
 
-
+const l4_stage_arguments_t temp_arg1 =  {0,20,0,3000,0,0 };
 
 void initialize_hardcoded_thr_sequences(){
 
 	/// **************** PREPROGRAMM SEQUENCES HERE ****************
-		//uint8_t exeFunc_index; // this is helper index to simplify HARDCODDING sequence manually.
-		//int sequence_id_int;
-		//char *wait_between_stages_str ="5000";
-		//char* sequenc_id_char;
+	uint8_t exeFunc_index=0; // this is helper index to simplify HARDCODDING sequence manually.
+	int sequence_id_int=0;
+
+	// Action 31001:Set Operational Mode 0 / Register 0x0E  14
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_GeneralSetRequest_sequence;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &temp_arg1;
+	exeFunc_index++;
+
+	// Action 31001:Set Operational Mode 0 / Register 0x0E  14
+	//THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_GeneralSetRequest_sequence;
+	//l4_stage_arguments_t temp_arg1 =  {0,20,0,3000,0,0 };
+	//THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &temp_arg1;
+	//exeFunc_index++;
+
+	// Wait Between SET requests
+	//THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
+	//THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
+	//THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
+	//THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+	//exeFunc_index++;
+
+
 
 
 		/*
@@ -1805,14 +1822,14 @@ void initialize_hardcoded_thr_sequences(){
 
 
 
-void l4_GeneralSetRequest(l4_stage_arguments_t stage_args){
+void l4_GeneralSetRequest(l4_stage_arguments_t *stage_args){
 	LAST_STARTED_MODULE = 1105;
 
 
 
 	uint8_t len; // will carry total length of request array
 
-	uint8_t access_register = stage_args.register_index;
+	uint8_t access_register = stage_args->register_index;
 
 	uint8_t length_of_register = REGISTER_LENGTH[access_register];
 
@@ -1877,7 +1894,7 @@ void l4_GeneralSetRequest(l4_stage_arguments_t stage_args){
 
 
 	if (length_of_register ==1){
-		uint8_t input_uint8 = (uint8_t) stage_args.double_arg1;
+		uint8_t input_uint8 = (uint8_t) stage_args->double_arg1;
 		input_uint8 = input_uint8* (uint8_t) CONVERSION_DOUBLE[access_register];
 		request[7]= input_uint8;
 
@@ -1887,7 +1904,7 @@ void l4_GeneralSetRequest(l4_stage_arguments_t stage_args){
 
 		// parse argument as double
 		// WARNING : Set Project-Settings-Manager linker script - Redlib (nohost) to use atof()
-		double input = stage_args.double_arg1;
+		double input = stage_args->double_arg1;
 		// in cases where data stored in register has length of 2 bytes. uint16_t would be used
 		// to store this data in register. For some registers input may be float
 		// example 3.3V  or 3.0 or 3
@@ -1908,7 +1925,7 @@ void l4_GeneralSetRequest(l4_stage_arguments_t stage_args){
 }
 
 
-void l4_ReadAllRegisters(l4_stage_arguments_t stage_args){
+void l4_ReadAllRegisters(l4_stage_arguments_t *stage_args){
 	LAST_STARTED_MODULE = 1102;
 
 
@@ -1941,11 +1958,11 @@ void l4_ReadAllRegisters(l4_stage_arguments_t stage_args){
 
 
 //General read request to any register
-void l4_GeneralReadRequest(l4_stage_arguments_t stage_args){
+void l4_GeneralReadRequest(l4_stage_arguments_t *stage_args){
 	LAST_STARTED_MODULE = 1107;
 
 		// FIRST ARGUMENT SHOUD BE uint8_t VALUE OF REGISTER THAT WOULD BE READ FROM
-		uint8_t access_register = stage_args.register_index;
+		uint8_t access_register = stage_args->register_index;
 		uint8_t length_of_register = REGISTER_LENGTH[access_register];
 
 		// TODO : Check if valid/existing register is accessed
