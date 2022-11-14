@@ -38,16 +38,35 @@
 #include <mod/ado_mram.h>
 #include "modules_globals.h"
 
+typedef struct  {
+	uint8_t sequence_id;
+	uint8_t register_index; //access register for which action is taken
+	uint32_t wait; // wait between stages [ms]
+	double double_arg1;
+	double double_arg2;
+	double double_arg3;
+
+}l4_stage_arguments_t;
+
+
 
 void thr_wait(int argc, char *argv[]);
-void GeneralSetRequest_sequence(int argc, char *argv[]);
-void GeneralReadRequest_sequence(int argc, char *argv[]);
+
+void l4_GeneralSetRequest(l4_stage_arguments_t stage_args);
+void l4_GeneralSetRequest_sequence(l4_stage_arguments_t stage_args);
+
+void l4_GeneralReadRequest(l4_stage_arguments_t stage_args);
+void l4_GeneralReadRequest_sequence(l4_stage_arguments_t stage_args);
+
+
 void thr_execute_sequence();
 void thr_void(int argc, char *argv[]);
 void thr_value_ramp(int argc, char *argv[]);
 void thr_wait_and_monitor(int argc, char *argv[]);
 
+
 void initialize_hardcoded_thr_sequences();
+
 
 
 //MEM
@@ -57,13 +76,17 @@ void thr_read_mem();
 void thr_read_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
 uint8_t MMRAM_READ_BUFFER[6];
 
-#define MAX_EXECUTION_SEQUENCE_DEPTH 50 // Maximum size of execution sequence stack
-#define MAX_HARDCODED_SEQUENCES 8 // Maximum number of preprogrammed sequences
+#define MAX_EXECUTION_SEQUENCE_DEPTH 20 // Maximum size of execution sequence stack
+#define MAX_HARDCODED_SEQUENCES 5 // Maximum number of preprogrammed sequences
+
+
+
 
 typedef struct {
-	char *thr_argv[6];
-	void (*function)(int argc, char *argv[]);
+	//char *thr_argv[6];
+	void (*function)(l4_stage_arguments_t stage_arguments);
 	uint16_t procedure_id;
+	l4_stage_arguments_t stage_args;
 } thr_sequences_t;
 
 typedef struct {
@@ -82,7 +105,6 @@ typedef struct {
 
 }thr_hardcoded_sequences_t;
 thr_hardcoded_sequences_t THR_HARDCODED_SEQUENCES[MAX_HARDCODED_SEQUENCES];
-
 
 
 
@@ -132,8 +154,8 @@ void l4_thruster_main (void) {
 
 
 
-
-void GeneralSetRequest_sequence(int argc, char *argv[]){
+//void l4_GeneralReadRequest(l4_stage_arguments_t stage_args)
+void l4_GeneralSetRequest_sequence(l4_stage_arguments_t stage_args){
 	LAST_STARTED_MODULE = 1104;
 	/*
 	 * _sequence is a wrapper arround General  thruster registor Read/Set request functions
@@ -145,8 +167,8 @@ void GeneralSetRequest_sequence(int argc, char *argv[]){
 	 *
 	 * after completion of sequence - timestamp is recorded
 	 */
-	uint16_t procedure_id = atoi(argv[0]); // procedure_id is always fist index of argument array
-	GeneralSetRequest(3,argv);
+	uint16_t procedure_id = stage_args.sequence_id; // procedure_id is always fist index of argument array
+	l4_GeneralSetRequest(stage_args);
 
 	char print_str[200];
 	sprintf(print_str, "\nStage SET index= %d completed\n",THR_HARDCODED_SEQUENCES[procedure_id].execution_index);
@@ -154,8 +176,8 @@ void GeneralSetRequest_sequence(int argc, char *argv[]){
 	deb_print_pure_debug((uint8_t *)print_str, len);
 
 	//*******assume that argv[5] is custom print message
-	len = strlen(argv[5]);
-	deb_print_pure_debug((uint8_t *)argv[5], len);
+	//len = strlen(argv[5]);
+	//deb_print_pure_debug((uint8_t *)argv[5], len);
 
 
 	THR_HARDCODED_SEQUENCES[procedure_id].execution_index++;
@@ -167,19 +189,18 @@ void GeneralSetRequest_sequence(int argc, char *argv[]){
 
 
 
-
-void GeneralReadRequest_sequence(int argc, char *argv[]){
+void l4_GeneralReadRequest_sequence(l4_stage_arguments_t stage_args){
 	LAST_STARTED_MODULE = 1106;
-	uint16_t procedure_id = atoi(argv[0]); // procedure_id is always fist index of argument array
-	GeneralReadRequest(3,argv);
+	uint16_t procedure_id = stage_args.sequence_id; // procedure_id is always fist index of argument array
+	l4_GeneralReadRequest(stage_args);
 
 	char print_str[200];
 	sprintf(print_str, "\nStage READ index= %d completed\n",THR_HARDCODED_SEQUENCES[procedure_id].execution_index);
 	int len = strlen(print_str);
 	deb_print_pure_debug((uint8_t *)print_str, len);
 
-	len = strlen(argv[5]);
-	deb_print_pure_debug((uint8_t *)argv[5], len); //assume that argv[5] is custom print message
+	//len = strlen(argv[5]);
+	//deb_print_pure_debug((uint8_t *)argv[5], len); //assume that argv[5] is custom print message
 
 
 	THR_HARDCODED_SEQUENCES[procedure_id].execution_index++;
@@ -740,10 +761,10 @@ void thr_execute_sequence(int procedure_id){
 	}
 
 	else{
-		void (*f)(int argc, char *argv[]);
+		void (*f)(l4_stage_arguments_t stage_arguments);
 		f = THR_HARDCODED_SEQUENCES[procedure_id].sequences[THR_HARDCODED_SEQUENCES[procedure_id].execution_index].function;
 		LAST_STARTED_MODULE = THR_HARDCODED_SEQUENCES[procedure_id].execution_index; //DEBUG
-		f(3,THR_HARDCODED_SEQUENCES[procedure_id].sequences[THR_HARDCODED_SEQUENCES[procedure_id].execution_index].thr_argv);
+		f(THR_HARDCODED_SEQUENCES[procedure_id].sequences[THR_HARDCODED_SEQUENCES[procedure_id].execution_index].stage_args);
 	}
 
 
@@ -832,12 +853,13 @@ void mem_write_cmd(int argc, char *argv[]){
 void initialize_hardcoded_thr_sequences(){
 
 	/// **************** PREPROGRAMM SEQUENCES HERE ****************
-		uint8_t exeFunc_index; // this is helper index to simplify HARDCODDING sequence manually.
-		int sequence_id_int;
-		char *wait_between_stages_str ="5000";
-		char* sequenc_id_char;
+		//uint8_t exeFunc_index; // this is helper index to simplify HARDCODDING sequence manually.
+		//int sequence_id_int;
+		//char *wait_between_stages_str ="5000";
+		//char* sequenc_id_char;
 
 
+		/*
 		// ******* SEQUENCE 0 ************* OPERATIONAL SCRIPTS /Hot Standby Script / 10-1
 
 		exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
@@ -1773,6 +1795,183 @@ void initialize_hardcoded_thr_sequences(){
 			THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = false;
 			THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
 			exeFunc_index= 0;
+			*/
+
+}
 
 
+
+//////////////****************************** EXPERIMENTAL FUNCS ///////////////////////
+
+
+
+void l4_GeneralSetRequest(l4_stage_arguments_t stage_args){
+	LAST_STARTED_MODULE = 1105;
+
+
+
+	uint8_t len; // will carry total length of request array
+
+	uint8_t access_register = stage_args.register_index;
+
+	uint8_t length_of_register = REGISTER_LENGTH[access_register];
+
+	//Check if valid/existing register is accessed
+	if(length_of_register ==0){
+		return;
+		// It means that SET request is attempted with mismatch to actual origin of data register
+		// Writing to wrong register position should be avoided.
+		// For now lets assume that user never attempts to set wrong register.
+		// TODO: Validate is register are allowed to be written/set to. (Based on enpulsion documentation)
+	}
+
+	//Request array initialisation
+	if(length_of_register ==1){
+		// if length of register is 1 byte then total length of request array is
+		len=8;
+		}
+
+	if(length_of_register ==2){
+		len=9;
+		}
+
+	if(length_of_register ==4){
+		len=11;
+		}
+
+
+	uint8_t request[len];
+
+
+	//Message header
+	request[0] = SENDER_ADRESS;
+	request[1] = DEVICE;
+	request[2] = MSGTYPE[3]; // WRITE -3
+	request[3] = 0x00; //checksum
+
+
+	//////Payload length
+	if (length_of_register ==1){
+		// if register that is intended to be set is one byte
+		// then length of payload is register address(1) + data(1)= 2 bytes
+		request[4] = 2; //
+	}
+
+	if (length_of_register ==2){
+		//if length of register is 2 bytes then
+		//length of payload is address(1)+data(2) = 3 bytes
+		request[4] =3;
+
+	}
+
+	if (length_of_register ==4){
+			/// 4 bytes only for FUSE REGISTERS
+			request[4] =5;
+
+		}
+
+
+	request[5] = 0x00;
+	request[6]= access_register;
+
+
+
+	if (length_of_register ==1){
+		uint8_t input_uint8 = (uint8_t) stage_args.double_arg1;
+		input_uint8 = input_uint8* (uint8_t) CONVERSION_DOUBLE[access_register];
+		request[7]= input_uint8;
+
+	}
+
+	if (length_of_register ==2){
+
+		// parse argument as double
+		// WARNING : Set Project-Settings-Manager linker script - Redlib (nohost) to use atof()
+		double input = stage_args.double_arg1;
+		// in cases where data stored in register has length of 2 bytes. uint16_t would be used
+		// to store this data in register. For some registers input may be float
+		// example 3.3V  or 3.0 or 3
+		// Function should be able to handle both float and integer inputs from user
+
+		// Apply conversion multiplier
+		input = input* CONVERSION_DOUBLE[access_register];
+		// Convert input to uint16_t
+		uint16_t value = (uint16_t) input;
+		// Represent uint16_t as two uint8_t bytes to fill the request array.
+		request[7]= value & 0xff;
+		request[8] = (value >> 8) & 0xff;
+	}
+
+	request[3] = CRC8(request, len); // calculate checksum after whole request array is sent
+	l4_thr_ExpectedReceiveBuffer = 6;// change expected receive buffer accordingly
+	thrSendBytes(request, len);
+}
+
+
+void l4_ReadAllRegisters(l4_stage_arguments_t stage_args){
+	LAST_STARTED_MODULE = 1102;
+
+
+	uint8_t request[8];
+
+
+	request[0]= 0x00;
+	request[1]= 0xFF;
+	request[2]= 0x03;
+	request[3]= 0x69;
+	request[4]= 0x02;
+	request[5]= 0x00;
+	request[6]= 0x00;
+	request[7]= 0x7F;
+
+	int len = sizeof(request);
+
+	// every request function should manually set expected RX buffer size and reset byte counter !!!!!!!!!!
+	l4_thr_ExpectedReceiveBuffer = 133;
+	l4_thr_counter =0;
+
+	thrSendBytes(request, len);
+	LATEST_ACCESSED_REGISTER = 0;
+
+
+
+
+}
+
+
+
+//General read request to any register
+void l4_GeneralReadRequest(l4_stage_arguments_t stage_args){
+	LAST_STARTED_MODULE = 1107;
+
+		// FIRST ARGUMENT SHOUD BE uint8_t VALUE OF REGISTER THAT WOULD BE READ FROM
+		uint8_t access_register = stage_args.register_index;
+		uint8_t length_of_register = REGISTER_LENGTH[access_register];
+
+		// TODO : Check if valid/existing register is accessed
+		if(length_of_register ==0){
+			return;
+		}
+
+		uint8_t request[8];
+		request[0] = SENDER_ADRESS;
+		request[1] = DEVICE;
+		request[2] = MSGTYPE[2]; // READ -3
+		request[3] = 0x00; // checksum
+		request[4] = 0x02; // LENGTH of payload REGISTER and length
+		request[5] = 0x00; // Hardcoded because length of payload is defined with two bytes of uint16
+		request[6]= access_register; // Access register at address requested by used
+		request[7]= length_of_register;
+
+		uint8_t len = sizeof(request);
+		request[3] = CRC8(request, len);
+
+		// Reply is n bytes long.
+		//Therefore we set global variable that should be used to process the RX buffer to corresponding length.
+		l4_thr_ExpectedReceiveBuffer = 6+REGISTER_LENGTH[access_register];
+		l4_thr_counter =0;
+
+		thrSendBytes(request, len);
+		TYPE_OF_LAST_REQUEST = 0x03;
+		LATEST_ACCESSED_REGISTER = access_register;
 }

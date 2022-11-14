@@ -1413,3 +1413,4 @@ case THR_TEMPERATURE_BOARD_REG:
 			}
 			return ret;
 }
+

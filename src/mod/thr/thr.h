@@ -34,6 +34,9 @@ extern const uint8_t MSGTYPE[8];
 extern const uint8_t REGISTER_LENGTH[108];
 extern const double CONVERSION_DOUBLE[108];
 
+extern int l4_thr_ExpectedReceiveBuffer;
+extern int l4_thr_counter;
+
 
 
 
