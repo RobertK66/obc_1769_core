@@ -50,7 +50,7 @@ typedef struct  {
 
 
 
-void thr_wait(int argc, char *argv[]);
+void l4_wait(l4_stage_arguments_t *stage_args);
 
 void l4_GeneralSetRequest(l4_stage_arguments_t *stage_args);
 void l4_GeneralSetRequest_sequence(l4_stage_arguments_t *stage_args);
@@ -62,7 +62,8 @@ void l4_GeneralReadRequest_sequence(l4_stage_arguments_t *stage_args);
 void thr_execute_sequence();
 void thr_void(int argc, char *argv[]);
 void thr_value_ramp(int argc, char *argv[]);
-void thr_wait_and_monitor(int argc, char *argv[]);
+//void thr_wait_and_monitor(int argc, char *argv[]);
+void l4_wait_and_monitor(int argc, char *argv[]);
 
 
 void initialize_hardcoded_thr_sequences();
@@ -76,8 +77,8 @@ void thr_read_mem();
 void thr_read_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len);
 uint8_t MMRAM_READ_BUFFER[6];
 
-#define MAX_EXECUTION_SEQUENCE_DEPTH 50 // Maximum size of execution sequence stack
-#define MAX_HARDCODED_SEQUENCES 8 // Maximum number of preprogrammed sequences
+#define MAX_EXECUTION_SEQUENCE_DEPTH 10 // Maximum size of execution sequence stack
+#define MAX_HARDCODED_SEQUENCES 5 // Maximum number of preprogrammed sequences
 
 
 
@@ -213,7 +214,7 @@ void l4_GeneralReadRequest_sequence(l4_stage_arguments_t *stage_args){
 
 
 //////
-void thr_wait(int argc, char *argv[]){
+void l4_wait(l4_stage_arguments_t *stage_args){
 	LAST_STARTED_MODULE = 1108;
 
 	/*
@@ -228,8 +229,8 @@ void thr_wait(int argc, char *argv[]){
 	 * THR_EXECUTION INDEX is increased after current timestamp increased above designed wait duration
 	 *
 	 */
-	uint16_t procedure_id = atoi(argv[0]); // procedure_id is always fist index of argument array
-	uint32_t duration = atoi(argv[1]);
+	uint16_t procedure_id = stage_args->sequence_id; // procedure_id is always fist index of argument array
+	uint32_t duration = stage_args->wait;
 	uint32_t now_timestamp = (uint32_t)timGetSystime();
 
 
@@ -247,14 +248,14 @@ void thr_wait(int argc, char *argv[]){
 		THR_HARDCODED_SEQUENCES[procedure_id].execution_index++; // increase sequence execution index so that after wait - next module to be executed
 
 
-		len = strlen(argv[5]);
-		deb_print_pure_debug((uint8_t *)argv[5], len); // assume that argv[5] is custom print message
+		//len = strlen(argv[5]);
+		//deb_print_pure_debug((uint8_t *)argv[5], len); // assume that argv[5] is custom print message
 	}
 
 }
 
 
-void thr_wait_and_monitor(int argc, char *argv[]){
+void l4_wait_and_monitor(int argc, char *argv[]){
 	/*
 	 *
 	 * This module is use for Hot Standby Script Sequence
@@ -847,30 +848,35 @@ void mem_write_cmd(int argc, char *argv[]){
 }
 // ******************************************************************************
 
-const l4_stage_arguments_t temp_arg1 =  {0,20,0,3000,0,0 };
+//const l4_stage_arguments_t temp_arg1 =  {0,20,0,3000,0,0 };
+
+//l4_stage_arguments_t HARDCODED_STAGE_ARGS[MAX_HARDCODED_SEQUENCES][MAX_EXECUTION_SEQUENCE_DEPTH];
+l4_stage_arguments_t HARDCODED_STAGE_ARGS[2][10];
 
 void initialize_hardcoded_thr_sequences(){
 
 	/// **************** PREPROGRAMM SEQUENCES HERE ****************
 	uint8_t exeFunc_index=0; // this is helper index to simplify HARDCODDING sequence manually.
 	int sequence_id_int=0;
+	uint32_t wait_between_stages = 2000;
 
 	// Action 31001:Set Operational Mode 0 / Register 0x0E  14
 	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_GeneralSetRequest_sequence;
-	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &temp_arg1;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 3000;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
 	exeFunc_index++;
 
-	// Action 31001:Set Operational Mode 0 / Register 0x0E  14
-	//THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_GeneralSetRequest_sequence;
-	//l4_stage_arguments_t temp_arg1 =  {0,20,0,3000,0,0 };
-	//THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &temp_arg1;
-	//exeFunc_index++;
 
-	// Wait Between SET requests
-	//THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = thr_wait;
-	//THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[0]= sequenc_id_char;
-	//THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[1] = wait_between_stages_str; // Wait [ms]
-	//THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].thr_argv[5] = "\nWaiting between SET Requests\n";
+
+	 //Wait Between SET requests
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_wait;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 3000;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = wait_between_stages;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
 	//exeFunc_index++;
 
 

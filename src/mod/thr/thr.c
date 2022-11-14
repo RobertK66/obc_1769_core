@@ -38,14 +38,8 @@ int l4_thr_counter = 0; // counter for received bytes
 
 // Its gonna be a loooong and boooring work to fill in this array......
 
-// REGISTER_DATA will store physical values after READ request
-//double REGISTER_DATA[108];
 
-//uint8_t VALUE_UINT8;
-//uint16_t VALUE_UINT16;
-//uint32_t VALUE_UINT32;
 uint8_t LATEST_ACCESSED_REGISTER ;
-//double ACTUAL_VALUE;
 uint8_t READ_REQUEST_OK_FLAG;
 uint8_t TYPE_OF_LAST_REQUEST;
 
