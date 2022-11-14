@@ -832,7 +832,7 @@ void initialize_hardcoded_thr_sequences(){
 	/// **************** PREPROGRAMM SEQUENCES HERE ****************
 	uint8_t exeFunc_index=0; // this is helper index to simplify HARDCODDING sequence manually.
 	int sequence_id_int=0;
-	uint32_t wait_between_stages = 2000;
+	uint32_t wait_between_stages = 500;
 
 	// SET
 	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_GeneralSetRequest_sequence;
@@ -872,7 +872,22 @@ void initialize_hardcoded_thr_sequences(){
 	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
 	exeFunc_index++;
 
+	// Action SET
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_GeneralSetRequest_sequence;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 1500;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
+	exeFunc_index++;
 
+	 //Wait Between SET requests
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_wait;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
+	//HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
+	//HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 3000;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = wait_between_stages;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
+	exeFunc_index++;
 
 	// RAMP
 	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_value_ramp;
@@ -880,7 +895,7 @@ void initialize_hardcoded_thr_sequences(){
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 3000; // ramp goal
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg2 = 20; //ramp duration [s]
-	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = 2; //dt
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = 1; //dt
 	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
 	exeFunc_index++;
 
@@ -899,7 +914,7 @@ void initialize_hardcoded_thr_sequences(){
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 1500; // ramp goal
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg2 = 20; //ramp duration [s]
-	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = 2; //dt [s]
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = 1; //dt [s]
 	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
 	exeFunc_index++;
 
@@ -912,6 +927,75 @@ void initialize_hardcoded_thr_sequences(){
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = wait_between_stages;
 	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
 	//exeFunc_index++;
+
+
+	THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].repeat = false;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].substage_index = 0; //DEFAULT SUBSTAGE INDEX
+
+
+	// ******* SEQUENCE 1 ************* STABILITY TEST
+
+	exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
+	sequence_id_int = 1;
+	wait_between_stages = 500;
+	// SET
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_GeneralSetRequest_sequence;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 1000;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
+	exeFunc_index++;
+
+
+
+	 //Wait Between SET requests
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_wait;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
+	//HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
+	//HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 3000;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = wait_between_stages;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
+	exeFunc_index++;
+
+
+	// Action SET
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_GeneralSetRequest_sequence;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 1500;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
+	exeFunc_index++;
+
+
+	 //Wait Between SET requests
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_wait;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
+	//HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
+	//HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 3000;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = wait_between_stages;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
+	exeFunc_index++;
+
+	// Action SET
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_GeneralSetRequest_sequence;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 1500;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
+	exeFunc_index++;
+
+	 //Wait Between SET requests
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_wait;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
+	//HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
+	//HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 3000;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = wait_between_stages;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
+	//exeFunc_index++;
+
+
 
 
 	THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
