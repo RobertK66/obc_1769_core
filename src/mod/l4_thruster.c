@@ -57,11 +57,12 @@ void l4_GeneralSetRequest_sequence(l4_stage_arguments_t *stage_args);
 
 void l4_GeneralReadRequest(l4_stage_arguments_t *stage_args);
 void l4_GeneralReadRequest_sequence(l4_stage_arguments_t *stage_args);
+void l4_ReadAllRegisters(l4_stage_arguments_t *stage_args);
 
 
 void thr_execute_sequence();
-void thr_void(int argc, char *argv[]);
-void thr_value_ramp(int argc, char *argv[]);
+void l4_void(l4_stage_arguments_t *stage_args);
+void l4_value_ramp(l4_stage_arguments_t *stage_args);
 //void thr_wait_and_monitor(int argc, char *argv[]);
 void l4_wait_and_monitor(int argc, char *argv[]);
 
@@ -376,7 +377,7 @@ void l4_wait_and_monitor(int argc, char *argv[]){
 }
 
 
-void thr_void(int argc, char *argv[]){
+void l4_void(l4_stage_arguments_t *stage_args){
 	LAST_STARTED_MODULE = 1109;
 
 	/*
@@ -385,23 +386,24 @@ void thr_void(int argc, char *argv[]){
 	 * void function that does nothing
 	 */
 
-	uint16_t procedure_id = atoi(argv[0]); // procedure_id is always fist index of argument array
+	uint16_t procedure_id = stage_args->sequence_id; // procedure_id is always fist index of argument array
 	THR_HARDCODED_SEQUENCES[procedure_id].execution_index ++;
 
 }
 
-void thr_value_ramp(int argc, char *argv[]){
+l4_stage_arguments_t l4_value_ramp_temp_request_args; // this global variable to be tightly coupled with l4_value_ramp function
+void l4_value_ramp(l4_stage_arguments_t *stage_args){
 	/*
 	 * According to enpulsion defination RAMP Frequency should be 1 Hz, Duration of ramp is 30s
 	 * Out function allows to specify different dt(frequency) and ramp duration.
 	 * When hardcoding sequences - lets stick with enpulsion ramp requirments
 	 */
 
-	uint16_t procedure_id = atoi(argv[0]); // procedure_id is always fist index of argument array
-	uint8_t register_index = atoi(argv[1]); // first argument is register index at which SET ramp would be implemented
-	double goal = atof(argv[2]); // goal to which value should be set
-	uint32_t ramp_duration = atoi(argv[3]); // time through which value should be changed from initial to goal
-	uint32_t ramp_dt = atoi(argv[4]); // wait between SET / Converted to (ms)
+	uint16_t procedure_id = stage_args->sequence_id; // procedure_id is always fist index of argument array
+	uint8_t register_index = stage_args->register_index; // first argument is register index at which SET ramp would be implemented
+	double goal = stage_args->double_arg1; // goal to which value should be set
+	uint32_t ramp_duration = (uint32_t)stage_args->double_arg2; // time through which value should be changed from initial to goal
+	uint32_t ramp_dt = stage_args->wait; // wait between SET / Converted to (ms)
 	double initial_value;
 	uint32_t now_timestamp;
 
@@ -411,25 +413,21 @@ void thr_value_ramp(int argc, char *argv[]){
 	double ramp_iterations = ramp_duration/ ramp_dt; // WARING - HARDCODE IN A WAY THAT THIS IS ALWAYS INT
 	double value_step;
 
-	char *temp_argv[3];
-	char argument2[50];
-	char argument3[50]; //7 //length of array should always be more then maximum characters for set value !!!!!
 
 
 
 	switch (THR_HARDCODED_SEQUENCES[procedure_id].substage_index){
 
 	case 0:// first we make read request to desired register in order to obtain initial register value
-		//GeneralReadRequest(argc,argv); // make sure that argv[1] is register index
-		ReadAllRegisters(argc,argv);
+		l4_ReadAllRegisters(stage_args); // arguments are irrelevant for read all registers function
 
 		sprintf(print_str, "\nWInitial read Request Sent\n");
 		len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
 
 		// assume that argv[5] is custom print message
-		len = strlen(argv[5]);
-		deb_print_pure_debug((uint8_t *)argv[5], len);
+		//len = strlen(argv[5]);
+		//deb_print_pure_debug((uint8_t *)argv[5], len);
 
 		THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
 		break;
@@ -474,18 +472,10 @@ void thr_value_ramp(int argc, char *argv[]){
 			deb_print_pure_debug((uint8_t *)print_str, len);
 
 
-			temp_argv[0]= "7";
-
-			sprintf(argument2, "%d",register_index);
-			temp_argv[1]= argument2;
-
-			sprintf(argument3, "%.2f",goal);
-			temp_argv[2]= argument3;
-
-			if (register_index == 16){sprintf(argument3, "%.5f",goal); temp_argv[2]= argument3;     } // for Thrust ramp we need to print goal with 5 decimal precesion
-
-			//sprintf(temp_argv[2], "%.2f",REGISTER_DATA[register_index]+value_step);
-			GeneralSetRequest(3, temp_argv);
+			//l4_value_ramp_temp_request_args.sequence_id =stage_args->sequence_id;
+			l4_value_ramp_temp_request_args.register_index = register_index;
+			l4_value_ramp_temp_request_args.double_arg1= goal;
+			l4_GeneralSetRequest(&l4_value_ramp_temp_request_args);
 			//REGISTER_DATA[register_index] = goal;
 			SetEncodedThrRegValue(goal, register_index); //Todo - check if it is stupid. Instead of assignment operation we run function ......
 
@@ -512,34 +502,18 @@ void thr_value_ramp(int argc, char *argv[]){
 		deb_print_pure_debug((uint8_t *)print_str, len);
 
 
-		temp_argv[0]= "7";
-
-		sprintf(argument2, "%d",register_index);
-		temp_argv[1]= argument2;
-
-		//sprintf(argument3, "%.2f",goal);
-		//temp_argv[2]= argument3;
-
-		//sprintf(argument3, "%.2f",REGISTER_DATA[register_index]+value_step);
-		sprintf(argument3, "%.2f",ReadThrRegData(register_index)+value_step);
-		temp_argv[2]= argument3;
-
-		//if (register_index == 16){sprintf(argument3, "%.5f",REGISTER_DATA[register_index]+value_step); temp_argv[2]= argument3;     } // for Thrust ramp we need to print goal with 5 decimal precesion
-		if (register_index == 16){sprintf(argument3, "%.5f",ReadThrRegData(register_index)+value_step); temp_argv[2]= argument3;     } // for Thrust ramp we need to print goal with 5 decimal precesion
-
-		//sprintf(temp_argv[2], "%.2f",REGISTER_DATA[register_index]+value_step); // this also works
-
-		//sprintf(print_str, "\nSET RAMP value = %.5f\n",REGISTER_DATA[register_index]);
 		sprintf(print_str, "\nSET RAMP value = %.5f\n",ReadThrRegData(register_index));
 		len = strlen(print_str);
 		deb_print_pure_debug((uint8_t *)print_str, len);
 
-		GeneralSetRequest(3, temp_argv);
+		l4_value_ramp_temp_request_args.register_index = register_index;
+		l4_value_ramp_temp_request_args.double_arg1= ReadThrRegData(register_index)+value_step;
+		l4_GeneralSetRequest(&l4_value_ramp_temp_request_args);
 
 		THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
 		THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
-
 		break;
+
 	case 4: // WAIT after RAMP set request done
 		now_timestamp = (uint32_t)timGetSystime();
 		if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage) < ramp_dt*1000){ // ramp_dt*1000 converts dt from [s] to [ms]
@@ -884,9 +858,61 @@ void initialize_hardcoded_thr_sequences(){
 	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_GeneralSetRequest_sequence;
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 1500;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
+	exeFunc_index++;
+
+
+	 //Wait Between SET requests
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_wait;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 3000;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = wait_between_stages;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
+	exeFunc_index++;
+
+
+
+	// Action 31001:Set Operational Mode 0 / Register 0x0E  14
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_value_ramp;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 3000; // ramp goal
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg2 = 20000; //ramp duration
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = 2000; //dt
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
+	exeFunc_index++;
+
+	 //Wait Between SET requests
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_wait;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 3000;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = wait_between_stages;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
+	exeFunc_index++;
+
+	// Action 31001:Set Operational Mode 0 / Register 0x0E  14
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_value_ramp;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 1500; // ramp goal
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg2 = 20000; //ramp duration
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = 2000; //dt
 	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
 	//exeFunc_index++;
+
+
+	 //Wait Between SET requests
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_wait;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 3000;
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = wait_between_stages;
+	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
+	//exeFunc_index++;
+
 
 	THR_HARDCODED_SEQUENCES[sequence_id_int].length = exeFunc_index; // MANUALLY DEFINE LENGTH OF SEQUENCE //
 	THR_HARDCODED_SEQUENCES[sequence_id_int].sequence_trigger = false;
