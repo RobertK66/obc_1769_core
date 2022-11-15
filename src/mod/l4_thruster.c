@@ -994,7 +994,7 @@ void initialize_hardcoded_thr_sequences(){
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 3000; // ramp goal
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg2 = 20; //ramp duration [s]
-	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = 1; //dt
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = 2; //dt
 	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
 	exeFunc_index++;
 
@@ -1013,7 +1013,7 @@ void initialize_hardcoded_thr_sequences(){
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].register_index = THR_SPECIFIC_IMPULSE_REF_REG;
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg1 = 1500; // ramp goal
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].double_arg2 = 20; //ramp duration [s]
-	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = 1; //dt [s]
+	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = 2; //dt [s]
 	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
 	exeFunc_index++;
 
