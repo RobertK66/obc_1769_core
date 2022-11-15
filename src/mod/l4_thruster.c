@@ -192,43 +192,51 @@ void l4_GeneralSetRequest_sequence(l4_stage_arguments_t *stage_args){
 }
 
 void l4_GeneralSetRequestAndWait_sequence(l4_stage_arguments_t *stage_args){
-	LAST_STARTED_MODULE = 1104;
-	/*
-	 * _sequence is a wrapper arround General  thruster registor Read/Set request functions
-	 *
-	 * it passes input argv further into original function
-	 *
-	 * However after execution of original function pointer of execution sequence stack THR_EXECUTION_INDEX
-	 * is increased so that next stage can be executed.
-	 *
-	 * after completion of sequence - timestamp is recorded
-	 */
-	uint16_t procedure_id = stage_args->sequence_id; // procedure_id is always fist index of argument array
+
+	LAST_STARTED_MODULE = 1106;
+	uint16_t procedure_id = stage_args->sequence_id;
 	uint32_t duration = stage_args->wait;
-
-	l4_GeneralSetRequest(stage_args);
-
 	char print_str[200];
+	uint32_t now_timestamp;
 	int len;
 
-	//*******assume that argv[5] is custom print message
-	//len = strlen(argv[5]);
-	//deb_print_pure_debug((uint8_t *)argv[5], len);
 
 
-	uint32_t now_timestamp = (uint32_t)timGetSystime();
 
-	if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage) < duration ){
-			// do nothing
-		}
-		else{
-			THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime(); //save execution finish time of wait stage
-			sprintf(print_str, "\nSET AND WAIT Stage= %d Complete t = %d\n", THR_HARDCODED_SEQUENCES[procedure_id].execution_index,now_timestamp);
-			len = strlen(print_str);
-			deb_print_pure_debug((uint8_t *)print_str, len);
-			THR_HARDCODED_SEQUENCES[procedure_id].execution_index++; // increase sequence execution index so that after wait - next module to be executed
+	switch (THR_HARDCODED_SEQUENCES[procedure_id].substage_index){
 
-		}
+	case 0:
+		l4_GeneralSetRequest(stage_args);
+		THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
+		THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
+		return;
+		break;
+	case 1:
+		now_timestamp = (uint32_t)timGetSystime();
+		if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage) < duration ){
+					// do nothing
+				}
+				else{
+					sprintf(print_str, "\n Set and wait, Stage= %d Complete t = %d\n", THR_HARDCODED_SEQUENCES[procedure_id].execution_index,now_timestamp);
+					len = strlen(print_str);
+					deb_print_pure_debug((uint8_t *)print_str, len);
+
+					THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
+					THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
+					THR_HARDCODED_SEQUENCES[procedure_id].execution_index++; // increase sequence execution index so that after wait - next module to be executed
+
+
+					//len = strlen(argv[5]);
+					//deb_print_pure_debug((uint8_t *)argv[5], len); // assume that argv[5] is custom print message
+				}
+		return;
+		break;
+
+
+	}
+
+
+
 
 }
 
@@ -254,37 +262,51 @@ void l4_GeneralReadRequest_sequence(l4_stage_arguments_t *stage_args){
 
 
 void l4_GeneralReadRequestAndWait_sequence(l4_stage_arguments_t *stage_args){
+
 	LAST_STARTED_MODULE = 1106;
 	uint16_t procedure_id = stage_args->sequence_id;
 	uint32_t duration = stage_args->wait;
-	l4_GeneralReadRequest(stage_args);
-
 	char print_str[200];
-	sprintf(print_str, "\nStage READ index= %d completed\n",THR_HARDCODED_SEQUENCES[procedure_id].execution_index);
-	int len = strlen(print_str);
-	deb_print_pure_debug((uint8_t *)print_str, len);
-
-	//len = strlen(argv[5]);
-	//deb_print_pure_debug((uint8_t *)argv[5], len); //assume that argv[5] is custom print message
+	uint32_t now_timestamp;
+	int len;
 
 
 
-	uint32_t now_timestamp = (uint32_t)timGetSystime();
 
-	if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage) < duration ){
-			// do nothing
-		}
-		else{
-			THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime(); //save execution finish time of wait stage
-			sprintf(print_str, "\nWait Stage= %d Complete t = %d\n", THR_HARDCODED_SEQUENCES[procedure_id].execution_index,now_timestamp);
-			len = strlen(print_str);
-			deb_print_pure_debug((uint8_t *)print_str, len);
-			THR_HARDCODED_SEQUENCES[procedure_id].execution_index++; // increase sequence execution index so that after wait - next module to be executed
+	switch (THR_HARDCODED_SEQUENCES[procedure_id].substage_index){
+
+	case 0:
+		l4_GeneralReadRequest(stage_args);
+		THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
+		THR_HARDCODED_SEQUENCES[procedure_id].substage_index++;
+		return;
+		break;
+	case 1:
+		now_timestamp = (uint32_t)timGetSystime();
+		if ( (now_timestamp - THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage) < duration ){
+					// do nothing
+				}
+				else{
+					sprintf(print_str, "\n Read single and wait, Stage= %d Complete t = %d\n", THR_HARDCODED_SEQUENCES[procedure_id].execution_index,now_timestamp);
+					len = strlen(print_str);
+					deb_print_pure_debug((uint8_t *)print_str, len);
+
+					THR_HARDCODED_SEQUENCES[procedure_id].sequence_execution_stage = (uint32_t)timGetSystime();
+					THR_HARDCODED_SEQUENCES[procedure_id].substage_index = 0;
+					THR_HARDCODED_SEQUENCES[procedure_id].execution_index++; // increase sequence execution index so that after wait - next module to be executed
 
 
-			//len = strlen(argv[5]);
-			//deb_print_pure_debug((uint8_t *)argv[5], len); // assume that argv[5] is custom print message
-		}
+					//len = strlen(argv[5]);
+					//deb_print_pure_debug((uint8_t *)argv[5], len); // assume that argv[5] is custom print message
+				}
+		return;
+		break;
+
+
+	}
+
+
+
 
 
 }
@@ -1086,9 +1108,9 @@ void initialize_hardcoded_thr_sequences(){
 
 	exeFunc_index=0; // at the beggining of sequence hardcodding set it to 0
 	sequence_id_int = 2;
-	wait_between_stages =1000;
+	wait_between_stages =2000;
 
-	/*
+
 	// SET AND WAIT
 	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].function = l4_GeneralSetRequestAndWait_sequence;
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].sequence_id =sequence_id_int;
@@ -1117,8 +1139,6 @@ void initialize_hardcoded_thr_sequences(){
 	HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index].wait = wait_between_stages;
 	THR_HARDCODED_SEQUENCES[sequence_id_int].sequences[exeFunc_index].stage_args = &HARDCODED_STAGE_ARGS[sequence_id_int][exeFunc_index];
 	exeFunc_index++;
-
-	*/
 
 
 
