@@ -45,6 +45,7 @@ typedef struct  {
 	double double_arg1;
 	double double_arg2;
 	double double_arg3;
+	//char *args[6];
 
 }l4_stage_arguments_t;
 

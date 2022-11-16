@@ -268,24 +268,23 @@ void thrProcessRxByte(uint8_t rxByte) {
 
 		thr_receiveBuffer[l4_thr_counter]=(char) rxByte;
 		//Chip_UART_SendByte(LPC_UART2, rxByte); // print received byte
-
 		l4_thr_counter =0;
 		ParseReadRequest((uint8_t*)&thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer);
 
 		char print_str[200];
 		sprintf(print_str, "\n Thruster Reply : \n");
-		int len = strlen(print_str);
-		deb_print_pure_debug((uint8_t *)print_str, len);
+		//int len = strlen(print_str);
+		//deb_print_pure_debug((uint8_t *)print_str, len);
+		SysEvent(0, EVENT_INFO, 3, (uint8_t *)print_str, strlen(print_str));
 
-		deb_print_pure_debug((uint8_t*)&thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer);
+		//deb_print_pure_debug((uint8_t*)&thr_receiveBuffer,l4_thr_ExpectedReceiveBuffer);
+		SysEvent(0, EVENT_INFO, 3, (uint8_t*)&thr_receiveBuffer, l4_thr_ExpectedReceiveBuffer);
 
 		sprintf(print_str, "\n");
-		len = strlen(print_str);
-		deb_print_pure_debug((uint8_t *)print_str, len);
+		//len = strlen(print_str);
+		//deb_print_pure_debug((uint8_t *)print_str, len);
+		SysEvent(0, EVENT_INFO, 3, (uint8_t *)print_str, strlen(print_str));
 
-
-		// TODO : TEST ParseReadRequest. Make request to read all registers.
-		// Parse reply with ParseReadRequest and verify that array of data values are stored correctly
 
 	}
 
@@ -374,7 +373,7 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 	LAST_STARTED_MODULE = 1103;
 
 	char print_str[200];
-	int len_print;
+	//int len_print;
 
 
 	//uint8_t sender = received_buffer[0];
@@ -389,8 +388,9 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 	if (message_type == 1){
 		sprintf(print_str, "\n Parse Request : Thruster OK reply received \n",uint16_payload_length  );
-		len_print = strlen(print_str);
-		deb_print_pure_debug((uint8_t *)print_str, len_print);
+		//len_print = strlen(print_str);
+		//deb_print_pure_debug((uint8_t *)print_str, len_print);
+		SysEvent(0, EVENT_INFO, 3, (uint8_t *)print_str, strlen(print_str));
 		return; // dont do any further parsing because it is simply OK message after SET request
 
 	}
@@ -430,72 +430,33 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 
 	if(uint16_payload_length ==1){
-
 		//void WriteThrRegDataStruct(uint8_t value_uint8, uint16_t value_uint16, uint32_t value_uint32, uint8_t register_index)
 		WriteThrRegDataStruct(received_data[0],0,0,LATEST_ACCESSED_REGISTER);
-
-
-		/******************************************************************************
-		// if payload length is only 1 byte
-		VALUE_UINT8 = received_data[0];
-		// then obviously return type is uint8. And array of received_data would be of a single element.
-		// Now after we received correct value. We need to apply conversion multuplier again and convert uint8/uint16 value into double.
-		//Store double in array representing REAL values of thruster registers
-
-		// LAST ACCESSED REGISTER should for READ or SET REQUEST should be set by the function which sended the request.
-		// It is implied that LAST_ACCESSED_REGISTER was defined correctly before executing ParseReadRequest
-		double multiplier = CONVERSION_DOUBLE[LATEST_ACCESSED_REGISTER];
-		ACTUAL_VALUE = (double)VALUE_UINT8 / multiplier;
-
-		//printf("\n After conversion multiplier ACTUAL VALUE = %f \n",ACTUAL_VALUE);
-
-		// Finally fill in the global array which will store ALL the register values
-		REGISTER_DATA[LATEST_ACCESSED_REGISTER]=ACTUAL_VALUE;
-
-		sprintf(print_str, "\n Parse Read Request: [%d] ACTUAL_VALUE= %.6f \n",LATEST_ACCESSED_REGISTER,ACTUAL_VALUE );
-		len_print = strlen(print_str);
-		deb_print_pure_debug((uint8_t *)print_str, len_print);
-
-		***************************************************************************/
-
-		sprintf(print_str, "\n Parse Read Request 2: [%d] ACTUAL_VALUE= %.6f \n",LATEST_ACCESSED_REGISTER,ReadThrRegData(LATEST_ACCESSED_REGISTER) );
-		len_print = strlen(print_str);
-		deb_print_pure_debug((uint8_t *)print_str, len_print);
+		sprintf(print_str, "\n Parse Read Request: [%d] ACTUAL_VALUE= %.6f \n",LATEST_ACCESSED_REGISTER,ReadThrRegData(LATEST_ACCESSED_REGISTER) );
+		//len_print = strlen(print_str);
+		//deb_print_pure_debug((uint8_t *)print_str, len_print);
+		SysEvent(0, EVENT_INFO, 3, (uint8_t *)print_str, strlen(print_str));
 
 	}
 
 	if(uint16_payload_length ==2){
 
 		//if payload length is 2 bytes, then return value should be stored as uint16_t
-		//VALUE_UINT16 = (received_data[1] <<8 )| received_data[0];
 
 		uint16_t temp_value_uint16 = (received_data[1] <<8 )| received_data[0];
 		WriteThrRegDataStruct(0,temp_value_uint16,0,LATEST_ACCESSED_REGISTER);
 
-
-		//double multiplier = CONVERSION_DOUBLE[LATEST_ACCESSED_REGISTER];
-		//ACTUAL_VALUE = (double)VALUE_UINT16 / multiplier;
-		//REGISTER_DATA[LATEST_ACCESSED_REGISTER]=ACTUAL_VALUE;
-
-		//sprintf(print_str, "\n Parse Read Request: [%d] ACTUAL_VALUE= %.6f \n",LATEST_ACCESSED_REGISTER,ACTUAL_VALUE );
+		sprintf(print_str, "\n Parse Read Request 2: [%d] ACTUAL_VALUE= %.6f \n",LATEST_ACCESSED_REGISTER,ReadThrRegData(LATEST_ACCESSED_REGISTER) );
 		//len_print = strlen(print_str);
 		//deb_print_pure_debug((uint8_t *)print_str, len_print);
-
-		//ReadThrRegData(LATEST_ACCESSED_REGISTER)
-		sprintf(print_str, "\n Parse Read Request 2: [%d] ACTUAL_VALUE= %.6f \n",LATEST_ACCESSED_REGISTER,ReadThrRegData(LATEST_ACCESSED_REGISTER) );
-		len_print = strlen(print_str);
-		deb_print_pure_debug((uint8_t *)print_str, len_print);
+		SysEvent(0, EVENT_INFO, 3, (uint8_t *)print_str, strlen(print_str));
 
 
 	}
 
 	if(uint16_payload_length ==4){
-		//TODO: Implement parser for fuse status. Fuses to be stored as uint32_t variable.
-		// This TODO is for later design iteration : Thruster test validation, and monitoring loop.
-		// Monitoring module for space craft operational variables would be implemented at next design stage.
-
+		//Fuse status to be stored as uint32_t variable.
 		//if payload length is 4 (fuses) then return value should be stored with uint32_t
-		//uint32_t i32 = v4[0] | (v4[1] << 8) | (v4[2] << 16) | (v4[3] << 24);
 		uint32_t temp_value_uint32 = received_data[0] | (received_data[1] << 8) | (received_data[2] << 16) | (received_data[3] << 24);
 		WriteThrRegDataStruct(0,0,temp_value_uint32,LATEST_ACCESSED_REGISTER);
 
@@ -504,130 +465,8 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 	if( uint16_payload_length >5 ){
 
-		//sprintf(print_str, "\n size of register datastruct: [%d] \n",sizeof(thr_register_data_t) );
-		//len_print = strlen(print_str);
-		//deb_print_pure_debug((uint8_t *)print_str, len_print);
-
-
-		//******************************* NEW CODE ********************8
-
 		memcpy(&THR_REGISTER_DATA.version_major,&received_data[0],sizeof(thr_register_data_t));
-		// ********************************NEW IMPLEMENTATION *********************
-
-		/*
-
-		//if payload is more then 4 then we are reading multiple registers
-
-		//sprintf(print_str, "\n Parse Request : Payload Length = %d \n",uint16_payload_length  );
-		//len_print = strlen(print_str);
-		//deb_print_pure_debug((uint8_t *)print_str, len_print);
-
-
-		//sprintf(print_str, "\n Reading Multiple Registers \n"  );
-		//len_print = strlen(print_str);
-		//deb_print_pure_debug((uint8_t *)print_str, len_print);
-
-		// Lets say that READ REQUEST TO ALL REGISTERS/ READ MORE THEN ONE REGISTER function will set last address to a value
-		// of a first address that is intended to be accessed
-		uint8_t next_register_index = LATEST_ACCESSED_REGISTER;
-		uint8_t length_of_next_register = REGISTER_LENGTH[next_register_index];
-		double multiplier = CONVERSION_DOUBLE[next_register_index];
-		//uint8_t starting_register = LATEST_ACCESSED_REGISTER; // first time
-
-		///sprintf(print_str, "\n Start RI= %d_RI_len=%d  Conversion_multiplier = %.2f \n",next_register_index,length_of_next_register,multiplier  );
-		//len_print = strlen(print_str);
-		//deb_print_pure_debug((uint8_t *)print_str, len_print);
-
-		int i = 0; // i referres to position in received_datavector, not register_index. Starting i is always 0.
-		uint32_t parse_start_time = (uint32_t)timGetSystime();
-		uint32_t current_time;
-		while( next_register_index<108 ){ // Untill last usable register !  WARNING !!! CHECK LENGTH OF ReadAllRegistersRequest !! This might trigger infitite loop
-			// It will trigger infinite loop if thruser reply with length of message that is greaater then 5 and less then enough to cover 101 registers !
-			//sprintf(print_str, "\nParse Iteration = %d length_of_next_register = %d \n", i,length_of_next_register);
-			//len_print = strlen(print_str);
-			//deb_print_pure_debug((uint8_t *)print_str, len_print);
-
-			//sprintf(print_str, "\n Next RI= %d Next_RI_len=%d  Conversion_multiplier = %.2f \n",next_register_index,length_of_next_register,multiplier  );
-			//len_print = strlen(print_str);
-			//deb_print_pure_debug((uint8_t *)print_str, len_print);
-			current_time = (uint32_t)timGetSystime();
-
-			if((current_time - parse_start_time)> 100){
-				//
-				 //
-				// * This is exit condition to prevent infinite loop.
-				// * In case thruster replies less bytes then expected - index will never reach exit condition.
-				// * To prevent this we introduce break after 100ms delay
-				// *
-				 // This is not the most elegant solution. But it is assumed that ReadAllRegisters will request amount of bytes
-				// * enough to cover all REGISTER_DATA. Thus in normal operation proccess time exceeded limit warning should never occure
-				// *
-
-
-
-
-				sprintf(print_str, "\nParse WARNING: Process time exceeded limit   next_register_index = %d  \n",next_register_index  );
-				len_print = strlen(print_str);
-				deb_print_pure_debug((uint8_t *)print_str, len_print);
-				current_time = (uint32_t)timGetSystime();
-
-
-
-				break;
-			}
-
-
-			if(length_of_next_register ==1){
-				VALUE_UINT8 = received_data[i];
-				multiplier = CONVERSION_DOUBLE[next_register_index];
-				ACTUAL_VALUE = (double)VALUE_UINT8 / multiplier;
-				REGISTER_DATA[next_register_index]=ACTUAL_VALUE;
-
-				//sprintf(print_str, "\n [%d] ACTUAL_VALUE= %.6f Conversion=%.6f  uint8_value =%d  \n",next_register_index,ACTUAL_VALUE,multiplier,VALUE_UINT8  );
-				//len_print = strlen(print_str);
-				//deb_print_pure_debug((uint8_t *)print_str, len_print);
-
-				next_register_index = next_register_index+1;
-				i = i+1;
-
-			}
-
-			if(length_of_next_register==2){
-				VALUE_UINT16 = (received_data[i+1] <<8 )| received_data[i]; // here problem / Compiles value out of wrong bytes
-				double multiplier = CONVERSION_DOUBLE[next_register_index];
-				ACTUAL_VALUE = (double)VALUE_UINT16 / multiplier;
-				REGISTER_DATA[next_register_index]=ACTUAL_VALUE;
-
-				//sprintf(print_str, "\n [%d] ACTUAL_VALUE= %.6f Conversion=%.6f  uint16_value =%d  \n",next_register_index,ACTUAL_VALUE,multiplier,VALUE_UINT16  );
-				//len_print = strlen(print_str);
-				//deb_print_pure_debug((uint8_t *)print_str, len_print);
-
-				next_register_index = next_register_index+2;
-				i = i+2;
-
-
-			}
-
-			if(length_of_next_register==4){
-
-				//sprintf(print_str, "\n [%d] Skip Fuse \n",next_register_index  );
-				//len_print = strlen(print_str);
-				//deb_print_pure_debug((uint8_t *)print_str, len_print);
-
-				next_register_index = next_register_index+4;
-				i=i+4;
-
-			}
-			length_of_next_register = REGISTER_LENGTH[next_register_index];
-			multiplier = CONVERSION_DOUBLE[next_register_index];
-
-			//sprintf(print_str, "\n Parse Iteration End: len_next_RI=%d   next_RI=[%d]  \n",length_of_next_register,next_register_index );
-			//len_print = strlen(print_str);
-			//deb_print_pure_debug((uint8_t *)print_str, len_print);
-
-		}
-
-	*/}
+	}
 
 
 
