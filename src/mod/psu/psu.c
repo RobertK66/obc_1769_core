@@ -606,3 +606,240 @@ fix16_t uq3_4_to_fix16(uint8_t val)
 	return (((uint32_t) val) * 4096); //shift to 12
 }
 
+
+void eps_rate_val(mval_t * mval, uint32_t id)
+{
+	if (mval == NULL)
+	{
+		/* Invalid pointer */
+		return;
+	}
+
+	mval->val = 0;
+	mval->quality = MV_VALUE_CRITICAL;
+
+	switch (id)
+	{
+	/* Housekeeping data */
+	case EPS_MVAL_HK_I_PV2_5V:
+		mval->val = q2_13_to_fix16(eps_hk_data.i_pv2_5v);
+		break;
+	case EPS_MVAL_HK_I_PV1_5V:
+		mval->val = q2_13_to_fix16(eps_hk_data.i_pv1_5v);
+		break;
+	case EPS_MVAL_HK_V_PV2:
+		mval->val = uq3_13_to_fix16(eps_hk_data.v_pv2);
+		break;
+	case EPS_MVAL_HK_V_5V_IN:
+		mval->val = uq3_13_to_fix16(eps_hk_data.v_5v_in);
+		break;
+	case EPS_MVAL_HK_I_PV1_3V3:
+		mval->val = q2_13_to_fix16(eps_hk_data.i_pv1_3v3);//
+		break;
+	case EPS_MVAL_HK_I_PV2_3V3:
+		mval->val = q2_13_to_fix16(eps_hk_data.i_pv2_3v3);//
+		break;
+	case EPS_MVAL_HK_V_PV1:
+		mval->val = uq3_13_to_fix16(eps_hk_data.v_pv1);//
+		break;
+	case EPS_MVAL_HK_V_3V3_IN:
+		mval->val = uq3_13_to_fix16(eps_hk_data.v_3v3_in);//
+		break;
+	case EPS_MVAL_HK_TEMP_BAT1SW:
+		mval->val = q7_8_to_fix16(eps_hk_data.temp_bat1_sw);
+		break;
+	case EPS_MVAL_HK_TEMP_5V:
+		mval->val = q7_8_to_fix16(eps_hk_data.temp_5v);
+		break;
+	case EPS_MVAL_HK_I_PV1_HV:
+		mval->val = q2_13_to_fix16(eps_hk_data.i_pv1_hv);
+		break;
+	case EPS_MVAL_HK_I_PV2_HV:
+		mval->val = q2_13_to_fix16(eps_hk_data.i_pv2_hv);
+		break;
+	case EPS_MVAL_HK_V_3V3_OUT:
+		mval->val = uq3_13_to_fix16(eps_hk_data.v_3v3_out);
+		break;
+	case EPS_MVAL_HK_V_HV:
+		mval->val = uq3_13_to_fix16(eps_hk_data.v_hv);
+		break;
+	case EPS_MVAL_HK_I_PV2_BAT1:
+		mval->val = q2_13_to_fix16(eps_hk_data.i_pv2_bat1);
+		break;
+	case EPS_MVAL_HK_I_PV1_BAT1:
+		mval->val = q2_13_to_fix16(eps_hk_data.i_pv1_bat1);
+		break;
+	case EPS_MVAL_HK_V_5V_OUT:
+		mval->val = uq3_13_to_fix16(eps_hk_data.v_5v_out);
+		break;
+	case EPS_MVAL_HK_V_BAT1:
+		mval->val = uq3_13_to_fix16(eps_hk_data.v_bat1);
+		break;
+	case EPS_MVAL_HK_I_PV2_BAT2:
+		mval->val = q2_13_to_fix16(eps_hk_data.i_pv2_bat2);
+		break;
+	case EPS_MVAL_HK_I_PV1_BAT2:
+		mval->val = q2_13_to_fix16(eps_hk_data.i_pv1_bat2);
+		break;
+	case EPS_MVAL_HK_VCC_MC:
+		mval->val = uq3_5_to_fix16(eps_hk_data.vcc_mc);
+		break;
+	case EPS_MVAL_HK_TEMP_MC:
+		mval->val = fix16_from_int((int) eps_hk_data.temp_mc);
+		break;
+	case EPS_MVAL_HK_V_BAT2:
+		mval->val = uq3_13_to_fix16(eps_hk_data.v_bat2);
+		break;
+	case EPS_MVAL_HK_TEMP_BAT1:
+		mval->val = q7_8_to_fix16(eps_hk_data.temp_bat1);
+		break;
+	case EPS_MVAL_HK_TEMP_BAT2:
+		mval->val = q7_8_to_fix16(eps_hk_data.temp_bat2);
+		break;
+	case EPS_MVAL_HK_STATUS_1:
+		mval->val = eps_hk_data.status_1;
+		break;
+	case EPS_MVAL_HK_STATUS_2:
+		mval->val = eps_hk_data.status_2;
+		break;
+	case EPS_MVAL_HK_STATUS_3:
+		mval->val = eps_hk_data.status_3;
+		break;
+	case EPS_MVAL_HK_STATUS_BAT1:
+		mval->val = fix16_from_int((int) eps_hk_data.status_bat1);
+		break;
+	case EPS_MVAL_HK_STATUS_BAT2:
+		mval->val = fix16_from_int((int) eps_hk_data.status_bat2);
+		break;
+	case EPS_MVAL_HK_REBOOT_MC:
+		mval->val = fix16_from_int((int) eps_hk_data.reboot_mc);
+		break;
+	case EPS_MVAL_HK_REBOOT_CC1:
+		mval->val = fix16_from_int((int) eps_hk_data.reboot_cc1);
+		break;
+	case EPS_MVAL_HK_REBOOT_CC2:
+		mval->val = fix16_from_int((int) eps_hk_data.reboot_cc2);
+		break;
+	case EPS_MVAL_HK_VCC_CC1:
+		mval->val = uq3_5_to_fix16(eps_hk_data.vcc_cc1);
+		break;
+	case EPS_MVAL_HK_TEMP_CC1:
+		mval->val = fix16_from_int((int) eps_hk_data.temp_cc1);
+		break;
+	case EPS_MVAL_HK_VCC_CC2:
+		mval->val = uq3_5_to_fix16(eps_hk_data.vcc_cc2);
+		break;
+	case EPS_MVAL_HK_TEMP_CC2:
+		mval->val = fix16_from_int((int) eps_hk_data.temp_cc2);
+		break;
+	case EPS_MVAL_HK_STATUS_CC1:
+		mval->val = eps_hk_data.status_cc1;
+		break;
+	case EPS_MVAL_HK_STATUS_CC2:
+		mval->val = eps_hk_data.status_cc2;
+		break;
+	case EPS_MVAL_HK_CC_ID:
+		mval->val = eps_hk_data.cc_id;
+		break;
+	case EPS_MVAL_HK_TBD:
+		mval->val = eps_hk_data.empty2;
+		break;
+	//case EPS_MVAL_EPS_SOFTWARE_VERSION:
+	//	mval->val = eps_hk_data.status_bat2;
+	//	break;
+
+		/* EPS settings */
+	case EPS_MVAL_SETTING_CURRENT_LIMIT_HV:
+		mval->val = uq3_4_to_fix16(eps_settings_data.current_lim_hv >> 1); /* Shift parity */
+		break;
+	case EPS_MVAL_SETTING_CURRENT_LIMIT_3V3_1:
+		mval->val = uq3_4_to_fix16(eps_settings_data.current_lim_3v3_1 >> 1); /* Shift parity */
+		break;
+	case EPS_MVAL_SETTING_CURRENT_LIMIT_3V3_2:
+		mval->val = uq3_4_to_fix16(eps_settings_data.current_lim_3v3_2 >> 1); /* Shift parity */
+		break;
+	case EPS_MVAL_SETTING_CURRENT_LIMIT_3V3_3:
+		mval->val = uq3_4_to_fix16(eps_settings_data.current_lim_3v3_3 >> 1); /* Shift parity */
+		break;
+	case EPS_MVAL_SETTING_CURRENT_LIMIT_3V3_BACKUP:
+		mval->val = uq3_4_to_fix16(eps_settings_data.current_lim_3v3_backup >> 1); /* Shift parity */
+		break;
+	case EPS_MVAL_SETTING_CURRENT_LIMIT_5V_1:
+		mval->val = uq3_4_to_fix16(eps_settings_data.current_lim_1 >> 1); /* Shift parity */
+		break;
+	case EPS_MVAL_SETTING_CURRENT_LIMIT_5V_2:
+		mval->val = uq3_4_to_fix16(eps_settings_data.current_lim_2 >> 1); /* Shift parity */
+		break;
+	case EPS_MVAL_SETTING_CURRENT_LIMIT_5V_3:
+		mval->val = uq3_4_to_fix16(eps_settings_data.current_lim_3 >> 1); /* Shift parity */
+		break;
+	case EPS_MVAL_SETTING_CURRENT_LIMIT_5V_4:
+		mval->val = uq3_4_to_fix16(eps_settings_data.current_lim_4 >> 1); /* Shift parity */
+		break;
+	case EPS_MVAL_SETTING_MC_FORCE_OUTPUT_VALUE_REGISTER_1:
+		mval->val = (uint8_t)(eps_settings_data.mc_force_out_val_1 & 0xFF);
+		break;
+	case EPS_MVAL_SETTING_MC_FORCE_OUTPUT_VALUE_REGISTER_2:
+		mval->val = (uint8_t)(eps_settings_data.mc_force_out_val_2 & 0xFF);
+		break;
+	case EPS_MVAL_SETTING_MC_FORCE_OUTPUT_VALUE_REGISTER_3:
+		mval->val = (uint8_t)(eps_settings_data.mc_force_out_val_3 & 0xFF);
+		break;
+	case EPS_MVAL_SETTING_MC_OUTPUT_VALUE_REGISTER_1:
+		mval->val = (uint8_t)(eps_settings_data.mc_out_val_1 & 0xFF);
+		break;
+	case EPS_MVAL_SETTING_MC_OUTPUT_VALUE_REGISTER_2:
+		mval->val = (uint8_t)(eps_settings_data.mc_out_val_2 & 0xFF);
+		break;
+	case EPS_MVAL_SETTING_MC_OUTPUT_VALUE_REGISTER_3:
+		mval->val = (uint8_t)(eps_settings_data.mc_out_val_3 & 0xFF);
+		break;
+	case EPS_MVAL_SETTING_CC1_FORCE_OUTPUT_VALUE_REGISTER:
+		mval->val = (uint8_t)(eps_settings_data.cc1_force_out_val & 0xFF);
+		break;
+	case EPS_MVAL_SETTING_CC1_OUTPUT_VALUE_REGISTER:
+		mval->val = (uint8_t)(eps_settings_data.cc1_output & 0xFF);
+		break;
+	case EPS_MVAL_SETTING_CC2_FORCE_OUTPUT_VALUE_REGISTER:
+		mval->val = (uint8_t)(eps_settings_data.cc2_force_out_val & 0xFF);
+		break;
+	case EPS_MVAL_SETTING_CC2_OUTPUT_VALUE_REGISTER:
+		mval->val = (uint8_t)(eps_settings_data.cc2_output & 0xFF);
+		break;
+	//case EPS_MVAL_SETTING_OBC_WATCHDOG:
+	//	mval->val = (eps_settings_data.obc_watchdog & 0xFF);
+	//	break;
+
+	default:
+		mval->val = 0;
+		mval->quality = MV_VALUE_CRITICAL;
+		return;
+	}
+
+	if (eps_hk_data.cc_id == 0xAB || eps_hk_data.cc_id == 0xAC)
+	{
+		mval->quality = MV_VALUE_GOOD;
+	}
+	else
+	{
+		mval->quality = MV_VALUE_CRITICAL;
+	}
+
+	if (id < EPS_MVAL_SETTING_CURRENT_LIMIT_HV)
+	{
+		/* Housekeeping data */
+		if (eps_hk_data.data_valid == 0)
+		{
+			mval->quality = MV_VALUE_CRITICAL;
+		}
+	}
+	else
+	{
+		/* Settings data */
+		if (eps_settings_data.data_valid == 0)
+		{
+			mval->quality = MV_VALUE_CRITICAL;
+		}
+	}
+}
+

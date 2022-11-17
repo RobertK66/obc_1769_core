@@ -14,7 +14,7 @@
 #include "../l7_climb_app.h"
 #include "../l2_debug_com.h"
 #include "../../ClimbObc.h"
-
+#include "../libfixmath/fix16.h"
 
 // init data needed. Choose UARt and 2 GPIO Pins to be used
 typedef struct {
@@ -208,6 +208,219 @@ typedef struct eps_hk_data_s
 	uint8_t data_valid;
 
 } eps_hk_data_t;
+
+typedef enum
+{
+    MV_VALUE_GOOD = 0, MV_SENSOR_DEAD, MV_VALUE_OUT_OF_RANGE, MV_VALUE_CRITICAL, MV_VALUE_ID_NOT_DEFINED
+} quality_en;
+
+
+typedef struct mval_s
+{
+    quality_en quality;
+    fix16_t val;
+}
+mval_t;
+
+
+enum mval_id
+{
+	/*
+
+    // OBC MVAL IDs /
+    OBC_MVAL_MAG_X = 1, // per setter and getter
+    OBC_MVAL_MAG_Y,
+    OBC_MVAL_MAG_Z,
+
+    OBC_MVAL_TEMP,
+
+    OBC_MVAL_GYRO_X, //per setter and getter
+    OBC_MVAL_GYRO_Y,
+    OBC_MVAL_GYRO_Z,
+    OBC_MVAL_GYRO_Y1,
+
+    OBC_MVAL_MPU_GYRO_X, //per setter and getter
+    OBC_MVAL_MPU_GYRO_Y,
+    OBC_MVAL_MPU_GYRO_Z,
+
+    OBC_MVAL_MPU_TEMP,
+
+    OBC_MVAL_RTC_TIME_S,
+    OBC_MVAL_RTC_TIME,
+    OBC_MVAL_RTC_DATE,
+    OBC_MVAL_RTC_UTC,
+
+
+    // Bottom panel MVAL IDs /
+    OBC_MVAL_MAG_BP_X, // per setter and getter //
+    OBC_MVAL_MAG_BP_Y,
+    OBC_MVAL_MAG_BP_Z,
+
+    OBC_MVAL_MAG_BOOM_X, // per setter and getter //
+    OBC_MVAL_MAG_BOOM_Y,
+    OBC_MVAL_MAG_BOOM_Z,
+
+    // Light sensor IDs //
+    OBC_MVAL_LS_A, // per setter and getter //
+    OBC_MVAL_LS_B,
+    OBC_MVAL_LS_C,
+    OBC_MVAL_LS_D,
+    OBC_MVAL_LS_BP,
+    OBC_MVAL_LS_TP,
+
+    // Temperature sensor IDs //
+    OBC_MVAL_TEMP_A,
+    OBC_MVAL_TEMP_B,
+    OBC_MVAL_TEMP_C,
+    OBC_MVAL_TEMP_D,
+    OBC_MVAL_TEMP_BP,
+    OBC_MVAL_TEMP_TP,
+
+    // MPPT sensor IDs //
+    OBC_MVAL_MPPT1_VOLTAGE_A,
+    OBC_MVAL_MPPT2_VOLTAGE_A,
+    OBC_MVAL_MPPT1_VOLTAGE_B,
+    OBC_MVAL_MPPT2_VOLTAGE_B,
+    OBC_MVAL_MPPT1_VOLTAGE_C,
+    OBC_MVAL_MPPT2_VOLTAGE_C,
+    OBC_MVAL_MPPT1_VOLTAGE_D,
+    OBC_MVAL_MPPT2_VOLTAGE_D,
+
+    OBC_MVAL_MPPT1_CURRENT_A,
+    OBC_MVAL_MPPT2_CURRENT_A,
+    OBC_MVAL_MPPT1_CURRENT_B,
+    OBC_MVAL_MPPT2_CURRENT_B,
+    OBC_MVAL_MPPT1_CURRENT_C,
+    OBC_MVAL_MPPT2_CURRENT_C,
+    OBC_MVAL_MPPT1_CURRENT_D,
+    OBC_MVAL_MPPT2_CURRENT_D,
+
+    // Reset counters //
+    OBC_MVAL_RC_A,
+    OBC_MVAL_RC_B,
+    OBC_MVAL_RC_C,
+    OBC_MVAL_RC_D,
+    OBC_MVAL_RC_BP,
+    OBC_MVAL_RC_SA,
+
+    // GPS IDs //
+    OBC_MVAL_GPS_LAT,
+    OBC_MVAL_GPS_LAT_DIR,
+    OBC_MVAL_GPS_LON,
+    OBC_MVAL_GPS_LON_DIR,
+    OBC_MVAL_GPS_HEIGHT,
+    OBC_MVAL_GPS_HDOP,
+    OBC_MVAL_GPS_UTC_TIME,
+    OBC_MVAL_GPS_UTC_DATE,
+
+    // Merged values //
+    OBC_MVAL_MAG_MERGED_X,
+    OBC_MVAL_MAG_MERGED_Y,
+    OBC_MVAL_MAG_MERGED_Z,
+
+    OBC_MVAL_GYRO_MERGED_X,
+    OBC_MVAL_GYRO_MERGED_Y,
+    OBC_MVAL_GYRO_MERGED_Z,
+    */
+
+    // EPS IDs //
+    EPS_MVAL_HK_I_PV2_5V,
+    EPS_MVAL_HK_I_PV1_5V,
+    EPS_MVAL_HK_V_PV2,
+    EPS_MVAL_HK_V_5V_IN,
+    EPS_MVAL_HK_I_PV1_3V3,
+    EPS_MVAL_HK_I_PV2_3V3,
+    EPS_MVAL_HK_V_PV1,
+    EPS_MVAL_HK_V_3V3_IN,
+    EPS_MVAL_HK_TEMP_BAT1SW,
+    EPS_MVAL_HK_TEMP_5V,
+    EPS_MVAL_HK_I_PV1_HV,
+    EPS_MVAL_HK_I_PV2_HV,
+    EPS_MVAL_HK_V_3V3_OUT,
+    EPS_MVAL_HK_V_HV,
+    EPS_MVAL_HK_I_PV2_BAT1,
+    EPS_MVAL_HK_I_PV1_BAT1,
+    EPS_MVAL_HK_V_5V_OUT,
+    EPS_MVAL_HK_V_BAT1,
+    EPS_MVAL_HK_I_PV2_BAT2,
+    EPS_MVAL_HK_I_PV1_BAT2,
+    EPS_MVAL_HK_VCC_MC,
+    EPS_MVAL_HK_TEMP_MC,
+    EPS_MVAL_HK_V_BAT2,
+    EPS_MVAL_HK_TEMP_BAT1,
+    EPS_MVAL_HK_TEMP_BAT2,
+    EPS_MVAL_HK_STATUS_1,
+    EPS_MVAL_HK_STATUS_2,
+    EPS_MVAL_HK_STATUS_3,
+    EPS_MVAL_HK_STATUS_BAT1,
+    EPS_MVAL_HK_STATUS_BAT2,
+    EPS_MVAL_HK_REBOOT_MC,
+    EPS_MVAL_HK_REBOOT_CC1,
+    EPS_MVAL_HK_REBOOT_CC2,
+    EPS_MVAL_HK_VCC_CC1,
+    EPS_MVAL_HK_TEMP_CC1,
+    EPS_MVAL_HK_VCC_CC2,
+    EPS_MVAL_HK_TEMP_CC2,
+    EPS_MVAL_HK_STATUS_CC1,
+    EPS_MVAL_HK_STATUS_CC2,
+    EPS_MVAL_HK_CC_ID,
+    EPS_MVAL_HK_TBD,
+
+    // EPS settings IDs //
+
+    EPS_MVAL_SETTING_CURRENT_LIMIT_HV,
+    EPS_MVAL_SETTING_CURRENT_LIMIT_3V3_1,
+    EPS_MVAL_SETTING_CURRENT_LIMIT_3V3_2,
+    EPS_MVAL_SETTING_CURRENT_LIMIT_3V3_3,
+    EPS_MVAL_SETTING_CURRENT_LIMIT_3V3_BACKUP,
+    EPS_MVAL_SETTING_CURRENT_LIMIT_5V_1,
+    EPS_MVAL_SETTING_CURRENT_LIMIT_5V_2,
+    EPS_MVAL_SETTING_CURRENT_LIMIT_5V_3,
+    EPS_MVAL_SETTING_CURRENT_LIMIT_5V_4,
+    EPS_MVAL_SETTING_MC_FORCE_OUTPUT_VALUE_REGISTER_1,
+    EPS_MVAL_SETTING_MC_FORCE_OUTPUT_VALUE_REGISTER_2,
+    EPS_MVAL_SETTING_MC_FORCE_OUTPUT_VALUE_REGISTER_3,
+    EPS_MVAL_SETTING_MC_OUTPUT_VALUE_REGISTER_1,
+    EPS_MVAL_SETTING_MC_OUTPUT_VALUE_REGISTER_2,
+    EPS_MVAL_SETTING_MC_OUTPUT_VALUE_REGISTER_3,
+    EPS_MVAL_SETTING_CC1_FORCE_OUTPUT_VALUE_REGISTER,
+    EPS_MVAL_SETTING_CC1_OUTPUT_VALUE_REGISTER,
+    EPS_MVAL_SETTING_CC2_FORCE_OUTPUT_VALUE_REGISTER,
+    EPS_MVAL_SETTING_CC2_OUTPUT_VALUE_REGISTER,
+
+
+	/*
+    // SP IDs //
+
+    // TOP LAYER IDs //
+    STACIE_TEMP_1, // per setter and getter //
+    STACIE_TEMP_2, // per setter and getter //
+    OBC_STATE, // per setter and getter //
+    ACDS_STATE, // per setter and getter //
+
+    // STATE MASCHINE COMMANDS//
+
+    ACDS_SHUTDOWN, // per setter and getter //
+    SA_SHUTDOWN, // per setter and getter //
+    FLUSH_BUFFER, // per setter and getter //
+    ALLOW_TRASMISSION, // per setter and getter //
+
+	OBC_MVAL_MAG_BOOM_TEMPERATURE,
+	OBC_MVAL_HEAP_FREE_BYTES_REMAINING,
+	OBC_MVAL_HEAP_MINIMUM_EVER_FREE_BYTES_REMAINING,
+	OBC_MVAL_OBC_RESET_COUNTER,
+	EPS_MVAL_SETTING_OBC_WATCHDOG,
+	EPS_MVAL_EPS_SOFTWARE_VERSION,
+	OBC_MVAL_STACIE_RSSI_A,
+	OBC_MVAL_STACIE_RSSI_C,
+	OBC_MVAL_STACIE_MODE_A,
+	OBC_MVAL_STACIE_MODE_C,
+	OBC_MVAL_STACIE_VERSION,
+
+	MVAL_MAX_ENUMVAL
+	*/
+};
+
 
 void i2c_Proccess_Received_Buffer(I2C_Data i2cJob, uint8_t *i2c_buffer,uint8_t i2c_buffer_len);
 void PSU_datavector_request(int argc, char *argv[]);
