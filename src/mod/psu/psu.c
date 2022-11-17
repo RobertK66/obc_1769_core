@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "../libfixmath/fix16.h"
+
 #define PSU_BUFFER_LENGTH 70 // Total size of PSU reply
 
 //I2C receive buffer
@@ -29,6 +31,8 @@ uint8_t PSU_register_request[1]; // PSU starting access register This should be 
 
 eps_hk_data_t HK_DATA_PSU;
 eps_hk_data_t eps_hk_data;
+
+eps_settings_t eps_settings_data;
 
 
 // So instead of structure with defined names of variables - lets use
@@ -476,3 +480,129 @@ void eps_housekeeping_data_read( uint8_t block)
 		*/
 	}
 }
+
+
+
+void eps_settings_read_all(uint8_t cc)
+{
+
+	// sentds i2c request for PSU settings
+	// Loads data into eps_settings_data upon reception
+	static I2C_Data job_tx =
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 };
+	static I2C_Data job_rx =
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 };
+	static uint8_t tx[1];
+
+	if (job_rx.job_done != 1)
+	{
+		/* Old job not finished - prevent job data from being  - please slow down
+		if (cc == CC1)
+		{
+			obc_error_counters.i2c0_error_counter++;
+		}
+		else
+		{
+			obc_error_counters.i2c2_error_counter++;
+		}
+		*/
+
+		eps_settings_data.data_valid = 0;
+		job_rx.job_done = 1; // Set for next call
+		job_rx.error = I2C_ERROR_JOB_NOT_FINISHED; // Set error to mark values old
+		return;
+	}
+
+	if (job_rx.error != I2C_ERROR_NO_ERROR || job_tx.error != I2C_ERROR_NO_ERROR)
+	{
+		/* Transmission error */
+		eps_settings_data.data_valid = 0;
+	}
+	else
+	{
+		eps_settings_data.data_valid = 1;
+	}
+
+	/*
+	if (cc == CC1)
+	{
+		job_tx.device = LPC_I2C0;
+		job_rx.device = LPC_I2C0;
+	}
+	else
+	{
+		job_tx.device = LPC_I2C2;
+		job_rx.device = LPC_I2C2;
+	}
+	*/
+	job_rx.device = LPC_I2C2;
+	job_rx.device = LPC_I2C2;
+
+	tx[0] = 64; /* Current Limit HV ... Nr. 64 */
+
+	job_tx.adress = I2C_ADR_EPS;
+	job_tx.tx_data = tx;
+	job_tx.tx_size = 1;
+	job_tx.rx_data = NULL;
+	job_tx.rx_size = 0;
+
+	i2c_add_job(&job_tx);
+
+	job_rx.adress = I2C_ADR_EPS;
+	job_rx.tx_data = NULL;
+	job_rx.tx_size = 0;
+	job_rx.rx_data = &(eps_settings_data.current_lim_hv);
+	job_rx.rx_size = 24;
+
+	if (i2c_add_job(&job_rx))
+	{
+		/*
+		if (cc == CC1)
+		{
+			obc_error_counters.i2c0_error_counter++;
+		}
+		else
+		{
+			obc_error_counters.i2c2_error_counter++;
+		}
+		*/
+	}
+}
+
+
+
+
+
+/// fix conversion functions
+
+//to convert from any format to fix16_t    which is q15_1
+fix16_t q2_13_to_fix16(int16_t val)
+{
+	return ((((uint32_t) val) * 8)); // shift to  3
+}
+
+fix16_t uq3_13_to_fix16(uint16_t val)
+{
+	return ((((uint32_t) val) * 8));
+}
+
+fix16_t q7_8_to_fix16(int16_t val)
+{
+	return ((((uint32_t) val) * 256)); // shift to 8
+}
+
+fix16_t uq8_8_to_fix16(uint16_t val)
+{
+	return ((((uint32_t) val) * 256)); // shift to 8
+}
+
+fix16_t uq3_5_to_fix16(uint8_t val)
+{
+	return (((uint32_t) val) * 2048); // shift to 11
+}
+
+fix16_t uq3_4_to_fix16(uint8_t val)
+{
+	return (((uint32_t) val) * 4096); //shift to 12
+}
+
