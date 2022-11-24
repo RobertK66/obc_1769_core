@@ -16,6 +16,7 @@
 #include <ado_modules.h>
 
 #include "ai2c/obc_i2c.h"
+#include "modules_globals.h"
 
 typedef sensor_values_t sen_eventarg_meassurement_t;
 
@@ -68,6 +69,7 @@ void sen_init(void *data) {
 }
 
 void sen_main() {
+	LAST_STARTED_MODULE = 6;
 	if (readInProgress) {
 		if (readJob.job_done == 1) {
 			readInProgress = false;
@@ -100,10 +102,12 @@ void sen_main() {
 bool ReadSHT30Async();
 
 void SenReadAllValues() {
+	LAST_STARTED_MODULE = 601;
 	ReadSHT30Async();
 }
 
 bool ReadSHT30Async() {
+	LAST_STARTED_MODULE = 602;
 	if (readInProgress) {
 		return false;
 	}
