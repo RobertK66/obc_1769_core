@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+
 #include <ado_uart.h>
 #include <ado_modules.h>
 
@@ -31,6 +32,9 @@ typedef struct __attribute__((packed)) {
 	char		fix;
 	uint32_t	utcTimeSec;
 	uint16_t	utcTimeMs;
+	double lat; // decimal degree format
+	double lon; // decimal degree
+	double alt; // meters
 } gps_ggamsg_t;
 
 typedef struct __attribute__((packed)) {
@@ -131,7 +135,10 @@ void gpsInit (void *initData) {
 }
 
 void gpsMain (void) {
+
+
 	LAST_STARTED_MODULE = 8;
+
 	// Uart Rx
 	int32_t stat = Chip_UART_ReadLineStatus(gpsInitData->pUart);
 	if (stat & UART_LSR_RDR) {
@@ -163,6 +170,7 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 	bool processed = false;
 	char msg[8];
 	strncpy(msg, argv[0], 8);
+
 	if (strncmp(msg, "PMTK",4)==0) {
 		// PNTK Messages are responses to PMTK commands (or sent on Power on)
 		processed = true;
@@ -192,12 +200,95 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 	} else if (strncmp(&msg[2], "GGA", 3)==0) {
 		// xxGGA Message shows essential fix data
 		processed = true;
-//		gps_ggamsg_t ggamsg;
-//		ggamsg.talker = msg[1];					// 'P' for GPS, 'L' for GLONASS, 'N' for 'generic' method?
-//		ggamsg.fix = argv[6][0];				// '0' invalid, '1' GNSS fix, '2' DGPS fix, ...
-//		ggamsg.utcTimeSec = atoi(argv[1]);		// argv[1] is format 'hhmmss.sss' -> to int gives hhmmss as integer
-//		ggamsg.utcTimeMs = atoi(&(argv[1][7])); // argv[1] is format 'hhmmss.sss' -> to int from position [1][7] gives ms as integer
-//		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_GGA, &ggamsg, sizeof(ggamsg));
+		char temp_dd[2]; //string containing   DD part of latitude neglecting MM.MMM part in DDMM.MMM
+		char temp_mmdotmmm[6]; // string containing   MM.MMM part of latitude neglecting DD part in DDMM.MMM
+		double latlon_dd;
+		double latlon_mm;
+
+
+		gps_ggamsg_t ggamsg;
+		ggamsg.talker = msg[1];					// 'P' for GPS, 'L' for GLONASS, 'N' for 'generic' method?
+		ggamsg.fix = argv[6][0];				// '0' invalid, '1' GNSS fix, '2' DGPS fix, ...
+		ggamsg.utcTimeSec = atoi(argv[1]);		// argv[1] is format 'hhmmss.sss' -> to int gives hhmmss as integer
+		ggamsg.utcTimeMs = atoi(&(argv[1][7])); // argv[1] is format 'hhmmss.sss' -> to int from position [1][7] gives ms as integer
+
+		// Parse latitude and longitude // Inpur of NMEA string is DDMM.MMM  format
+		// Note ! Some GGA are DDMM.MMM others are DDMM.MMMMMMM
+		// Since we dont have a GNSS device defined currently - I do parser for DDMM.MMM  which should work with DDMM.MMMMMMM also
+		// parsing for additional .___MMMM can be easily added later if device will supply constant format.
+
+		// example_nmea= "$GPGGA,172814.0,3723.46587704,N,12202.26957864,W,2,6,1.2,18.893,M,-25.669,M,2.0 0031*4F"
+
+		temp_dd[0] = argv[2][0];
+		temp_dd[1] = argv[2][1];
+
+		latlon_dd = atof(temp_dd); // convert char to double
+
+
+		temp_mmdotmmm[0] =argv[2][2];
+		temp_mmdotmmm[1] =argv[2][3];
+		temp_mmdotmmm[2] = (char)0x2e; // 0x2e ="."
+		temp_mmdotmmm[3] = argv[2][5];
+		temp_mmdotmmm[4] = argv[2][6];
+		temp_mmdotmmm[5] = argv[2][7];
+
+		latlon_mm = atof(temp_mmdotmmm); // convert char to double
+
+		ggamsg.lat = latlon_dd + latlon_mm/60; // format is decimal degrees not dd mm ss
+
+		if (strncmp(argv[3], "N", 1)==0){
+			// if N - do nothing decimal degrees are already positive
+		}
+		if (strncmp(argv[3], "S", 1)==0){
+			ggamsg.lat = (-1)*ggamsg.lat;
+				}
+
+
+		// Longitude parser // the same // assume DDMM.MMM format (which will work with DDMM.MMMMMMM messages also)
+
+		temp_dd[0] = argv[4][0];
+		temp_dd[1] = argv[4][1];
+
+
+
+		temp_mmdotmmm[0] =argv[4][2];
+		temp_mmdotmmm[1] =argv[4][3];
+		temp_mmdotmmm[2] = (char)0x2e; // 0x2e ="."
+		temp_mmdotmmm[3] = argv[4][5];
+		temp_mmdotmmm[4] = argv[4][6];
+		temp_mmdotmmm[5] = argv[4][7];
+
+		latlon_dd = atof(temp_dd); // convert char to double
+		latlon_mm = atof(temp_mmdotmmm); // convert char to double
+
+		ggamsg.lon = latlon_dd + latlon_mm/60; // format is decimal degrees not dd mm ss
+
+		if (strncmp(argv[5], "E", 1)==0){
+			// if N - do nothing decimal degrees are already positive
+		}
+		if (strncmp(argv[5], "W", 1)==0){
+			ggamsg.lon = (-1)*ggamsg.lon;
+		}
+
+
+		// Parse altitude
+		ggamsg.alt = atof(argv[9]); // altitude above mean sea level
+		if (strncmp(argv[10], "M", 1)==0){
+			// unit is already in meters !
+		}
+		else{
+			// WARNING ! Assume that unit output will change during on orbit operation
+			// Is this possible that output unit can change ?
+			// if so ! we have to convert unit to meters and store it.
+
+			// Check which other units device can possibly output !
+			// For each possible unit do the conversion to meters (or other unit that we would like to use)
+
+		}
+
+		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_GGA, &ggamsg, sizeof(ggamsg));
+
+
 	} else if (strncmp(&msg[2], "GSA", 3)==0) {
 		// xxGSA Message shows fix details
 		processed = true;
@@ -329,6 +420,7 @@ static gps_rx_state gpsRxStatus = GPS_RX_IDLE;
 
 
 void gpsProcessRxByte(uint8_t rxByte) {
+
 	LAST_STARTED_MODULE = 805;
 
 	switch (gpsRxStatus) {
