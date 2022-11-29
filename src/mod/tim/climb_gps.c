@@ -8,15 +8,12 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 #include <ado_uart.h>
 #include <ado_modules.h>
 
 #include "obc_time.h"
 #include "../modules_globals.h"
-
-#include "../l2_debug_com.h"
 
 // Event structs - used as API to ground station (or debug IF) only
 //typedef struct __attribute__((packed)) {
