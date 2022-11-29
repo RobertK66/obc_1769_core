@@ -8,6 +8,7 @@
 #include "hw_check.h"
 
 #include "l2_debug_com.h"
+#include "modules_globals.h"
 
 pinmux_array_t *hwcInitData;
 
@@ -28,6 +29,7 @@ void _hwc_init (pinmux_array_t *initData) {
 }
 
 void hwc_main (void ) {
+	LAST_STARTED_MODULE=3;
 	loopCounter++;
 	memWaitLoops--;
 	if (loopCounter >= toggleTimer) {
