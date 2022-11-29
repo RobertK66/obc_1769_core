@@ -135,17 +135,6 @@ void gpsInit (void *initData) {
 	InitUart(gpsInitData->pUart, 9600, gpsUartIRQ);
 	gpsFirstByteAfterReset = true;
 
-
-	/// TEST MESSAGE DURING INIT FOR DEBUG
-	uint8_t request[4];
-	request[0] =0x01;
-	request[1] = 0x02;
-	request[2] = 0x03;
-	request[3] = 0x00; // checksum
-	uint8_t len = sizeof(request);
-	gpsSendBytes(request,len);
-	////////////////////////////////////
-
 }
 
 void gpsMain (void) {
@@ -183,10 +172,6 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 	LAST_STARTED_MODULE = 802;
 	bool processed = false;
 	char msg[8];
-
-	char print_str[200];
-	int print_len;
-
 	strncpy(msg, argv[0], 8);
 
 	if (strncmp(msg, "PMTK",4)==0) {
@@ -304,12 +289,7 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 
 		}
 
-
-		//////////debug
-		sprintf(print_str, "\n Received GGA data : lat= %.6f lon=%.6f alt = %.2f [m] \n", ggamsg.lat, ggamsg.lon, ggamsg.alt );
-		print_len = strlen(print_str);
-		deb_print_pure_debug((uint8_t *)print_str, print_len);
-		//SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_GGA, &ggamsg, sizeof(ggamsg));
+		SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_GGA, &ggamsg, sizeof(ggamsg));
 
 
 	} else if (strncmp(&msg[2], "GSA", 3)==0) {
@@ -330,12 +310,6 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 	} else if (strncmp(&msg[2], "RMC", 3)==0) {
 		// xxRMC Message shows minimum recommended position data
 		processed = true;
-		//////////debug
-		sprintf(print_str, "\n Starting RMC proccessing \n" );
-		print_len = strlen(print_str);
-		deb_print_pure_debug((uint8_t *)print_str, print_len);
-
-
 		if (argv[2][0] == 'A') {
 			// valid fix
 			uint32_t time = atoi(argv[1]);		// argv[1] is format 'hhmmss.sss' -> to int gives hhmmss as integer
@@ -450,12 +424,7 @@ static gps_rx_state gpsRxStatus = GPS_RX_IDLE;
 
 void gpsProcessRxByte(uint8_t rxByte) {
 
-	//deb_print_pure_debug(&rxByte, 1); // print received byte into debug uart for visualization
-	char print_str[200];
-	int len;
-
 	LAST_STARTED_MODULE = 805;
-
 
 	switch (gpsRxStatus) {
 	case GPS_RX_IDLE:
@@ -471,8 +440,7 @@ void gpsProcessRxByte(uint8_t rxByte) {
 
 	case GPS_RX_DATA:
 		if (rxByte == '*') {
-			gpsRxStatus = GPS_RX_CHCKSUM1; //This was in original function
-			//gpsRxStatus = GPS_RX_LF; // With this I will just skip CHECKSUM check and wait for LF
+			gpsRxStatus = GPS_RX_CHCKSUM1;
 		} else {
 			gpsRxChecksum ^= rxByte;
 			if (rxByte == ',') {
@@ -504,7 +472,6 @@ void gpsProcessRxByte(uint8_t rxByte) {
 		} else {
 			SysEvent(MODULE_ID_GPS, EVENT_ERROR, EID_GPS_CRCERROR, NULL, 0);
 			gpsRxStatus = GPS_RX_IDLE;
-			//gpsRxStatus = GPS_RX_CHCKSUM2; // WARNING ! I manually add it to skip checksum check !
 		}
 		break;
 	}
@@ -521,7 +488,6 @@ void gpsProcessRxByte(uint8_t rxByte) {
 		} else {
 			SysEvent(MODULE_ID_GPS, EVENT_ERROR, EID_GPS_CRCERROR, NULL, 0);
 			gpsRxStatus = GPS_RX_IDLE;
-			//gpsRxStatus = GPS_RX_CR; // WARNING ! Manually add it to skip checksumm check
 		}
 		break;
 	}
@@ -532,56 +498,19 @@ void gpsProcessRxByte(uint8_t rxByte) {
 		} else {
 			SysEvent(MODULE_ID_GPS, EVENT_ERROR, EID_GPS_MSGERROR, NULL, 0);
 			gpsRxStatus = GPS_RX_IDLE;
-			//gpsRxStatus = GPS_RX_LF; //WARNING !
 		}
 		break;
 
 	case GPS_RX_LF:
-
 		if (rxByte == 0x0a) {
 			// ok the message is finally good here.
 			if (!gpsProcessNmeaMessage(gpsFieldCnt, gpsNmeaMessage)) {
-				//SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_RAW, gpsRxBuffer, gpsRxIdx);
-				// pure print of full received NMEA message
-
-				//////////debug
-				//sprintf(print_str, "\n Proccessing NMEA FAILED \n" );
-				//len = strlen(print_str);
-				//deb_print_pure_debug((uint8_t *)print_str, len);
-				//deb_print_pure_debug(gpsRxBuffer, gpsRxIdx); //if processing failed ?
-				//sprintf(print_str, "\n" );
-				//len = strlen(print_str);
-				//deb_print_pure_debug((uint8_t *)print_str, len);
-				//debug end
-			}
-			else{
-				//////////debug
-				//sprintf(print_str, "\n Proccessing NMEA Success \n");
-				//len = strlen(print_str);
-				//deb_print_pure_debug((uint8_t *)print_str, len);
-				//deb_print_pure_debug(gpsRxBuffer, gpsRxIdx); //if next byte is not LF
-				//sprintf(print_str, "\n" );
-				//len = strlen(print_str);
-				//deb_print_pure_debug((uint8_t *)print_str, len);
-				//debug end
-
+				SysEvent(MODULE_ID_GPS, EVENT_INFO, EID_GPS_NMEA_MSG_RAW, gpsRxBuffer, gpsRxIdx);
 			}
 			gpsRxStatus = GPS_RX_IDLE;
 		} else {
-			//SysEvent(MODULE_ID_GPS, EVENT_ERROR, EID_GPS_MSGERROR, NULL, 0);
-			gpsRxStatus = GPS_RX_IDLE; // This was in original function
-			gpsRxStatus = GPS_RX_LF;  // But I will wait for LF wait for LF
-
-			//////////debug
-			//sprintf(print_str, "\n next byte is not LF error rxByte=  %d \n", rxByte);
-			//len = strlen(print_str);
-			//deb_print_pure_debug((uint8_t *)print_str, len);
-			//deb_print_pure_debug(gpsRxBuffer, gpsRxIdx); //if next byte is not LF
-			//sprintf(print_str, "\n" );
-			//len = strlen(print_str);
-			//deb_print_pure_debug((uint8_t *)print_str, len);
-			//debug end
-
+			SysEvent(MODULE_ID_GPS, EVENT_ERROR, EID_GPS_MSGERROR, NULL, 0);
+			gpsRxStatus = GPS_RX_IDLE;
 		}
 		break;
 
