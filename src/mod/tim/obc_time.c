@@ -347,7 +347,7 @@ juliandayfraction timConvertUtcDateToJdf(uint32_t gpsDate) {
 	uint8_t  month = (uint8_t)((gpsDate/100) % 100);
 	uint8_t  dayOfMonth = (uint8_t)(gpsDate/10000);
 
-	if ((month < 12) && (dayOfMonth < 32)) {
+	if ((month <= 12) && (dayOfMonth < 32)) {
 		uint16_t dayOfYear = timGetDayOfYear(year, month, dayOfMonth);
 		return (juliandayfraction)dayOfYear;
 	} else {
@@ -379,7 +379,7 @@ void timSyncUtc(uint16_t year, obc_systime32_t systemTime, juliandayfraction utc
 		int leap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
 		uint8_t month;
 		for (month = 1; month < 13; month++) {
-			if (dayInYear < timeMonthOffsetDays[leap][month]) {
+			if (dayInYear <= timeMonthOffsetDays[leap][month]) {
 				break;
 			}
 		}
