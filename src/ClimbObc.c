@@ -144,6 +144,9 @@ int main(void) {
     // Onboard I2C
     init_i2c(LPC_I2C1, 100);		// 100 kHz
 
+    init_i2c(LPC_I2C2, 10);		// 100 kHz  A/B
+//    init_i2c(LPC_I2C0, 100);		// 100 kHz  C/D
+
     // Init all other modules
     for (int i=0; i < MODULE_CNT; i++) {
     	Modules[i].init(Modules[i].initdata);
