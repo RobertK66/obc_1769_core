@@ -103,7 +103,7 @@ static const app_command_t Commands[] = {
 		{ '6' , GeneralReadRequest },
 		{ '7' , GeneralSetRequest },
 		{ 'k' , PSU_datavector_request },
-		{ 'b' , old_pegasys_PSU_request_cmd }
+		{ 'b' , old_pegasys_PSU_request_cmd },
 		{ '8' , thr_execute_sequence_cmd }, // 1st argument - thrust duration in ms
 		{ '9' , mem_write_cmd }
 
