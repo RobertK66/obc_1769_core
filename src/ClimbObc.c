@@ -33,6 +33,8 @@
 #include "mod/modules_globals.h"
 
 
+#include "mod/psu/psu.h"
+
 
 #if BA_BOARD == BA_OM13085_EM2T
 // EM2T Test Hardware has 2 SD Cards connected to SSP0/SSP1
@@ -77,6 +79,16 @@ static thr_initdata_t ThrInit = {
 
 };
 
+
+//LPC_I2C0 - C/D      LPC_I2C2 - A/B
+static psu_i2c_initdata_t PSUInitData = {
+		LPC_I2C2, //device
+		100 // frequency [kHz]
+
+};
+
+
+
 // List of (wire) busses to be initialized.
 //static ado_wbus_config_t WBuses[] = {
 //		{ADO_WBUS_SPI,    0, LPC_SPI  },
@@ -105,7 +117,8 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( app_init, app_main, NULL),
 		// MOD_INIT( rtst_init, rtst_main, &RadtestInit),
 		MOD_INIT( thrInit, thrMain, &ThrInit),
-		MOD_INIT( l4_thruster_init, l4_thruster_main, NULL)
+		MOD_INIT( l4_thruster_init, l4_thruster_main, NULL),
+		MOD_INIT( psu_init, psu_main, &PSUInitData)
 
 };
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
