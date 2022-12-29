@@ -33,6 +33,9 @@
 #include "mod/modules_globals.h"
 
 
+// prototypes
+void init_mainlooptimer(LPC_TIMER_T* pTimer,  CHIP_SYSCTL_CLOCK_T timBitIdx);
+
 
 #if BA_BOARD == BA_OM13085_EM2T
 // EM2T Test Hardware has 2 SD Cards connected to SSP0/SSP1
@@ -62,19 +65,18 @@ static const mram_chipinit_array_t Chips = {
 	(sizeof(Mrams)/sizeof(mram_chipinit_t)), Mrams
 };
 
-static const mem_init_t MemoryInit = { PTR_FROM_IDX(PINIDX_SD_VCC_EN) };	// defines the GPIO pin which enables the Power Supply of the SD-Card
+static const mem_init_t MemoryInit = {
+		PTR_FROM_IDX(PINIDX_SD_VCC_EN)	// defines the GPIO pin which enables the Power Supply of the SD-Card
+};
 
-static init_report_t InitReport;
-
-static gps_initdata_t GpsInit = {
+static const gps_initdata_t GpsInit = {
 		LPC_UART0,
 		PTR_FROM_IDX(PINIDX_GPIO4_CP),
 		PTR_FROM_IDX(PINIDX_STACIE_C_IO1_P)
 };
 
-static thr_initdata_t ThrInit = {
+static const thr_initdata_t ThrInit = {
 		LPC_UART1, ///Y+ sidepanel
-
 };
 
 // List of (wire) busses to be initialized.
@@ -93,6 +95,8 @@ static thr_initdata_t ThrInit = {
 //		LPC_TIMER1
 //};
 
+static init_report_t InitReport;
+
 static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( deb_init, deb_main, LPC_UART2),
 		MOD_INIT( timInit, timMain, &InitReport ),
@@ -110,6 +114,11 @@ static const MODULE_DEF_T Modules[] = {
 };
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
 
+// Main variables
+static MODULE_STATUS_T ModStat[MODULE_CNT];
+static MODULES_STATUS_T ModulesStatus;
+
+
 int main(void) {
     // Read clock settings and update SystemCoreClock variable.
 	// (Here in main() this sets the global available SystemCoreClock variable for the first time after all SystemInits finished)
@@ -118,10 +127,9 @@ int main(void) {
 	// Determine reset reason
 	InitReport.resetBits = LPC_SYSCON->RSID & 0x003F;
 	InitReport.rtcOscDelayMs = 0;
-
 	// Clear all (set) bits in this register (if possible).
 	LPC_SYSCON->RSID = InitReport.resetBits;
-
+	// Try to figure out if this was Hardware watchdog -> not possible in EM2!?
 	if (Chip_GPIO_GetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_EXT_WDT_TRIGGERED), PINNR_FROM_IDX(PINIDX_EXT_WDT_TRIGGERED))) {
 		InitReport.hwWatchdog = true;
 		// Reset the WD Flip Flop. (Clear pin must be initialized as output now)
@@ -135,20 +143,22 @@ int main(void) {
 
 	//ADO_WBUS_Init(WBuses, WBUS_CNT);  not implemeted yet -> abstraction over I2C,SPI and SSPDMA buses
 
-
     // Layer 1 - Bus Inits
     ADO_SSP_Init(ADO_SSP0, 24000000, SSP_CLOCK_MODE3);
     ADO_SSP_Init(ADO_SSP1, 24000000, SSP_CLOCK_MODE3);
     ADO_SPI_Init(0x08, SPI_CLOCK_MODE3);    // Clock Divider 0x08 -> fastest, must be even: can be up to 0xFE for slower SPI Clocking
 
-    // Onboard I2C
-    init_i2c(LPC_I2C1, 100);		// 100 kHz
+    // I2C
+    init_i2c(LPC_I2C1, 100);	// 100 kHz  Onboard
+    init_i2c(LPC_I2C2, 100);	// 100 kHz  A/B
+//    init_i2c(LPC_I2C0, 100);	// 100 kHz  C/D
 
-    init_i2c(LPC_I2C2, 10);		// 100 kHz  A/B
-//    init_i2c(LPC_I2C0, 100);		// 100 kHz  C/D
+    init_mainlooptimer(LPC_TIMER0, SYSCTL_CLOCK_TIMER0);		// used to measure modules runtime. (ticks with 10us)
 
     // Init all other modules
     for (int i=0; i < MODULE_CNT; i++) {
+    	ModStat[i].moduleIdx = i;
+    	ModulesStatus.curExecutingPtr = &ModStat[i];
     	Modules[i].init(Modules[i].initdata);
     }
 
@@ -161,9 +171,35 @@ int main(void) {
 
     // Enter an infinite loop calling all registered modules main function.
     while(1) {
+    	uint32_t finishedAtTicks;
+    	int32_t runtime;
+
+    	ModulesStatus.mainLoopStartedAtTicks = LPC_TIMER0->TC;
     	for (int i=0; i < MODULE_CNT; i++) {
+    		ModulesStatus.curExecutingPtr = &ModStat[i];
+        	ModulesStatus.startedAtTicks = LPC_TIMER0->TC;
     		Modules[i].main();
+    		finishedAtTicks = LPC_TIMER0->TC;
+    		if (finishedAtTicks >= ModulesStatus.startedAtTicks) {
+    			runtime = finishedAtTicks - ModulesStatus.startedAtTicks;
+    		} else {
+    			runtime = ModulesStatus.startedAtTicks - finishedAtTicks;
+    		}
+    		if (runtime > ModulesStatus.curExecutingPtr->longestExecutionTicks) {
+    			ModulesStatus.curExecutingPtr->longestExecutionTicks = runtime;
+    		}
     	}
+
+    	finishedAtTicks = LPC_TIMER0->TC;
+    	if (finishedAtTicks >= ModulesStatus.mainLoopStartedAtTicks) {
+			runtime = finishedAtTicks - ModulesStatus.mainLoopStartedAtTicks;
+		} else {
+			runtime = ModulesStatus.mainLoopStartedAtTicks - finishedAtTicks;
+		}
+    	if (runtime > ModulesStatus.longestMainLoopTicks) {
+    	    ModulesStatus.longestMainLoopTicks = runtime;
+   		}
+
     	// Feed the watchdog
     	Chip_GPIO_SetPinToggle(LPC_GPIO, PORT_FROM_IDX(PINIDX_WATCHDOG_FEED), PINNR_FROM_IDX(PINIDX_WATCHDOG_FEED));
     }
@@ -187,4 +223,18 @@ void Chip_SystemInit(void) {
 	/* Setup FLASH access to 4 clocks (100MHz clock) */
 	Chip_SYSCTL_SetFLASHAccess(FLASHTIM_100MHZ_CPU);
 }
+
+void init_mainlooptimer(LPC_TIMER_T* pTimer, CHIP_SYSCTL_CLOCK_T timBitIdx) {
+	Chip_TIMER_TIMER_SetCountClockSrc(pTimer, TIMER_CAPSRC_RISING_PCLK, 0); // Use internal clock for this timer (timer->CTCR)
+	Chip_Clock_EnablePeriphClock(timBitIdx);								// (PCONP) power enable the timer block
+	Chip_Clock_SetPCLKDiv(timBitIdx, SYSCTL_CLKDIV_8);  					// Clk/8 -> 96/4 = 12Mhz -> Tick = 83,3 ns
+	Chip_TIMER_PrescaleSet(pTimer, 119); 									// (timer->PR) Prescaler = 119+1 -> Increment TC at every 120 Ticks -> 10us (when clk is 96 Mhz and Clck divide / 8)
+	Chip_TIMER_Enable(pTimer);												// (timer->TCR) enable timer to start ticking
+}
+
+void main_showruntimes_cmd(int argc, char *argv[]) {
+	  SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_RAWDATA, ModStat , sizeof(ModStat) );
+	  SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_RAWDATA, &ModulesStatus.longestMainLoopTicks , sizeof( ModulesStatus.longestMainLoopTicks) );
+}
+
 

@@ -23,6 +23,7 @@ void app_main (void);
 #define EID_APP_SYSTEMINIT		4
 #define EID_APP_SYSTEMSTATUS	5
 #define EID_APP_INIT			6
+#define EID_APP_RUNTIMES		7
 
 #include "../build.h"
 
