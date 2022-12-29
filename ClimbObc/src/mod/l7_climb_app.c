@@ -79,6 +79,7 @@ void SetUtcDateTimeCmd(int argc, char *argv[]);
 void GetFullTimeCmd(int argc, char *argv[]);
 void SendToGpsUartCmd(int argc, char *argv[]);
 void i2c_test_cmd(int argc, char *argv[]);
+void main_showruntimes_cmd(int argc, char *argv[]);
 
 //extern void *sdCard;
 
@@ -104,7 +105,8 @@ static const app_command_t Commands[] = {
 		{ '7' , GeneralSetRequest },
 		{ '8' , thr_execute_sequence_cmd }, // 1st argument - thrust duration in ms
 		{ '9' , mem_write_cmd },
-		{ 'Q' , i2c_test_cmd }
+		{ 'Q' , i2c_test_cmd },
+		{ 'a' , main_showruntimes_cmd}
 
 };
 
@@ -502,5 +504,4 @@ void GetFullTimeCmd(int argc, char *argv[]) {
 	obc_utc_fulltime_t ft = timGetUTCTime();
 	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_FULLTIMEINFO, &ft, sizeof(ft));
 }
-
 

@@ -19,6 +19,21 @@ typedef struct {
 } MODULE_DEF_T;
 
 typedef struct {
+	uint8_t	 moduleIdx;
+	uint32_t longestExecutionTicks;
+}  __attribute__((packed)) MODULE_STATUS_T;
+
+typedef struct {
+	MODULE_STATUS_T* curExecutingPtr;
+	uint32_t startedAtTicks;
+	uint32_t mainLoopStartedAtTicks;
+	uint32_t longestMainLoopTicks;
+	MODULE_STATUS_T* top1;
+	MODULE_STATUS_T* top2;
+	MODULE_STATUS_T* top3;
+} MODULES_STATUS_T;
+
+typedef struct {
 	uint16_t 	moduleId:	8;	//
 	uint16_t 	eventId:	6;	//
 	uint16_t 	severity:	2;	//
