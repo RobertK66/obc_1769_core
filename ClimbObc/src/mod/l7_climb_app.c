@@ -80,6 +80,8 @@ void GetFullTimeCmd(int argc, char *argv[]);
 void SendToGpsUartCmd(int argc, char *argv[]);
 void i2c_test_cmd(int argc, char *argv[]);
 void main_showruntimes_cmd(int argc, char *argv[]);
+void PSU_datavector_request(int argc, char *argv[]);
+void old_pegasys_PSU_request_cmd(int argc, char *argv[]);
 
 //extern void *sdCard;
 
@@ -95,7 +97,6 @@ static const app_command_t Commands[] = {
 		{ 'p' , SpPowerCmd },
 		{ 'O' , SetObcNameCmd },
 		{ 'N' , SetSdCardNameCmd },
-		{ 'i' , GetSystemInfoCmd },
 		//{ 'd' , TriggerWatchdogCmd },
 		{ 't' , SetUtcDateTimeCmd },
 		{ 'T' , GetFullTimeCmd },
@@ -104,6 +105,8 @@ static const app_command_t Commands[] = {
 		{ '6' , GeneralReadRequest },
 		{ '7' , GeneralSetRequest },
 		{ '8' , thr_execute_sequence_cmd }, // 1st argument - thrust duration in ms
+        { 'k' , PSU_datavector_request },
+        { 'b' , old_pegasys_PSU_request_cmd },
 		{ '9' , mem_write_cmd },
 		{ 'Q' , i2c_test_cmd },
 		{ 'a' , main_showruntimes_cmd}
