@@ -69,7 +69,6 @@ void sen_init(void *data) {
 }
 
 void sen_main() {
-	LAST_STARTED_MODULE = 6;
 	if (readInProgress) {
 		if (readJob.job_done == 1) {
 			readInProgress = false;
@@ -102,12 +101,10 @@ void sen_main() {
 bool ReadSHT30Async();
 
 void SenReadAllValues() {
-	LAST_STARTED_MODULE = 601;
 	ReadSHT30Async();
 }
 
 bool ReadSHT30Async() {
-	LAST_STARTED_MODULE = 602;
 	if (readInProgress) {
 		return false;
 	}

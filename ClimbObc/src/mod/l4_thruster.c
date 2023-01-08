@@ -135,9 +135,6 @@ void l4_thruster_init (void *dummy) {
 }
 
 void l4_thruster_main (void) {
-	LAST_STARTED_MODULE = 11;
-
-
 
 
 	for (int i=0;i<=5;i++){ // for all preprogrammed sequences
@@ -162,7 +159,6 @@ void l4_thruster_main (void) {
 
 //void l4_GeneralReadRequest(l4_stage_arguments_t stage_args)
 void l4_GeneralSetRequest_sequence(l4_stage_arguments_t *stage_args){
-	LAST_STARTED_MODULE = 1104;
 	/*
 	 * _sequence is a wrapper arround General  thruster registor Read/Set request functions
 	 *
@@ -194,8 +190,6 @@ void l4_GeneralSetRequest_sequence(l4_stage_arguments_t *stage_args){
 }
 
 void l4_GeneralSetRequestAndWait_sequence(l4_stage_arguments_t *stage_args){
-
-	LAST_STARTED_MODULE = 1106;
 	uint16_t procedure_id = stage_args->sequence_id;
 	uint32_t duration = stage_args->wait;
 	char print_str[200];
@@ -245,7 +239,6 @@ void l4_GeneralSetRequestAndWait_sequence(l4_stage_arguments_t *stage_args){
 
 
 void l4_GeneralReadRequest_sequence(l4_stage_arguments_t *stage_args){
-	LAST_STARTED_MODULE = 1106;
 	uint16_t procedure_id = stage_args->sequence_id; // procedure_id is always fist index of argument array
 	l4_GeneralReadRequest(stage_args);
 
@@ -267,7 +260,6 @@ void l4_GeneralReadRequest_sequence(l4_stage_arguments_t *stage_args){
 
 void l4_GeneralReadRequestAndWait_sequence(l4_stage_arguments_t *stage_args){
 
-	LAST_STARTED_MODULE = 1106;
 	uint16_t procedure_id = stage_args->sequence_id;
 	uint32_t duration = stage_args->wait;
 	char print_str[200];
@@ -320,7 +312,6 @@ void l4_GeneralReadRequestAndWait_sequence(l4_stage_arguments_t *stage_args){
 
 //////
 void l4_wait(l4_stage_arguments_t *stage_args){
-	LAST_STARTED_MODULE = 1108;
 
 	/*
 	 * thr_wait is a "staging" function incorporated in THR_EXECUTION_SEQUENCE
@@ -377,8 +368,6 @@ void l4_wait_and_monitor(int argc, char *argv[]){
 	 *
 	 */
 
-
-	LAST_STARTED_MODULE = 1108;
 	uint16_t procedure_id = atoi(argv[0]); // procedure_id is always fist index of argument array
 	uint32_t duration = atoi(argv[1]);
 	uint32_t logging_dt = atoi(argv[2]); //Time after which READ request is sent
@@ -485,8 +474,6 @@ void l4_wait_and_monitor(int argc, char *argv[]){
 
 
 void l4_void(l4_stage_arguments_t *stage_args){
-	LAST_STARTED_MODULE = 1109;
-
 	/*
 	 * Incorporates with sequence execution
 	 *
@@ -713,7 +700,6 @@ void l4_value_ramp(l4_stage_arguments_t *stage_args){
 }
 
 void thr_execute_sequence_cmd(int argc, char *argv[]){
-	LAST_STARTED_MODULE = 1110;
 	/*
 	 * This function is meant to trigger execution of SEQUENCE
 	 * Triggered function is thr_execute_sequence()
@@ -813,7 +799,6 @@ void thr_execute_sequence_cmd(int argc, char *argv[]){
 
 
 void thr_execute_sequence(int procedure_id){
-	LAST_STARTED_MODULE = 1111;
 	/*
 	 *
 	 * Executes preprogrammed sequence  defined in THR_EXECUTION_SEQUENCE function pointer array
@@ -862,7 +847,7 @@ void thr_execute_sequence(int procedure_id){
 	else{
 		void (*f)(l4_stage_arguments_t *stage_arguments);
 		f = L4_HARDCODED_SEQUENCES[procedure_id].sequences[L4_HARDCODED_SEQUENCES[procedure_id].execution_index].function;
-		LAST_STARTED_MODULE = L4_HARDCODED_SEQUENCES[procedure_id].execution_index; //DEBUG
+		//LAST_STARTED_MODULE = L4_HARDCODED_SEQUENCES[procedure_id].execution_index; //DEBUG
 		f(L4_HARDCODED_SEQUENCES[procedure_id].sequences[L4_HARDCODED_SEQUENCES[procedure_id].execution_index].stage_args);
 	}
 
@@ -876,7 +861,6 @@ void thr_execute_sequence(int procedure_id){
 //****************** THIS IS JUST TEST AND TRIAL********************************
 
 void thr_write_mem(){
-	LAST_STARTED_MODULE = 1112;
 	uint8_t testdata[6];
 	testdata[0] = 0x68;
 	testdata[1] = 0x65;
@@ -890,8 +874,6 @@ void thr_write_mem(){
 
 
 void thr_write_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
-	LAST_STARTED_MODULE = 1113;
-
 	if (result == MRAM_RES_SUCCESS) {
 		char print_str[200];
 		sprintf(print_str, "\nMemory Write Success\n");
@@ -911,14 +893,12 @@ void thr_write_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, ui
 
 
 void thr_read_mem(){
-	LAST_STARTED_MODULE = 1114;
 	MramReadAsync(0, 5000, MMRAM_READ_BUFFER, sizeof(MMRAM_READ_BUFFER), thr_read_mem_callback);
 	//void MramReadAsync(uint8_t chipIdx, uint32_t adr,  uint8_t *rx_data,  uint32_t len,
 	//void (*finishedHandler)(uint8_t chipIdx,mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len))
 }
 
 void thr_read_mem_callback(uint8_t chipIdx, mram_res_t result, uint32_t adr, uint8_t *data, uint32_t len) {
-	LAST_STARTED_MODULE = 1115;
 
 	if (result == MRAM_RES_SUCCESS) {
 		char print_str[200];
@@ -2147,9 +2127,6 @@ void initialize_hardcoded_thr_sequences(){
 
 
 void l4_GeneralSetRequest(l4_stage_arguments_t *stage_args){
-	LAST_STARTED_MODULE = 1105;
-
-
 
 	uint8_t len; // will carry total length of request array
 
@@ -2250,9 +2227,6 @@ void l4_GeneralSetRequest(l4_stage_arguments_t *stage_args){
 
 
 void l4_ReadAllRegisters(l4_stage_arguments_t *stage_args){
-	LAST_STARTED_MODULE = 1102;
-
-
 	uint8_t request[8];
 
 
@@ -2280,7 +2254,6 @@ void l4_ReadAllRegisters(l4_stage_arguments_t *stage_args){
 }
 
 void l4_ReadAllRegistersAndWait_sequence(l4_stage_arguments_t *stage_args){
-	LAST_STARTED_MODULE = 1106;
 	uint16_t procedure_id = stage_args->sequence_id;
 	uint32_t duration = stage_args->wait;
 	char print_str[200];
@@ -2333,8 +2306,6 @@ void l4_ReadAllRegistersAndWait_sequence(l4_stage_arguments_t *stage_args){
 
 //General read request to any register
 void l4_GeneralReadRequest(l4_stage_arguments_t *stage_args){
-	LAST_STARTED_MODULE = 1107;
-
 		// FIRST ARGUMENT SHOUD BE uint8_t VALUE OF REGISTER THAT WOULD BE READ FROM
 		uint8_t access_register = stage_args->register_index;
 		uint8_t length_of_register = REGISTER_LENGTH[access_register];

@@ -135,10 +135,6 @@ void gpsInit (void *initData) {
 }
 
 void gpsMain (void) {
-
-
-	LAST_STARTED_MODULE = 8;
-
 	// Uart Rx
 	int32_t stat = Chip_UART_ReadLineStatus(gpsInitData->pUart);
 	if (stat & UART_LSR_RDR) {
@@ -149,7 +145,6 @@ void gpsMain (void) {
 }
 
 void gpsUartIRQ(LPC_USART_T *pUART) {
-	LAST_STARTED_MODULE = 801;
 	if (gpsInitData->pUart->IER & UART_IER_THREINT) {
 		// Transmit register is empty now (byte was sent out)
 		if (gpsTxBufferEmpty() == false) {
@@ -166,7 +161,6 @@ void gpsUartIRQ(LPC_USART_T *pUART) {
 
 
 bool gpsProcessNmeaMessage(int argc, char *argv[]) {
-	LAST_STARTED_MODULE = 802;
 	bool processed = false;
 	char msg[8];
 	strncpy(msg, argv[0], 8);
@@ -364,7 +358,6 @@ bool gpsProcessNmeaMessage(int argc, char *argv[]) {
 
 
 void gpsSendByte(uint8_t b) {
-	LAST_STARTED_MODULE = 803;
 	// block irq while handling tx buffer
 	Chip_UART_IntDisable(gpsInitData->pUart, UART_IER_THREINT);
 
@@ -390,7 +383,6 @@ void gpsSendByte(uint8_t b) {
 }
 
 void gpsSendBytes(uint8_t *data, uint8_t len) {
-	LAST_STARTED_MODULE = 804;
 	for (int i=0;i<len;i++) {
 		gpsSendByte(data[i]);
 	}
@@ -420,8 +412,6 @@ static gps_rx_state gpsRxStatus = GPS_RX_IDLE;
 
 
 void gpsProcessRxByte(uint8_t rxByte) {
-
-	LAST_STARTED_MODULE = 805;
 
 	switch (gpsRxStatus) {
 	case GPS_RX_IDLE:

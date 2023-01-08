@@ -179,7 +179,6 @@ void thrInit (void *initData) {
 }
 
 void thrMain (void) {
-	LAST_STARTED_MODULE=10;
 	// Uart Rx
 	int32_t stat = Chip_UART_ReadLineStatus(thrInitData->pUart);
 	if (stat & UART_LSR_RDR) {
@@ -192,7 +191,6 @@ void thrMain (void) {
 }
 
 void thrUartIRQ(LPC_USART_T *pUART) {
-	LAST_STARTED_MODULE=1001;
 	if (thrInitData->pUart->IER & UART_IER_THREINT) {
 		// Transmit register is empty now (byte was sent out)
 		if (thrTxBufferEmpty() == false) {
@@ -210,12 +208,8 @@ void thrUartIRQ(LPC_USART_T *pUART) {
 }
 
 void thrSendByte(uint8_t b) {
-	LAST_STARTED_MODULE=1002;
-
 	// block irq while handling tx buffer
 	Chip_UART_IntDisable(thrInitData->pUart, UART_IER_THREINT);
-
-
 
 	//if (thrTxBufferEmpty()) {
 		// First Byte: Store in Buffer and initiate TX
@@ -244,7 +238,6 @@ void thrSendByte(uint8_t b) {
 }
 
 void thrSendBytes(uint8_t *data, uint8_t len) {
-	LAST_STARTED_MODULE=1003;
 	//set to transmit when sending data package
 	Chip_GPIO_SetPinOutHigh(LPC_GPIO, 2, 5); //  This is PINIDX_RS485_TX_RX TRANSMIT
 	for (int i=0;i<len;i++) {
@@ -255,9 +248,6 @@ void thrSendBytes(uint8_t *data, uint8_t len) {
 
 
 void thrProcessRxByte(uint8_t rxByte) {
-	LAST_STARTED_MODULE=1004;
-	// do your processing of RX here....
-
 	if (l4_thr_counter< l4_thr_ExpectedReceiveBuffer){ // change it to expected buffer length SET by REQUEST functions
 
 		thr_receiveBuffer[l4_thr_counter]=(char) rxByte;
@@ -298,7 +288,6 @@ void thrProcessRxByte(uint8_t rxByte) {
 
 
 void ThrSendVersionRequestCmd(int argc, char *argv[]){
-	LAST_STARTED_MODULE = 1101;
 
 	uint8_t request[8];
 	request[0]= 0x00;
@@ -321,9 +310,6 @@ void ThrSendVersionRequestCmd(int argc, char *argv[]){
 
 
 void ReadAllRegisters(int argc, char *argv[]){
-	LAST_STARTED_MODULE = 1102;
-
-
 	uint8_t request[8];
 
 
@@ -370,7 +356,6 @@ void PrintAllRegisters(){
 // received_buffer of arbitrary size
 // len length of actual thruster reply
 void ParseReadRequest(uint8_t* received_buffer,int len){
-	LAST_STARTED_MODULE = 1103;
 
 	char print_str[200];
 	//int len_print;
@@ -477,10 +462,6 @@ void ParseReadRequest(uint8_t* received_buffer,int len){
 
 
 void GeneralSetRequest(int argc, char *argv[]){
-	LAST_STARTED_MODULE = 1105;
-
-
-
 	uint8_t len; // will carry total length of request array
 
 	// First argument should ne uint8_t value of register that are attmepted to write to.
@@ -601,9 +582,7 @@ void GeneralSetRequest(int argc, char *argv[]){
 
 //General read request to any register
 void GeneralReadRequest(int argc, char *argv[]){
-	LAST_STARTED_MODULE = 1107;
-
-		// FIRST ARGUMENT SHOUD BE uint8_t VALUE OF REGISTER THAT WOULD BE READ FROM
+			// FIRST ARGUMENT SHOUD BE uint8_t VALUE OF REGISTER THAT WOULD BE READ FROM
 		uint8_t access_register = atoi(argv[1]);
 		uint8_t length_of_register = REGISTER_LENGTH[access_register];
 

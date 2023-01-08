@@ -29,7 +29,6 @@ void _hwc_init (pinmux_array_t *initData) {
 }
 
 void hwc_main (void ) {
-	LAST_STARTED_MODULE=3;
 	loopCounter++;
 	memWaitLoops--;
 	if (loopCounter >= toggleTimer) {

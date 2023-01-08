@@ -267,7 +267,6 @@ void memSendEventOperational() {
 }
 
 void memMain(void) {
-	LAST_STARTED_MODULE = 7;
 	if(memWaitLoops>0) {
 		memWaitLoops--;
 	}

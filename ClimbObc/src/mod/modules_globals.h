@@ -11,7 +11,7 @@
 
 
 
-extern uint16_t LAST_STARTED_MODULE;
+//extern uint16_t LAST_STARTED_MODULE;
 // 1- deb_main
 // 2- timMain
 // 3- hwc_main
