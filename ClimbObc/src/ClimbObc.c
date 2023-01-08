@@ -16,7 +16,6 @@
 #include <ado_modules.h>
 #include <mod/ado_sdcard.h>
 #include <mod/ado_mram.h>
-#include "mod/ado_wirebus.h"
 
 #include "mod/tim/obc_time.h"
 #include "mod/tim/climb_gps.h"
@@ -79,29 +78,7 @@ static const gps_initdata_t GpsInit = {
 
 static const thr_initdata_t ThrInit = {
 		LPC_UART1, ///Y+ sidepanel
-  };
-
-//LPC_I2C0 - C/D      LPC_I2C2 - A/B
-//static psu_i2c_initdata_t PSUInitData = {
-//		LPC_I2C2, //device
-//		100 // frequency [kHz]
-//};
-
-// List of (wire) busses to be initialized.
-//static ado_wbus_config_t WBuses[] = {
-//		{ADO_WBUS_SPI,    0, LPC_SPI  },
-//		{ADO_WBUS_SSPDMA, 0, LPC_SSP0 },
-//		{ADO_WBUS_SSPDMA, 0, LPC_SSP1 },
-//		{ADO_WBUS_I2C, 	  0, LPC_I2C0 },
-//		{ADO_WBUS_I2C,    0, LPC_I2C1 },
-//		{ADO_WBUS_I2C,    0, LPC_I2C2 }
-//};
-//#define WBUS_CNT (sizeof(WBuses)/sizeof(ado_wbus_config_t))
-
-// Lets use timer1 for our radiation tests.
-//static rtst_initdata_t RadtestInit = {
-//		LPC_TIMER1
-//};
+};
 
 static init_report_t InitReport;
 
@@ -115,7 +92,6 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( memInit, memMain, &MemoryInit),
 		MOD_INIT( gpsInit, gpsMain, &GpsInit),
 		MOD_INIT( app_init, app_main, NULL),
-		// MOD_INIT( rtst_init, rtst_main, &RadtestInit),
 		MOD_INIT( thrInit, thrMain, &ThrInit),
 		MOD_INIT( l4_thruster_init, l4_thruster_main, NULL),
 		MOD_INIT( psu_init, psu_main, NULL)
@@ -126,6 +102,20 @@ static const MODULE_DEF_T Modules[] = {
 // Main variables
 static MODULE_STATUS_T ModStat[MODULE_CNT];
 static MODULES_STATUS_T ModulesStatus;
+
+static uint32_t inline calculatelongest_runtime(uint32_t started, uint32_t finished, uint32_t longest) {
+	uint32_t runtime;
+	if (finished >= started) {
+		runtime = finished - started;
+	} else {
+		runtime = started - finished;
+	}
+	if (runtime > longest) {
+		return runtime;
+	} else {
+		return longest;
+	}
+}
 
 
 int main(void) {
@@ -150,17 +140,15 @@ int main(void) {
 		InitReport.oddEven = true;
 	}
 
-	//ADO_WBUS_Init(WBuses, WBUS_CNT);  not implemeted yet -> abstraction over I2C,SPI and SSPDMA buses
-
     // Layer 1 - Bus Inits
 	// -------------------
 	// SSP&SPI
-    ADO_SSP_Init(ADO_SSP0, 24000000, SSP_CLOCK_MODE3);
-    ADO_SSP_Init(ADO_SSP1, 24000000, SSP_CLOCK_MODE3);
-    ADO_SPI_Init(0x08, SPI_CLOCK_MODE3);    // Clock Divider 0x08 -> fastest, must be even: can be up to 0xFE for slower SPI Clocking
+    ADO_SSP_Init(ADO_SSP0, 24000000, SSP_CLOCK_MODE3);	// MRAM x3
+    ADO_SSP_Init(ADO_SSP1, 24000000, SSP_CLOCK_MODE3);  // MRAM x3
+    ADO_SPI_Init(0x08, SPI_CLOCK_MODE3);    // SDCard, Clock Divider 0x08 -> fastest, must be even: can be up to 0xFE for slower SPI Clocking
 
     // I2C buses
-    //init_i2c(LPC_I2C0, 100);		// 100 kHz  C/D
+    // init_i2c(LPC_I2C0, 100);		// 100 kHz  C/D
     init_i2c(LPC_I2C1, 100);		// 100 kHz  on-board
     init_i2c(LPC_I2C2, 100);		// 100 kHz  A/B
 
@@ -182,39 +170,28 @@ int main(void) {
     // Enter an infinite loop calling all registered modules main function.
     while(1) {
     	uint32_t finishedAtTicks;
-    	int32_t runtime;
-
     	ModulesStatus.mainLoopStartedAtTicks = LPC_TIMER0->TC;
     	for (int i=0; i < MODULE_CNT; i++) {
     		ModulesStatus.curExecutingPtr = &ModStat[i];
         	ModulesStatus.startedAtTicks = LPC_TIMER0->TC;
     		Modules[i].main();
     		finishedAtTicks = LPC_TIMER0->TC;
-    		if (finishedAtTicks >= ModulesStatus.startedAtTicks) {
-    			runtime = finishedAtTicks - ModulesStatus.startedAtTicks;
-    		} else {
-    			runtime = ModulesStatus.startedAtTicks - finishedAtTicks;
-    		}
-    		if (runtime > ModulesStatus.curExecutingPtr->longestExecutionTicks) {
-    			ModulesStatus.curExecutingPtr->longestExecutionTicks = runtime;
-    		}
+    		ModulesStatus.curExecutingPtr->longestExecutionTicks = calculatelongest_runtime( ModulesStatus.startedAtTicks,
+    				                                                                         finishedAtTicks,
+																						     ModulesStatus.curExecutingPtr->longestExecutionTicks);
     	}
 
     	finishedAtTicks = LPC_TIMER0->TC;
-    	if (finishedAtTicks >= ModulesStatus.mainLoopStartedAtTicks) {
-			runtime = finishedAtTicks - ModulesStatus.mainLoopStartedAtTicks;
-		} else {
-			runtime = ModulesStatus.mainLoopStartedAtTicks - finishedAtTicks;
-		}
-    	if (runtime > ModulesStatus.longestMainLoopTicks) {
-    	    ModulesStatus.longestMainLoopTicks = runtime;
-   		}
+    	ModulesStatus.longestMainLoopTicks = calculatelongest_runtime( ModulesStatus.mainLoopStartedAtTicks,
+    																   finishedAtTicks,
+																	   ModulesStatus.longestMainLoopTicks);
 
     	// Feed the watchdog
     	Chip_GPIO_SetPinToggle(LPC_GPIO, PORT_FROM_IDX(PINIDX_WATCHDOG_FEED), PINNR_FROM_IDX(PINIDX_WATCHDOG_FEED));
     }
     return 0;
 }
+
 
 // This init gets called after reset - memory clear - copy of memory sections (constants or static initialized stuff) and all
 // vector tables are set up for the used Chip.
