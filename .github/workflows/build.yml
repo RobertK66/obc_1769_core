@@ -18,7 +18,7 @@ jobs:
           MY_SWVERSION=$(printf '%.8s' "${{ github.sha }}" )
           echo "#define BUILD_SWVERSION \"SW-$MY_SWVERSION\"" >> src/build.h
           echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
-          cat src/build.h
+          cat ClimbObc/src/build.h
           pwd
           
       - name: Build the mcu workspace
