@@ -25,9 +25,12 @@ jobs:
         uses: RobertK66/actions-build-mcuxpresso@main
         id: publish-document
         with:
-          project: |
+          projects: |
+            ado_chip_175x_6x
             ClimbObc
-            AnotherProj
+          configs: |
+            ado_chip_175x_6x/TestConfig_2
+            ClimbObc/Debug
 
       - name: rename the axf file
         run: |
