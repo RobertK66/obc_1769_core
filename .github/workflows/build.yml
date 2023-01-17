@@ -25,7 +25,9 @@ jobs:
         uses: RobertK66/actions-build-mcuxpresso@main
         id: publish-document
         with:
-          project:  ClimbObc AnotherProj
+          project: |
+            ClimbObc
+            AnotherProj
 
       - name: rename the axf file
         run: |
