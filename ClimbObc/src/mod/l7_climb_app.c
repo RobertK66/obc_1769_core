@@ -28,7 +28,7 @@
 
 #include "../radtest/radtest.h"
 
-#include "modules_globals.h"
+
 
 typedef struct {
 	uint8_t	cmdId;
@@ -74,7 +74,7 @@ void SetObcNameCmd(int argc, char *argv[]);
 void ReadStatusMramCmd(int argc, char *argv[]);
 void GetSystemInfoCmd(int argc, char *argv[]);
 void SetSdCardNameCmd(int argc, char *argv[]);
-void TriggerWatchdogCmd(int argc, char *argv[]);
+void TriggerErrorsCmd(int argc, char *argv[]);
 void SetUtcDateTimeCmd(int argc, char *argv[]);
 void GetFullTimeCmd(int argc, char *argv[]);
 void SendToGpsUartCmd(int argc, char *argv[]);
@@ -97,7 +97,7 @@ static const app_command_t Commands[] = {
 		{ 'p' , SpPowerCmd },
 		{ 'O' , SetObcNameCmd },
 		{ 'N' , SetSdCardNameCmd },
-		{ 'd' , TriggerWatchdogCmd },
+		{ 'E' , TriggerErrorsCmd },
 		{ 't' , SetUtcDateTimeCmd },
 		{ 'T' , GetFullTimeCmd },
 		{ 'g' , SendToGpsUartCmd },
@@ -147,8 +147,12 @@ void i2c_test_cmd(int argc, char *argv[]) {
 }
 
 
+void app_init_irqpriorities(void);
 
 void app_init (void *dummy) {
+
+	app_init_irqpriorities();
+
 	//SdcCardinitialize(0);
 	char ver[32] = "MYSW-Version: ";
 	ver[31] = 0;
@@ -276,8 +280,42 @@ void CardPowerOffCmd(int argc, char *argv[]) {
 //	HwcSetOutput(PINIDX_SD_VCC_EN, HWC_High);
 }
 
-void TriggerWatchdogCmd(int argc, char *argv[]) {
-	while(true);
+
+
+void app_init_irqpriorities(void) {
+	// enable faults to call their handler iso escalating to a hardfault.
+	SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk;
+	SCB->SHCSR |= SCB_SHCSR_BUSFAULTENA_Msk;
+
+}
+
+// Error 1.
+int illegal_instruction_execution(uint32_t myval) {
+  int (*bad_instruction)(void) = (void *)myval; //0xE0000000;
+  return bad_instruction();
+}
+
+// Error 2.
+uint32_t read_from_bad_address(void) {
+  return *(volatile uint32_t *)0xbadcafe;
+}
+
+
+void TriggerErrorsCmd(int argc, char *argv[]) {
+	if (argc == 2) {
+		switch ( atoi(argv[1])) {
+		case 0:
+			// Wait for Watchdog to reset device.
+			while(true);
+			break;
+		case 1:
+			illegal_instruction_execution(0xE0000000);
+			break;
+		case 2:
+			read_from_bad_address();
+			break;
+		}
+	}
 }
 
 

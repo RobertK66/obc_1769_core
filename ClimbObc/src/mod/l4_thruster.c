@@ -36,7 +36,7 @@
 #include "tim/obc_time.h"
 
 #include <mod/ado_mram.h>
-#include "modules_globals.h"
+
 
 typedef struct  {
 	uint8_t sequence_id;

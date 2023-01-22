@@ -12,7 +12,6 @@
 #include "../l7_climb_app.h"
 #include "../l2_debug_com.h"
 //#include "../l4_thruster.h" // with that we include variable  l4_thr_ExpectedReceiveBuffer  which defines expected RX buffer length
-#include "../modules_globals.h"
 #include <ado_crc.h>
 #include "../tim/obc_time.h"
 //uint16_t LAST_STARTED_MODULE;

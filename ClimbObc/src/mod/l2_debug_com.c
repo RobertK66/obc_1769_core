@@ -11,7 +11,7 @@ is then translated into argc argv and is available for higher layers module
 as "Received Command".
 
 Tx can buffer up to TX_L2_FRAME_SIZE Bytes. A TX Frame can send any binary
-data. Frame starts and ends with 0x7E. To Escape a flag in date we use 0x7D.
+data. Frame starts and ends with 0x7E. To Escape a flag in data we use 0x7D.
 The escaped data is Xored by 0x20.
 	Example:   01 02 7e 03 -> 01 02 7d 5e 03
 
@@ -19,8 +19,6 @@ The escaped data is Xored by 0x20.
 */
 #include "l2_debug_com.h"
 
-#include "modules_globals.h"
-//uint16_t LAST_STARTED_MODULE;
 #include <string.h>
 #include <ado_uart.h>
 

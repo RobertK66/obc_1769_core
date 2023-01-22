@@ -125,6 +125,11 @@ void PLL1_IRQHandler(void) ALIAS(IntDefaultHandler);
 void USBActivity_IRQHandler(void) ALIAS(IntDefaultHandler);
 void CANActivity_IRQHandler(void) ALIAS(IntDefaultHandler);
 
+
+// Prototyping the fault handler with pointer to stacked frame
+struct sContextStateFrame;
+void my_fault_handler_c(struct sContextStateFrame *ptr);
+
 //*****************************************************************************
 //
 // The entry point for the application.
@@ -168,7 +173,7 @@ void (* const g_pfnVectors[])(void) = {
     ResetISR,                               // The reset handler
     NMI_Handler,                            // The NMI handler
     HardFault_Handler,                      // The hard fault handler
-    MemManage_Handler,                      // The MPU fault handler
+	MemManage_Handler,                      // The MPU fault handler
     BusFault_Handler,                       // The bus fault handler
     UsageFault_Handler,                     // The usage fault handler
     __valid_user_code_checksum,             // LPC MCU Checksum
@@ -321,19 +326,51 @@ ResetISR(void) {
 // Default exception handlers. Override the ones here by defining your own
 // handler routines in your application code.
 //*****************************************************************************
+
+// A wrapper  to call a c-function with the stacked registers interpretable by a struct pointer.
+// Depending of bit 2 in LR we have to use the correct Stack pointer here!
+//#define HARDFAULT_HANDLING_ASM(_x)               \
+//  __asm volatile(                                \
+//      "tst lr, #4 \n"                            \
+//      "ite eq \n"                                \
+//      "mrseq r0, msp \n"                         \
+//      "mrsne r0, psp \n"                         \
+//      "b my_fault_handler_c \n"                  \
+//                                                 )
+//
+
+//// Prototype of handler
+//struct sContextStateFrame;
+//void my_fault_handler_c(sContextStateFrame *ptr);
+
 __attribute__ ((section(".after_vectors")))
 void NMI_Handler(void)
-{ while(1) {}
+{
+	while(1) {}
 }
 
 __attribute__ ((section(".after_vectors")))
 void HardFault_Handler(void)
-{ while(1) {}
+{
+	volatile unsigned long var = 0;		// We use the address of this variable to find out current stack pointer value
+	// The 'stacked frame' can be found 8 bytes before the 4 byte variable !? -> +12
+	my_fault_handler_c((struct sContextStateFrame*)((unsigned long)&var + 12));
 }
 
 __attribute__ ((section(".after_vectors")))
 void MemManage_Handler(void)
-{ while(1) {}
+{
+	//HARDFAULT_HANDLING_ASM();
+//	__asm volatile(                                \
+//	      "tst lr, #4 \n"                            \
+//	      "ite eq \n"                                \
+//	      "mrseq r0, msp \n"                         \
+//	      "mrsne r0, psp \n"                         \
+//	      "b my_fault_handler_c \n"                  \
+//
+	volatile unsigned long var = 0;		// We use the address of this variable to find out current stack pointer value
+	// The 'stacked frame' can be found 8 bytes before the 4 byte variable !? -> +12
+	my_fault_handler_c((struct sContextStateFrame*)((unsigned long)&var + 12));
 }
 
 __attribute__ ((section(".after_vectors")))

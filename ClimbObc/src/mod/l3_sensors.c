@@ -16,7 +16,7 @@
 #include <ado_modules.h>
 
 #include "ai2c/obc_i2c.h"
-#include "modules_globals.h"
+
 
 typedef sensor_values_t sen_eventarg_meassurement_t;
 

@@ -29,7 +29,7 @@
 //#include "radtest/radtest.h"
 #include "mod/thr/thr.h"
 #include "mod/l4_thruster.h"
-#include "mod/modules_globals.h"
+
 
 
 #include "mod/psu/psu.h"
@@ -118,6 +118,31 @@ static uint32_t inline calculatelongest_runtime(uint32_t started, uint32_t finis
 }
 
 
+void mainloop(void) {
+	  // Enter an infinite loop calling all registered modules main function.
+	    while(1) {
+	    	uint32_t finishedAtTicks;
+	    	ModulesStatus.mainLoopStartedAtTicks = LPC_TIMER0->TC;
+	    	for (int i=0; i < MODULE_CNT; i++) {
+	    		ModulesStatus.curExecutingPtr = &ModStat[i];
+	        	ModulesStatus.startedAtTicks = LPC_TIMER0->TC;
+	    		Modules[i].main();
+	    		finishedAtTicks = LPC_TIMER0->TC;
+	    		ModulesStatus.curExecutingPtr->longestExecutionTicks = calculatelongest_runtime( ModulesStatus.startedAtTicks,
+	    				                                                                         finishedAtTicks,
+																							     ModulesStatus.curExecutingPtr->longestExecutionTicks);
+	    	}
+
+	    	finishedAtTicks = LPC_TIMER0->TC;
+	    	ModulesStatus.longestMainLoopTicks = calculatelongest_runtime( ModulesStatus.mainLoopStartedAtTicks,
+	    																   finishedAtTicks,
+																		   ModulesStatus.longestMainLoopTicks);
+
+	    	// Feed the watchdog
+	    	Chip_GPIO_SetPinToggle(LPC_GPIO, PORT_FROM_IDX(PINIDX_WATCHDOG_FEED), PINNR_FROM_IDX(PINIDX_WATCHDOG_FEED));
+	    }
+}
+
 int main(void) {
     // Read clock settings and update SystemCoreClock variable.
 	// (Here in main() this sets the global available SystemCoreClock variable for the first time after all SystemInits finished)
@@ -168,27 +193,28 @@ int main(void) {
     SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_INIT, &InitReport, sizeof(InitReport) );
 
     // Enter an infinite loop calling all registered modules main function.
-    while(1) {
-    	uint32_t finishedAtTicks;
-    	ModulesStatus.mainLoopStartedAtTicks = LPC_TIMER0->TC;
-    	for (int i=0; i < MODULE_CNT; i++) {
-    		ModulesStatus.curExecutingPtr = &ModStat[i];
-        	ModulesStatus.startedAtTicks = LPC_TIMER0->TC;
-    		Modules[i].main();
-    		finishedAtTicks = LPC_TIMER0->TC;
-    		ModulesStatus.curExecutingPtr->longestExecutionTicks = calculatelongest_runtime( ModulesStatus.startedAtTicks,
-    				                                                                         finishedAtTicks,
-																						     ModulesStatus.curExecutingPtr->longestExecutionTicks);
-    	}
-
-    	finishedAtTicks = LPC_TIMER0->TC;
-    	ModulesStatus.longestMainLoopTicks = calculatelongest_runtime( ModulesStatus.mainLoopStartedAtTicks,
-    																   finishedAtTicks,
-																	   ModulesStatus.longestMainLoopTicks);
-
-    	// Feed the watchdog
-    	Chip_GPIO_SetPinToggle(LPC_GPIO, PORT_FROM_IDX(PINIDX_WATCHDOG_FEED), PINNR_FROM_IDX(PINIDX_WATCHDOG_FEED));
-    }
+//    while(1) {
+//    	uint32_t finishedAtTicks;
+//    	ModulesStatus.mainLoopStartedAtTicks = LPC_TIMER0->TC;
+//    	for (int i=0; i < MODULE_CNT; i++) {
+//    		ModulesStatus.curExecutingPtr = &ModStat[i];
+//        	ModulesStatus.startedAtTicks = LPC_TIMER0->TC;
+//    		Modules[i].main();
+//    		finishedAtTicks = LPC_TIMER0->TC;
+//    		ModulesStatus.curExecutingPtr->longestExecutionTicks = calculatelongest_runtime( ModulesStatus.startedAtTicks,
+//    				                                                                         finishedAtTicks,
+//																						     ModulesStatus.curExecutingPtr->longestExecutionTicks);
+//    	}
+//
+//    	finishedAtTicks = LPC_TIMER0->TC;
+//    	ModulesStatus.longestMainLoopTicks = calculatelongest_runtime( ModulesStatus.mainLoopStartedAtTicks,
+//    																   finishedAtTicks,
+//																	   ModulesStatus.longestMainLoopTicks);
+//
+//    	// Feed the watchdog
+//    	Chip_GPIO_SetPinToggle(LPC_GPIO, PORT_FROM_IDX(PINIDX_WATCHDOG_FEED), PINNR_FROM_IDX(PINIDX_WATCHDOG_FEED));
+//    }
+    mainloop();
     return 0;
 }
 
@@ -225,3 +251,126 @@ void main_showruntimes_cmd(int argc, char *argv[]) {
 }
 
 
+typedef struct __attribute__((packed)) ContextStateFrame {
+  //uint32_t sp_old; 				// SP prior to fault !?
+  uint32_t r0;
+  uint32_t r1;
+  uint32_t r2;
+  uint32_t r3;
+  uint32_t r12;
+  uint32_t lr;
+  uint32_t return_address;
+  uint32_t xpsr;
+  //uint32_t dummy;
+} sContextStateFrame;
+
+//#define HARDFAULT_HANDLING_ASM(_x)               \
+//  __asm volatile(                                \
+//      "tst lr, #4 \n"                            \
+//      "ite eq \n"                                \
+//      "mrseq r0, msp \n"                         \
+//      "mrsne r0, psp \n"                         \
+//      "b my_fault_handler_c \n"                  \
+//                                                 )
+
+__attribute__((optimize("O0")))
+void my_fault_handler_c(sContextStateFrame *frame) {
+	// Logic for dealing with the exception. Typically:
+	//  - log the fault which occurred for postmortem analysis
+	//  - If the fault is recoverable,
+	//    - clear errors and return back to Thread Mode
+	//  - else
+	//    - reboot system
+	int d;
+	d = frame->lr;				// This is the prog-pointer to last stored return value code before fault occured -> translate with map file....
+	//d = frame->return_address; 	// this is the PC which triggered the fault.
+
+
+	// Configurable Fault Status Register
+    // Consists of MMSR, BFSR and UFSR
+	uint32_t _CFSR = SCB->CFSR; // (*((volatile unsigned long *)(0xE000ED28))) ;
+
+	// Hard Fault Status Register
+	uint32_t _HFSR = SCB->HFSR; //(*((volatile unsigned long *)(0xE000ED2C))) ;
+
+	// Debug Fault Status Register
+	uint32_t _DFSR = SCB->DFSR; //(*((volatile unsigned long *)(0xE000ED30))) ;
+
+	// Auxiliary Fault Status Register
+	uint32_t _AFSR = SCB->AFSR; //(*((volatile unsigned long *)(0xE000ED3C))) ;
+
+	// Read the Fault Address Registers. These may not contain valid values.
+	// Check BFARVALID/MMARVALID to see if they are valid values
+	// MemManage Fault Address Register
+	uint32_t _MMAR = (*((volatile unsigned long *)(0xE000ED34))) ;
+	// Bus Fault Address Register
+	uint32_t _BFAR = (*((volatile unsigned long *)(0xE000ED38)));
+
+
+	// Clear any logged faults from the CFSR
+	SCB->CFSR |= SCB->CFSR;
+	// the instruction we will return to when we exit from the exception
+	frame->return_address = (uint32_t)mainloop;
+	// the function we are returning to should never branch
+	// so set lr to a pattern that would fault if it did
+	frame->lr = 0xdeadbeef;
+	// reset the psr state and only leave the
+	// "thumb instruction interworking" bit set
+	frame->xpsr = (1 << 24);  ///???
+
+
+}
+
+
+//void my_fault_handler_c2() {
+//	// Logic for dealing with the exception. Typically:
+//	//  - log the fault which occurred for postmortem analysis
+//	//  - If the fault is recoverable,
+//	//    - clear errors and return back to Thread Mode
+//	//  - else
+//	//    - reboot system
+//
+//	volatile unsigned long var = 0;
+//	void * currentSP = (void *)((unsigned long)&var + 4);
+//
+//	sContextStateFrame *frame = (sContextStateFrame *)currentSP;
+//
+//	int d;
+//	d = frame->lr;				// This is the prog-pointer to last stored return value code before fault occured -> translate with map file....
+//	//d = frame->return_address; 	// this is the PC which triggered the fault.
+//
+//
+//	// Configurable Fault Status Register
+//    // Consists of MMSR, BFSR and UFSR
+//	uint32_t _CFSR = SCB->CFSR; // (*((volatile unsigned long *)(0xE000ED28))) ;
+//
+//	// Hard Fault Status Register
+//	uint32_t _HFSR = SCB->HFSR; //(*((volatile unsigned long *)(0xE000ED2C))) ;
+//
+//	// Debug Fault Status Register
+//	uint32_t _DFSR = SCB->DFSR; //(*((volatile unsigned long *)(0xE000ED30))) ;
+//
+//	// Auxiliary Fault Status Register
+//	uint32_t _AFSR = SCB->AFSR; //(*((volatile unsigned long *)(0xE000ED3C))) ;
+//
+//	// Read the Fault Address Registers. These may not contain valid values.
+//	// Check BFARVALID/MMARVALID to see if they are valid values
+//	// MemManage Fault Address Register
+//	uint32_t _MMAR = (*((volatile unsigned long *)(0xE000ED34))) ;
+//	// Bus Fault Address Register
+//	uint32_t _BFAR = (*((volatile unsigned long *)(0xE000ED38)));
+//
+//
+//	// Clear any logged faults from the CFSR
+//	SCB->CFSR |= SCB->CFSR;
+//	// the instruction we will return to when we exit from the exception
+//	//frame->return_address = (uint32_t)mainloop;
+//	// the function we are returning to should never branch
+//	// so set lr to a pattern that would fault if it did
+//	frame->lr =(uint32_t)mainloop; // 0xdeadbeef;
+//	// reset the psr state and only leave the
+//	// "thumb instruction interworking" bit set
+//	frame->xpsr = (1 << 24);  ///???
+//
+//
+//}

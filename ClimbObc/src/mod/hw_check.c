@@ -8,7 +8,7 @@
 #include "hw_check.h"
 
 #include "l2_debug_com.h"
-#include "modules_globals.h"
+
 
 pinmux_array_t *hwcInitData;
 
