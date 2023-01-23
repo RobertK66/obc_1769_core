@@ -31,14 +31,24 @@ typedef enum {
 	RTC_STAT_RUNNING		= 0x22,
 	RTC_STAT_RESETDEFAULT	= 0x33,
 	RTC_STAT_UNKNOWN		= 0xDD,
-	RTC_STAT_XTAL_ERROR		= 0xE0,
+	RTC_STAT_XTAL_ERROR		= 0xE0
 } rtc_status_t;
 
-// Usage of 19 bytes General Purpose Register
-typedef enum {
-	RTC_GPRIDX_STATUS = 0,
-	RTC_GPRIDX_RESETCOUNTER32 = 4,		// must be on base of a uint32 register to be accessed with single read/write.
-	RTC_GPRIDX_CRC8 = 19
+//
+//typedef enum {
+//	RTC_FAULT_NONE			= 0x00,
+//	RTC_FAULT_1				= 0x99
+//} rtc_faulttype_t;
+
+// Usage of 20 bytes General Purpose Register
+typedef enum {							//    3   2   1     0
+	RTC_GPRIDX_RESETCOUNTER32 = 0,		// 0: rc  rc  rc    rc        words (must be aligned to be accessed with single read/write).
+	RTC_GPRIDX_FAULTWORD0	  = 4,		// 4: f0  f0  f0    f0
+	RTC_GPRIDX_FAULTWORD1	  = 8,		// 8: f1  f1  f1    f1
+	RTC_GPRIDX_FAULTWORD2	  = 12,		//12: f2  f2  f2    f2
+	RTC_GPRIDX_STATUS 		  = 16,		//16: crc .   fault status    bytes
+	RTC_GPRIDX_FAULTTYPE      = 17,
+	RTC_GPRIDX_CRC8 		  = 19
 } rtc_gpridx_t;
 
 typedef struct {
@@ -257,6 +267,8 @@ void RtcClearGpr() {
 	}
 }
 
+
+
 // We use the 5 GPR registers as a byte store with 19 bytes + 1byte CRC8
 void RtcWriteGpr(rtc_gpridx_t idx, uint8_t byte) {
 	if ((idx < 19) && (idx >= 0)) {
@@ -310,6 +322,13 @@ bool RtcIsGprChecksumOk(void) {
 	gprbase = (uint8_t *) &(LPC_RTC->GPREG);
 	uint8_t crc = CRC8(gprbase, 19);
 	return (gprbase[19] == crc);
+}
+
+void timSetFaultDump(rtc_faultdump_t *fault) {
+	RtcWriteGpr(RTC_GPRIDX_FAULTTYPE, fault->type);
+	RtcWriteGpr32(RTC_GPRIDX_FAULTWORD0, fault->word0);
+	RtcWriteGpr32(RTC_GPRIDX_FAULTWORD1, fault->word1);
+	RtcWriteGpr32(RTC_GPRIDX_FAULTWORD2, fault->word2);
 }
 
 void timBlockMs(uint16_t ms) {

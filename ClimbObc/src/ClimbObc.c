@@ -101,7 +101,7 @@ static const MODULE_DEF_T Modules[] = {
 
 // Main variables
 static MODULE_STATUS_T ModStat[MODULE_CNT];
-static MODULES_STATUS_T ModulesStatus;
+MODULES_STATUS_T ModulesStatus;
 
 static uint32_t inline calculatelongest_runtime(uint32_t started, uint32_t finished, uint32_t longest) {
 	uint32_t runtime;
@@ -118,9 +118,21 @@ static uint32_t inline calculatelongest_runtime(uint32_t started, uint32_t finis
 }
 
 
+
 void mainloop(void) {
-	  // Enter an infinite loop calling all registered modules main function.
-	    while(1) {
+	// Lets check if mainloop gets 'called' by return from a fail-handler!
+	ModulesStatus.CurrentMsp = __get_MSP();
+	if (ModulesStatus.CurrentMsp != ModulesStatus.MainloopMsp) {
+		// Avoid 'leaking' stack pointer for continuing mainloop....
+		__set_MSP(ModulesStatus.MainloopMsp);
+		// TODO:
+		// -> goto "emergency-dumpstatus-mainloop" and shutdown operation with hard reset (watchdog) in the end
+		// idea here is to persist a status dump in MRAM - if this is stil. possible.
+		// ...
+	}
+
+	// Enter an infinite loop calling all registered modules main function.
+	while(1) {
 	    	uint32_t finishedAtTicks;
 	    	ModulesStatus.mainLoopStartedAtTicks = LPC_TIMER0->TC;
 	    	for (int i=0; i < MODULE_CNT; i++) {
@@ -192,28 +204,8 @@ int main(void) {
 
     SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_INIT, &InitReport, sizeof(InitReport) );
 
-    // Enter an infinite loop calling all registered modules main function.
-//    while(1) {
-//    	uint32_t finishedAtTicks;
-//    	ModulesStatus.mainLoopStartedAtTicks = LPC_TIMER0->TC;
-//    	for (int i=0; i < MODULE_CNT; i++) {
-//    		ModulesStatus.curExecutingPtr = &ModStat[i];
-//        	ModulesStatus.startedAtTicks = LPC_TIMER0->TC;
-//    		Modules[i].main();
-//    		finishedAtTicks = LPC_TIMER0->TC;
-//    		ModulesStatus.curExecutingPtr->longestExecutionTicks = calculatelongest_runtime( ModulesStatus.startedAtTicks,
-//    				                                                                         finishedAtTicks,
-//																						     ModulesStatus.curExecutingPtr->longestExecutionTicks);
-//    	}
-//
-//    	finishedAtTicks = LPC_TIMER0->TC;
-//    	ModulesStatus.longestMainLoopTicks = calculatelongest_runtime( ModulesStatus.mainLoopStartedAtTicks,
-//    																   finishedAtTicks,
-//																	   ModulesStatus.longestMainLoopTicks);
-//
-//    	// Feed the watchdog
-//    	Chip_GPIO_SetPinToggle(LPC_GPIO, PORT_FROM_IDX(PINIDX_WATCHDOG_FEED), PINNR_FROM_IDX(PINIDX_WATCHDOG_FEED));
-//    }
+    // Enter infinite loop
+    ModulesStatus.MainloopMsp =  __get_MSP() - 0x20;
     mainloop();
     return 0;
 }
@@ -264,15 +256,6 @@ typedef struct __attribute__((packed)) ContextStateFrame {
   //uint32_t dummy;
 } sContextStateFrame;
 
-//#define HARDFAULT_HANDLING_ASM(_x)               \
-//  __asm volatile(                                \
-//      "tst lr, #4 \n"                            \
-//      "ite eq \n"                                \
-//      "mrseq r0, msp \n"                         \
-//      "mrsne r0, psp \n"                         \
-//      "b my_fault_handler_c \n"                  \
-//                                                 )
-
 __attribute__((optimize("O0")))
 void my_fault_handler_c(sContextStateFrame *frame) {
 	// Logic for dealing with the exception. Typically:
@@ -281,66 +264,22 @@ void my_fault_handler_c(sContextStateFrame *frame) {
 	//    - clear errors and return back to Thread Mode
 	//  - else
 	//    - reboot system
-	int d;
-	d = frame->lr;				// This is the prog-pointer to last stored return value code before fault occured -> translate with map file....
-	//d = frame->return_address; 	// this is the PC which triggered the fault.
+	const bool faulted_from_exception = ((frame->xpsr & 0xFF) != 0);
+	rtc_faultdump_t fault;
 
+	if (faulted_from_exception) {
+		fault.type = RTC_FAULT_IRQ;
+		fault.word0 = frame->xpsr;									// there are the 'current' IRQ numbers in bits....
+	} else {
+		fault.type = RTC_FAULT_MAIN;
+		fault.word0 = ModulesStatus.curExecutingPtr->moduleIdx;		// Module executing in main loop
+	}
+	fault.word1 = SCB->CFSR;										// Current Fault Status register.
+	fault.word2 = frame->return_address;							// The PC where the fault occured -> translate with map file to get code line!
+
+	timSetFaultDump(&fault);
 
 	// Configurable Fault Status Register
-    // Consists of MMSR, BFSR and UFSR
-	uint32_t _CFSR = SCB->CFSR; // (*((volatile unsigned long *)(0xE000ED28))) ;
-
-	// Hard Fault Status Register
-	uint32_t _HFSR = SCB->HFSR; //(*((volatile unsigned long *)(0xE000ED2C))) ;
-
-	// Debug Fault Status Register
-	uint32_t _DFSR = SCB->DFSR; //(*((volatile unsigned long *)(0xE000ED30))) ;
-
-	// Auxiliary Fault Status Register
-	uint32_t _AFSR = SCB->AFSR; //(*((volatile unsigned long *)(0xE000ED3C))) ;
-
-	// Read the Fault Address Registers. These may not contain valid values.
-	// Check BFARVALID/MMARVALID to see if they are valid values
-	// MemManage Fault Address Register
-	uint32_t _MMAR = (*((volatile unsigned long *)(0xE000ED34))) ;
-	// Bus Fault Address Register
-	uint32_t _BFAR = (*((volatile unsigned long *)(0xE000ED38)));
-
-
-	// Clear any logged faults from the CFSR
-	SCB->CFSR |= SCB->CFSR;
-	// the instruction we will return to when we exit from the exception
-	frame->return_address = (uint32_t)mainloop;
-	// the function we are returning to should never branch
-	// so set lr to a pattern that would fault if it did
-	frame->lr = 0xdeadbeef;
-	// reset the psr state and only leave the
-	// "thumb instruction interworking" bit set
-	frame->xpsr = (1 << 24);  ///???
-
-
-}
-
-
-//void my_fault_handler_c2() {
-//	// Logic for dealing with the exception. Typically:
-//	//  - log the fault which occurred for postmortem analysis
-//	//  - If the fault is recoverable,
-//	//    - clear errors and return back to Thread Mode
-//	//  - else
-//	//    - reboot system
-//
-//	volatile unsigned long var = 0;
-//	void * currentSP = (void *)((unsigned long)&var + 4);
-//
-//	sContextStateFrame *frame = (sContextStateFrame *)currentSP;
-//
-//	int d;
-//	d = frame->lr;				// This is the prog-pointer to last stored return value code before fault occured -> translate with map file....
-//	//d = frame->return_address; 	// this is the PC which triggered the fault.
-//
-//
-//	// Configurable Fault Status Register
 //    // Consists of MMSR, BFSR and UFSR
 //	uint32_t _CFSR = SCB->CFSR; // (*((volatile unsigned long *)(0xE000ED28))) ;
 //
@@ -352,25 +291,37 @@ void my_fault_handler_c(sContextStateFrame *frame) {
 //
 //	// Auxiliary Fault Status Register
 //	uint32_t _AFSR = SCB->AFSR; //(*((volatile unsigned long *)(0xE000ED3C))) ;
-//
-//	// Read the Fault Address Registers. These may not contain valid values.
-//	// Check BFARVALID/MMARVALID to see if they are valid values
-//	// MemManage Fault Address Register
-//	uint32_t _MMAR = (*((volatile unsigned long *)(0xE000ED34))) ;
-//	// Bus Fault Address Register
-//	uint32_t _BFAR = (*((volatile unsigned long *)(0xE000ED38)));
-//
-//
-//	// Clear any logged faults from the CFSR
-//	SCB->CFSR |= SCB->CFSR;
-//	// the instruction we will return to when we exit from the exception
-//	//frame->return_address = (uint32_t)mainloop;
-//	// the function we are returning to should never branch
-//	// so set lr to a pattern that would fault if it did
-//	frame->lr =(uint32_t)mainloop; // 0xdeadbeef;
-//	// reset the psr state and only leave the
-//	// "thumb instruction interworking" bit set
-//	frame->xpsr = (1 << 24);  ///???
-//
-//
-//}
+
+	// Read the Fault Address Registers. These may not contain valid values.
+	// TODO: Check BFARVALID/MMARVALID to see if they are valid values
+	// MemManage Fault Address Register -> use in combination with type and word0/1/2 content .....
+	uint32_t _MMAR = (*((volatile unsigned long *)(0xE000ED34))) ;
+	// Bus Fault Address Register
+	uint32_t _BFAR = (*((volatile unsigned long *)(0xE000ED38)));
+
+	// Clear any logged faults from the CFSR
+	SCB->CFSR |= SCB->CFSR;
+
+	// This code here only makes sense if we want to use mainloop (in some degarded form !!???) to persist more fault dump in MRAM.....
+	if (!faulted_from_exception) {
+		// the instruction we will return to when we exit from the exception
+		frame->return_address = (uint32_t)mainloop;
+		// the function we are returning to should never branch
+		// so set lr to a pattern that would fault if it did
+		frame->lr = 0xdeadbeef;
+		// reset the psr state and only leave the
+		// "thumb instruction interworking" bit set
+		frame->xpsr = (1 << 24);  ///???
+	} else {
+		frame->return_address = (uint32_t)mainloop;
+		frame->lr = 0xdeadbeee;
+	}
+
+
+	// TODO: make while(true) if seems to be unrecoverable !!!!!
+	// for final flight version this should always end here !!!!!!  (fault in RTC could be used after next reset)
+	// for now and for debugging only I let it recover to mainloop with manipulated Stack pointer which shouldn't leak.....
+
+
+}
+

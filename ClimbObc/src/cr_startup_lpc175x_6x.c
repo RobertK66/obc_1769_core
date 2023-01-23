@@ -327,22 +327,6 @@ ResetISR(void) {
 // handler routines in your application code.
 //*****************************************************************************
 
-// A wrapper  to call a c-function with the stacked registers interpretable by a struct pointer.
-// Depending of bit 2 in LR we have to use the correct Stack pointer here!
-//#define HARDFAULT_HANDLING_ASM(_x)               \
-//  __asm volatile(                                \
-//      "tst lr, #4 \n"                            \
-//      "ite eq \n"                                \
-//      "mrseq r0, msp \n"                         \
-//      "mrsne r0, psp \n"                         \
-//      "b my_fault_handler_c \n"                  \
-//                                                 )
-//
-
-//// Prototype of handler
-//struct sContextStateFrame;
-//void my_fault_handler_c(sContextStateFrame *ptr);
-
 __attribute__ ((section(".after_vectors")))
 void NMI_Handler(void)
 {
@@ -355,19 +339,13 @@ void HardFault_Handler(void)
 	volatile unsigned long var = 0;		// We use the address of this variable to find out current stack pointer value
 	// The 'stacked frame' can be found 8 bytes before the 4 byte variable !? -> +12
 	my_fault_handler_c((struct sContextStateFrame*)((unsigned long)&var + 12));
+	// This is never recoverable, so do not try here
+	while(1);
 }
 
 __attribute__ ((section(".after_vectors")))
 void MemManage_Handler(void)
 {
-	//HARDFAULT_HANDLING_ASM();
-//	__asm volatile(                                \
-//	      "tst lr, #4 \n"                            \
-//	      "ite eq \n"                                \
-//	      "mrseq r0, msp \n"                         \
-//	      "mrsne r0, psp \n"                         \
-//	      "b my_fault_handler_c \n"                  \
-//
 	volatile unsigned long var = 0;		// We use the address of this variable to find out current stack pointer value
 	// The 'stacked frame' can be found 8 bytes before the 4 byte variable !? -> +12
 	my_fault_handler_c((struct sContextStateFrame*)((unsigned long)&var + 12));
@@ -375,7 +353,10 @@ void MemManage_Handler(void)
 
 __attribute__ ((section(".after_vectors")))
 void BusFault_Handler(void)
-{ while(1) {}
+{
+	volatile unsigned long var = 0;		// We use the address of this variable to find out current stack pointer value
+	// The 'stacked frame' can be found 8 bytes before the 4 byte variable !? -> +12
+	my_fault_handler_c((struct sContextStateFrame*)((unsigned long)&var + 12));
 }
 
 __attribute__ ((section(".after_vectors")))

@@ -28,6 +28,8 @@ typedef struct {
 	uint32_t startedAtTicks;
 	uint32_t mainLoopStartedAtTicks;
 	uint32_t longestMainLoopTicks;
+	uint32_t MainloopMsp;
+	uint32_t CurrentMsp;
 } MODULES_STATUS_T;
 
 typedef struct {

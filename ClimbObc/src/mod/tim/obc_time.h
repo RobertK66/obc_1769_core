@@ -61,12 +61,24 @@ typedef union {
     };
 } init_report_t;
 
+typedef enum {
+	RTC_FAULT_NONE			= 0x00,
+	RTC_FAULT_IRQ			= 0x99,
+	RTC_FAULT_MAIN			= 0xAA,
+} rtc_faulttype_t;
+
+
+typedef struct {
+	uint32_t		word0;
+	uint32_t		word1;
+	uint32_t		word2;
+	rtc_faulttype_t type;
+} rtc_faultdump_t;
+
 // API module functions
 void timInit (void *dummy);
 void timMain (void);
-
-void 	 			timSetResetNumber(uint32_t resetCount);
-uint32_t 			timGetResetNumber(void);
+// Time functions
 obc_systime32_t		timGetSystime(void);
 
 void 				TimSetUtc1(uint16_t year, uint8_t month, uint8_t dayOfMonth, uint8_t hour, uint8_t min, uint8_t sec, bool syncRTC, uint8_t syncSource);
@@ -76,6 +88,11 @@ obc_utc_fulltime_t 	timGetUTCTime(void);
 juliandayfraction 	timConvertUtcTimeToJdf(uint32_t gpsTime, uint16_t gpsMs);
 juliandayfraction 	timConvertUtcDateToJdf(uint32_t gpsDate);
 
+// GPR-functions
+void 	 			timSetResetNumber(uint32_t resetCount);
+uint32_t 			timGetResetNumber(void);
+void				timSetFaultDump(rtc_faultdump_t *fault);
+rtc_faultdump_t     timGetFaultDump(void);
 
 
 // Event defines (Internal defined event structs can be used on debug and com APIs as generic 'Event'.

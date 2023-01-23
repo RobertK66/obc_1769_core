@@ -465,7 +465,8 @@ __attribute__( ( always_inline ) ) __STATIC_INLINE uint32_t __get_MSP(void)
  */
 __attribute__( ( always_inline ) ) __STATIC_INLINE void __set_MSP(uint32_t topOfMainStack)
 {
-  __ASM volatile ("MSR msp, %0\n" : : "r" (topOfMainStack) : "sp");
+  //__ASM volatile ("MSR msp, %0\n" : : "r" (topOfMainStack) : "sp"); // see: https://github.com/qmk/qmk_firmware/issues/7310
+	__ASM volatile ("MSR msp, %0\n" : : "r" (topOfMainStack) : );
 }
 
 

@@ -318,6 +318,8 @@ void I2C_Handler(LPC_I2C_T *I2Cx) {
 		active_job_done[busNr] = 1;
 		if (!I2C_RB_empty(&I2C_buffer[busNr]))
 			I2C_send(I2Cx, busNr); /*starte nächsten Job, sofern vorhanden. */
+
+		//read_from_bad_address();
 		return;
 
 	case I2C_I2STAT_M_TX_SLAW_NACK:/* SLA+W has been transmitted, NACK has been received */
