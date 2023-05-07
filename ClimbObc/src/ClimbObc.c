@@ -47,7 +47,7 @@ static const sdcard_init_t SdCards[] = {
 #else
 // OBC Hardware has one SD Card connected to SPI
 static const sdcard_init_t SdCards[] = {
-	{ADO_SBUS_SPI, PTR_FROM_IDX(PINIDX_SPI_CS_SD)}
+//	{ADO_SBUS_SPI, PTR_FROM_IDX(PINIDX_SPI_CS_SD)}
 };
 #endif
 static const sdcard_init_array_t Cards = {
@@ -72,8 +72,8 @@ static const mem_init_t MemoryInit = {
 
 static const gps_initdata_t GpsInit = {
 		LPC_UART0,
-		PTR_FROM_IDX(PINIDX_GPIO4_CP),
-		PTR_FROM_IDX(PINIDX_STACIE_C_IO1_P)
+		0, // PTR_FROM_IDX(PINIDX_GPIO4_CP),
+		0, //PTR_FROM_IDX(PINIDX_STACIE_C_IO1_P)
 };
 
 static const thr_initdata_t ThrInit = {
@@ -86,15 +86,15 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( deb_init, deb_main, LPC_UART2),
 		MOD_INIT( timInit, timMain, &InitReport ),
 		MOD_INIT( hwc_init, hwc_main, &ObcPins ),
-		MOD_INIT( MramInitAll, MramMain, &Chips),
-		MOD_INIT( SdcInitAll, SdcMain, &Cards),
-		MOD_INIT( sen_init, sen_main, NULL),
-		MOD_INIT( memInit, memMain, &MemoryInit),
+//		MOD_INIT( MramInitAll, MramMain, &Chips),
+//		MOD_INIT( SdcInitAll, SdcMain, &Cards),
+//		MOD_INIT( sen_init, sen_main, NULL),
+//		MOD_INIT( memInit, memMain, &MemoryInit),
 		MOD_INIT( gpsInit, gpsMain, &GpsInit),
 		MOD_INIT( app_init, app_main, NULL),
-		MOD_INIT( thrInit, thrMain, &ThrInit),
-		MOD_INIT( l4_thruster_init, l4_thruster_main, NULL),
-		MOD_INIT( psu_init, psu_main, NULL)
+//		MOD_INIT( thrInit, thrMain, &ThrInit),
+//		MOD_INIT( l4_thruster_init, l4_thruster_main, NULL),
+//		MOD_INIT( psu_init, psu_main, NULL)
 
 };
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
@@ -129,6 +129,8 @@ int main(void) {
 	// Clear all (set) bits in this register (if possible).
 	LPC_SYSCON->RSID = InitReport.resetBits;
 	// Try to figure out if this was Hardware watchdog -> not possible in EM2!?
+#if BA_BOARD == BA_OM13085
+#else
 	if (Chip_GPIO_GetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_EXT_WDT_TRIGGERED), PINNR_FROM_IDX(PINIDX_EXT_WDT_TRIGGERED))) {
 		InitReport.hwWatchdog = true;
 		// Reset the WD Flip Flop. (Clear pin must be initialized as output now)
@@ -139,6 +141,7 @@ int main(void) {
 		// Every 2nd Reset.
 		InitReport.oddEven = true;
 	}
+#endif
 
     // Layer 1 - Bus Inits
 	// -------------------
@@ -161,9 +164,12 @@ int main(void) {
     	Modules[i].init(Modules[i].initdata);
     }
 
+#if BA_BOARD == BA_OM13085
+#else
     // End WD reset pulse and make clr pin input again.
     Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_CLR_WDT_FLPFLP), PINNR_FROM_IDX(PINIDX_CLR_WDT_FLPFLP));
     Chip_GPIO_SetPinDIRInput(LPC_GPIO, PORT_FROM_IDX(PINIDX_CLR_WDT_FLPFLP), PINNR_FROM_IDX(PINIDX_CLR_WDT_FLPFLP));
+#endif
 
     SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_INIT, &InitReport, sizeof(InitReport) );
 
