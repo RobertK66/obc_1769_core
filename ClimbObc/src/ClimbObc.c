@@ -26,7 +26,7 @@
 #include "mod/mem/obc_memory.h"
 #include "mod/l7_climb_app.h"
 
-//#include "radtest/radtest.h"
+#include "mod/srs/radsensor.h"
 #include "mod/thr/thr.h"
 #include "mod/l4_thruster.h"
 #include "mod/modules_globals.h"
@@ -80,6 +80,12 @@ static const thr_initdata_t ThrInit = {
 		LPC_UART1, ///Y+ sidepanel
 };
 
+
+static const srs_initdata_t SrsInit = {
+		LPC_I2C0,		// I2C bus to use
+		0x20			// SRS slave address.
+};
+
 static init_report_t InitReport;
 
 static const MODULE_DEF_T Modules[] = {
@@ -95,7 +101,7 @@ static const MODULE_DEF_T Modules[] = {
 //		MOD_INIT( thrInit, thrMain, &ThrInit),
 //		MOD_INIT( l4_thruster_init, l4_thruster_main, NULL),
 //		MOD_INIT( psu_init, psu_main, NULL)
-
+		MOD_INIT( srs_init, srs_main, &SrsInit)
 };
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
 
@@ -151,9 +157,9 @@ int main(void) {
     ADO_SPI_Init(0x08, SPI_CLOCK_MODE3);    // SDCard, Clock Divider 0x08 -> fastest, must be even: can be up to 0xFE for slower SPI Clocking
 
     // I2C buses
-    // init_i2c(LPC_I2C0, 100);		// 100 kHz  C/D
+    init_i2c(LPC_I2C0, 100);		// 100 kHz  C/D
     init_i2c(LPC_I2C1, 100);		// 100 kHz  on-board
-    init_i2c(LPC_I2C2, 100);		// 100 kHz  A/B
+    //init_i2c(LPC_I2C2, 100);		// 100 kHz  A/B
 
     init_mainlooptimer(LPC_TIMER0, SYSCTL_CLOCK_TIMER0);		
 
