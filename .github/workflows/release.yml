@@ -9,25 +9,30 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v§
         with:
           submodules: 'true'
 
       - name: Generate Build defines
         run: |
           MY_SWVERSION=$(printf '%.10s' "$GITHUB_REF_NAME" )
-          echo "#define BUILD_SWVERSION \"SW-$MY_SWVERSION\"" >> src/build.h
+          echo "#define BUILD_SWVERSION \"SW-$MY_SWVERSION\"" >> ClimbObc/src/build.h
           echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
-          cat src/build.h
+          cat ClimbObc/src/build.h
           pwd
-          printenv
           
           
       - name: Build the mcu workspace
         uses: RobertK66/actions-build-mcuxpresso@main
         id: build-it
         with:
-          project:  ClimbObc
+          projects: |
+            ado_chip_175x_6x
+            ClimbObc
+          configs: |
+            ado_chip_175x_6x/TestConfig_2
+            ClimbObc/Debug
+          resultpath:  ClimbObc/Debug/ClimbObc.axf
 
       - name: rename the axf file
         run: |
