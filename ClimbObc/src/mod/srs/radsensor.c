@@ -29,7 +29,7 @@ void srs_main() {
 	if (srsReadinProgress) {
 		if (srsJob.job_done == 1) {
 			srsReadinProgress = false;
-				SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_RAWDATA, srsRx, srsJob.rx_size);
+				SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_DATARX, srsRx, srsJob.rx_size);
 			}
 		}
 

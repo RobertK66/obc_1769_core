@@ -25,9 +25,9 @@ void srs_main();
 void srs_test_cmd(int argc, char *argv[]);
 
 
-#define MODULE_ID_RADSENSOR		0x05
-
-#define EID_SRS_RAWDATA			0x01
+#define MODULE_ID_RADSENSOR		0x06
+#define EID_SRS_DATATX			0x00
+#define EID_SRS_DATARX			0x01
 
 
 #endif /* MOD_SRS_RADSENSOR_H_ */
