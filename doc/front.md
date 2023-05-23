@@ -3,7 +3,7 @@
 #                     OBC - User Manual - Special Version SBS/DevBoard
 
 
-![](pic/obc.jpg)
+![](pic/OM13085.jpg)
 
 
  
