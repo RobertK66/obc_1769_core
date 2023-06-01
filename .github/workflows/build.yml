@@ -45,14 +45,14 @@ jobs:
 
       - name: rename the axf file
         run: |
-          cp ${{ steps.publish-document.outputs.axf }} ClimbObc${{ env.MY_SWVERSION }}${{ matrix.kind }}.axf          
+          cp ${{ steps.publish-document.outputs.axf }} ClimbObc${{ env.MY_SWVERSION }}-${{ matrix.kind }}.axf          
           ls 
           
       - name: Upload Binary
         uses: actions/upload-artifact@v3
         id: upload-axf
         with:
-          name: 'obc-axf-${{ env.MY_SWVERSION }}${{ matrix.kind }}'
-          path: ClimbObc${{ env.MY_SWVERSION }}${{ matrix.kind }}.axf 
+          name: '${{ matrix.kind }}-build-{{ env.MY_SWVERSION }}'
+          path: ClimbObc${{ env.MY_SWVERSION }}-${{ matrix.kind }}.axf 
           if-no-files-found: error
           
