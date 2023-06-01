@@ -1,7 +1,13 @@
-This is a special Release build for use with the LPC1769 developer board OM13085.
+Additional Notes and Info for Multi target releases.
 
-Hardware needs fololowing external connections:
------------------------------------------------
+OBC - EMx Version (???.axp)
+---------------------------
+
+
+DevBoard - BA_OM13085 Version (???.axp)
+---------------------------------------
+	Hardware needs fololowing external connections:
+
 	J2-40	UART2 - TX
 	J2-41   UART2 - RX	Debug Interface
   
