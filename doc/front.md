@@ -1,9 +1,9 @@
 ![](pic/climb.jpg)
 
-#                     OBC - User Manual - Special Version SRS/DevBoard
+#                     OBC - User Manual
 
 
-![](pic/OM13085.jpg)
+![](pic/obc.jpg)
 
 
  
