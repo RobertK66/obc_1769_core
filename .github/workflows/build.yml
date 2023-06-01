@@ -25,8 +25,8 @@ jobs:
       - name: Generate Build defines
         run: |
           MY_SWVERSION=$(printf '%.8s' "${{ github.sha }}" )
-          echo "#define BUILD_SWVERSION \"SW-$MY_SWVERSION\"\n" >> ClimbObc/src/build.h
-          echo "#define BA_BOARD {{matrix.board}}\n" >> ClimbObc/src/build.h
+          echo "#define BUILD_SWVERSION \"SW-$MY_SWVERSION\"" >> ClimbObc/src/build.h
+          echo "#define BA_BOARD ${{ matrix.board }}" >> ClimbObc/src/build.h
           echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
           cat ClimbObc/src/build.h
           pwd
@@ -45,14 +45,14 @@ jobs:
 
       - name: rename the axf file
         run: |
-          cp ${{ steps.publish-document.outputs.axf }} ClimbObc${{ env.MY_SWVERSION }}{{ matrix.kind }}.axf          
+          cp ${{ steps.publish-document.outputs.axf }} ClimbObc${{ env.MY_SWVERSION }}${{ matrix.kind }}.axf          
           ls 
           
       - name: Upload Binary
         uses: actions/upload-artifact@v3
         id: upload-axf
         with:
-          name: 'obc-axf-${{ env.MY_SWVERSION }}{{ matrix.kind }}'
-          path: ClimbObc${{ env.MY_SWVERSION }}{{ matrix.kind }}.axf 
+          name: 'obc-axf-${{ env.MY_SWVERSION }}${{ matrix.kind }}'
+          path: ClimbObc${{ env.MY_SWVERSION }}${{ matrix.kind }}.axf 
           if-no-files-found: error
           
