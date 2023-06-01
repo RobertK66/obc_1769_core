@@ -67,7 +67,7 @@ Events
 
 Events are sent by using a frame start/end Character of **0x7e.** If a databyte
 of 0x7e (or 0x7d) has to be transmitted this byte is escaped by using the escape
-char: **0x7d.**
+char: **0x7d** and the escaped data byte is XOR-ed with **0x20**.
 
 
 So one frame looks like this:
