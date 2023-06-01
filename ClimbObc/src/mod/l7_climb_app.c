@@ -152,10 +152,15 @@ static const app_command_t Commands[] = {
 
 void app_init (void *dummy) {
 	//SdcCardinitialize(0);
-	char ver[32] = "MYSW-Version: ";
-	ver[31] = 0;
-	strncpy(&ver[12], BUILD_SWVERSION, 18);
-	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, ver, 12 + strlen(BUILD_SWVERSION));
+	char ver[40] = "SW-Ver: ";
+	ver[39] = 0;
+	strncpy(&ver[8], BUILD_SWVERSION, 32);
+	int pos = 8+strlen(BUILD_SWVERSION);
+	if (pos < 39) {
+		ver[pos] = ' ';
+		strncpy(&ver[pos+1], BA_BOARD_REL, 38 - pos);
+	}
+	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, ver, strlen(ver));
 }
 
 void app_main (void) {

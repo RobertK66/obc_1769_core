@@ -54,7 +54,7 @@ void srs_test_cmd(int argc, char *argv[]) {
 		}
 	}
 
-	srsJob.device = LPC_I2C0;
+	srsJob.device = srs->pI2C;
 	srsJob.tx_size = 1;
 	srsJob.tx_data = srsTx;
 	srsJob.rx_size = readLen;
