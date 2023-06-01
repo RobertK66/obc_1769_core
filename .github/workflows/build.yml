@@ -52,7 +52,7 @@ jobs:
         uses: actions/upload-artifact@v3
         id: upload-axf
         with:
-          name: '${{ matrix.kind }}-build-{{ env.MY_SWVERSION }}'
+          name: 'Build-${{ env.MY_SWVERSION }}'
           path: ClimbObc${{ env.MY_SWVERSION }}-${{ matrix.kind }}.axf 
           if-no-files-found: error
           
