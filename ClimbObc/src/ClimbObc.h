@@ -15,6 +15,7 @@
 #define BA_CLIMBOBC		3
 
 // Switch the board Config here.
+
 #ifndef BA_BOARD
 #define BA_BOARD	BA_CLIMBOBC					// BA_CLIMBOBC //BA_OM13085 // BA_OM13085_EM2T
 

@@ -26,7 +26,7 @@
 #include "mod/mem/obc_memory.h"
 #include "mod/l7_climb_app.h"
 
-//#include "radtest/radtest.h"
+#include "mod/srs/radsensor.h"
 #include "mod/thr/thr.h"
 #include "mod/l4_thruster.h"
 #include "mod/modules_globals.h"
@@ -38,18 +38,50 @@
 void init_mainlooptimer(LPC_TIMER_T* pTimer,  CHIP_SYSCTL_CLOCK_T timBitIdx);
 
 
-#if BA_BOARD == BA_OM13085_EM2T
-// EM2T Test Hardware has 2 SD Cards connected to SSP0/SSP1
-static const sdcard_init_t SdCards[] = {
-	{ADO_SBUS_SSP0, PTR_FROM_IDX(PINIDX_SSP0_CS_SD)},
-	{ADO_SBUS_SSP1, PTR_FROM_IDX(PINIDX_SSP1_CS_SD)}
-};
+#if BA_BOARD == BA_CLIMBOBC
+	// OBC Hardware
+	// ------------
+	// has one SD Card connected to SPI
+	static const sdcard_init_t SdCards[] = {
+	    {ADO_SBUS_SPI, PTR_FROM_IDX(PINIDX_SPI_CS_SD)}
+	};
+	// SRS connected to Side Panel A (X+)
+	static const srs_initdata_t SrsInit = {
+		LPC_I2C2,		// I2C bus to use
+		0x20			// SRS slave address.
+	};
+
+#elif BA_BOARD == BA_OM13085_EM2T
+	// OM13085 * EM2T Test Hardware
+	//-----------------------------
+	// has 2 SD Cards connected to SSP0/SSP1
+	static const sdcard_init_t SdCards[] = {
+		{ADO_SBUS_SSP0, PTR_FROM_IDX(PINIDX_SSP0_CS_SD)},
+		{ADO_SBUS_SSP1, PTR_FROM_IDX(PINIDX_SSP1_CS_SD)}
+	};
+
+	// SRS connected to I2C0 -> J2-25/26
+	static const srs_initdata_t SrsInit = {
+		LPC_I2C0,		// I2C bus to use
+		0x20			// SRS slave address.
+	};
+
 #else
-// OBC Hardware has one SD Card connected to SPI
-static const sdcard_init_t SdCards[] = {
-	{ADO_SBUS_SPI, PTR_FROM_IDX(PINIDX_SPI_CS_SD)}
-};
+	// pure OM13085
+	// ------------
+	//no SDC support
+	static const sdcard_init_t SdCards[] = {
+
+	};
+
+	// SRS connected to to I2C0 -> J2-25/26
+	static const srs_initdata_t SrsInit = {
+		LPC_I2C0,		// I2C bus to use
+		0x20			// SRS slave address.
+	};
+
 #endif
+
 static const sdcard_init_array_t Cards = {
 	(sizeof(SdCards)/sizeof(sdcard_init_t)), SdCards
 };
@@ -72,8 +104,8 @@ static const mem_init_t MemoryInit = {
 
 static const gps_initdata_t GpsInit = {
 		LPC_UART0,
-		PTR_FROM_IDX(PINIDX_GPIO4_CP),
-		PTR_FROM_IDX(PINIDX_STACIE_C_IO1_P)
+		0, // PTR_FROM_IDX(PINIDX_GPIO4_CP),
+		0, //PTR_FROM_IDX(PINIDX_STACIE_C_IO1_P)
 };
 
 static const thr_initdata_t ThrInit = {
@@ -87,15 +119,15 @@ static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( timInit, timMain, &InitReport ),
 		MOD_INIT( hwc_init, hwc_main, &ObcPins ),
 		MOD_INIT( MramInitAll, MramMain, &Chips),
-		MOD_INIT( SdcInitAll, SdcMain, &Cards),
-		MOD_INIT( sen_init, sen_main, NULL),
-		MOD_INIT( memInit, memMain, &MemoryInit),
+//		MOD_INIT( SdcInitAll, SdcMain, &Cards),
+//		MOD_INIT( sen_init, sen_main, NULL),
+//		MOD_INIT( memInit, memMain, &MemoryInit),
 		MOD_INIT( gpsInit, gpsMain, &GpsInit),
 		MOD_INIT( app_init, app_main, NULL),
-		MOD_INIT( thrInit, thrMain, &ThrInit),
-		MOD_INIT( l4_thruster_init, l4_thruster_main, NULL),
-		MOD_INIT( psu_init, psu_main, NULL)
-
+//		MOD_INIT( thrInit, thrMain, &ThrInit),
+//		MOD_INIT( l4_thruster_init, l4_thruster_main, NULL),
+//		MOD_INIT( psu_init, psu_main, NULL)
+		MOD_INIT( srs_init, srs_main, &SrsInit)
 };
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
 
@@ -129,6 +161,7 @@ int main(void) {
 	// Clear all (set) bits in this register (if possible).
 	LPC_SYSCON->RSID = InitReport.resetBits;
 	// Try to figure out if this was Hardware watchdog -> not possible in EM2!?
+#if BA_BOARD == BA_CLIMBOBC
 	if (Chip_GPIO_GetPinState(LPC_GPIO, PORT_FROM_IDX(PINIDX_EXT_WDT_TRIGGERED), PINNR_FROM_IDX(PINIDX_EXT_WDT_TRIGGERED))) {
 		InitReport.hwWatchdog = true;
 		// Reset the WD Flip Flop. (Clear pin must be initialized as output now)
@@ -139,6 +172,7 @@ int main(void) {
 		// Every 2nd Reset.
 		InitReport.oddEven = true;
 	}
+#endif
 
     // Layer 1 - Bus Inits
 	// -------------------
@@ -148,7 +182,7 @@ int main(void) {
     ADO_SPI_Init(0x08, SPI_CLOCK_MODE3);    // SDCard, Clock Divider 0x08 -> fastest, must be even: can be up to 0xFE for slower SPI Clocking
 
     // I2C buses
-    // init_i2c(LPC_I2C0, 100);		// 100 kHz  C/D
+    init_i2c(LPC_I2C0, 100);		// 100 kHz  C/D
     init_i2c(LPC_I2C1, 100);		// 100 kHz  on-board
     init_i2c(LPC_I2C2, 100);		// 100 kHz  A/B
 
@@ -161,9 +195,11 @@ int main(void) {
     	Modules[i].init(Modules[i].initdata);
     }
 
+#if BA_BOARD == BA_CLIMBOBC
     // End WD reset pulse and make clr pin input again.
     Chip_GPIO_SetPinOutHigh(LPC_GPIO, PORT_FROM_IDX(PINIDX_CLR_WDT_FLPFLP), PINNR_FROM_IDX(PINIDX_CLR_WDT_FLPFLP));
     Chip_GPIO_SetPinDIRInput(LPC_GPIO, PORT_FROM_IDX(PINIDX_CLR_WDT_FLPFLP), PINNR_FROM_IDX(PINIDX_CLR_WDT_FLPFLP));
+#endif
 
     SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_INIT, &InitReport, sizeof(InitReport) );
 

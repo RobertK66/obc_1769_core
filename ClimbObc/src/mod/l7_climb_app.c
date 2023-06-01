@@ -26,6 +26,8 @@
 //#include "crc/obc_checksums.h"
 #include "l4_thruster.h"
 
+#include "srs/radsensor.h"
+
 #include "../radtest/radtest.h"
 
 #include "modules_globals.h"
@@ -108,7 +110,7 @@ static const app_command_t Commands[] = {
         { 'k' , PSU_datavector_request },
         { 'b' , old_pegasys_PSU_request_cmd },
 		{ '9' , mem_write_cmd },
-		{ 'Q' , i2c_test_cmd },
+		{ 'Q' , srs_test_cmd },
 		{ 'a' , main_showruntimes_cmd}
 
 };
@@ -121,39 +123,44 @@ static const app_command_t Commands[] = {
 }
 
 
-static bool ictReadinProgress = false;
-static I2C_Data ictReadJob;
-static uint8_t ictReadTx[20];
-static uint8_t ictReadRx[20];
-
-void i2c_test_cmd(int argc, char *argv[]) {
-	if (ictReadinProgress) {
-			return;
-	}
-	ictReadinProgress = true;
-
-	ictReadJob.device = LPC_I2C2;
-	ictReadJob.tx_size = 1;
-	ictReadJob.tx_data = ictReadTx;
-	ictReadJob.rx_size = 0x10;
-	ictReadJob.rx_data = ictReadRx;
-	ictReadJob.adress = 0x20;
-	ictReadTx[0] = 0x00;		// adr
-	//ictReadTx[1] = 0x55;		// len
-
-
-	i2c_add_job(&ictReadJob);
-	return;
-}
-
-
+//static bool ictReadinProgress = false;
+//static I2C_Data ictReadJob;
+//static uint8_t ictReadTx[20];
+//static uint8_t ictReadRx[20];
+//
+//void i2c_test_cmd(int argc, char *argv[]) {
+//	if (ictReadinProgress) {
+//			return;
+//	}
+//	ictReadinProgress = true;
+//
+//	ictReadJob.device = LPC_I2C0;
+//	ictReadJob.tx_size = 1;
+//	ictReadJob.tx_data = ictReadTx;
+//	ictReadJob.rx_size = 0x10;
+//	ictReadJob.rx_data = ictReadRx;
+//	ictReadJob.adress = 0x20;
+//	ictReadTx[0] = 0x00;		// adr
+//	//ictReadTx[1] = 0x55;		// len
+//
+//
+//	i2c_add_job(&ictReadJob);
+//	return;
+//}
+//
+//
 
 void app_init (void *dummy) {
 	//SdcCardinitialize(0);
-	char ver[32] = "MYSW-Version: ";
-	ver[31] = 0;
-	strncpy(&ver[12], BUILD_SWVERSION, 18);
-	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, ver, 12 + strlen(BUILD_SWVERSION));
+	char ver[40] = "SW-Ver: ";
+	ver[39] = 0;
+	strncpy(&ver[8], BUILD_SWVERSION, 32);
+	int pos = 8+strlen(BUILD_SWVERSION);
+	if (pos < 39) {
+		ver[pos] = ' ';
+		strncpy(&ver[pos+1], BA_BOARD_REL, 38 - pos);
+	}
+	SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_STRING, ver, strlen(ver));
 }
 
 void app_main (void) {
@@ -165,12 +172,12 @@ void app_main (void) {
 	}
 	// handle event - queue ....
 
-	if (ictReadinProgress) {
-if (ictReadJob.job_done == 1) {
-			ictReadinProgress = false;
-			SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_RAWDATA, ictReadRx, 0x10);
-		}
-	}
+//	if (ictReadinProgress) {
+//if (ictReadJob.job_done == 1) {
+//			ictReadinProgress = false;
+//			SysEvent(MODULE_ID_CLIMBAPP, EVENT_INFO, EID_APP_RAWDATA, ictReadRx, 0x10);
+//		}
+//	}
 
 }
 
