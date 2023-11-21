@@ -17,6 +17,9 @@
 
 #define SRS_CTRL_ADDR			0x0B
 
+#define SRS_CTRLCMD_SETSYNCTIME		0x0D;
+
+
 static uint8_t PowerOnCmd[2] = {0x00, SRS_POWERBUS_ENABLECMD};
 static uint8_t PowerOffCmd[2] = {0x00, SRS_POWERBUS_DISABLECMD};
 
@@ -29,8 +32,12 @@ static bool srsJobInProgress = false;
 static bool srsIsPowerJob = false;
 static I2C_Data srsJob;
 
+
+static bool srsCmdSynctime = false;
 static uint8_t srsTx[20];
 static uint8_t srsRx[20];
+
+uint8_t srs_crc(uint8_t *data, int len);
 
 
 void srs_init(void *initdata) {
@@ -78,6 +85,27 @@ void srs_main() {
 			srsJobInProgress = true;
 			srsIsPowerJob = true;
 			i2c_add_job(&srsJob);
+		} else if (srsCmdSynctime) {
+			srsCmdSynctime = false;
+			srsJob.device = srs->pI2C;			// Redundant but lets do in sake of memory flips.....
+			srsJob.adress = SRS_CTRL_ADDR;
+			uint64_t unixtime = timGetUnixTime();
+			srsTx[0] = SRS_CTRLCMD_SETSYNCTIME;
+			srsTx[1] =  *((uint8_t*)(&unixtime) + 0);
+			srsTx[2] =  *((uint8_t*)(&unixtime) + 1);
+			srsTx[3] =  *((uint8_t*)(&unixtime) + 2);
+			srsTx[4] =  *((uint8_t*)(&unixtime) + 3);
+			srsTx[5] =  *((uint8_t*)(&unixtime) + 4);
+			srsTx[6] =  *((uint8_t*)(&unixtime) + 5);
+			srsTx[7] =  *((uint8_t*)(&unixtime) + 6);
+			srsTx[8] =  *((uint8_t*)(&unixtime) + 7);
+			srsTx[9] =  srs_crc(srsTx, 8);
+			srsJob.tx_size = 10;
+			srsJob.tx_data = srsTx;
+			srsJob.rx_size = 0; //10;
+			srsJob.rx_data = 0; //srsRx;
+			srsJobInProgress = true;
+			i2c_add_job(&srsJob);
 		}
 	}
 }
@@ -89,6 +117,20 @@ void srs_enable(void) {
 
 void srs_disable(void) {
 	srsRequestedPowerOn = false;
+}
+
+void srs_synctime(void) {
+	srsCmdSynctime = true;
+}
+
+
+
+uint8_t srs_crc(uint8_t *data, int len) {
+	uint8_t ret = 0x00;
+	while (len>=0) {
+		ret ^= data[len--];
+	}
+	return ret;
 }
 
 
@@ -103,6 +145,10 @@ void srs_cmd(int argc, char *argv[]) {
 		case 'P':
 			srs_enable();
 			break;
+		case 't':
+			srs_synctime();
+			break;
+
 		default:
 			break;
 		}

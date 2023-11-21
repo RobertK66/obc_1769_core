@@ -482,3 +482,16 @@ obc_utc_fulltime_t timGetUTCTime(void) {
 obc_systime32_t inline	timGetSystime(void) {
 	return ObcSystemTime.msAfterReset;
 }
+
+uint32_t leapDaysSince1970() {
+	return 12;
+}
+
+uint64_t	timGetUnixTime(void) {
+	uint32_t unixDays = (ObcSystemTime.utcOffset.year - 1970) * 365 + (uint32_t)ObcSystemTime.utcOffset.dayOfYear + leapDaysSince1970();
+	uint16_t daysOfYearInt = (uint16_t)ObcSystemTime.utcOffset.dayOfYear;
+	juliandayfraction secOfDay = (ObcSystemTime.utcOffset.dayOfYear - (juliandayfraction)(daysOfYearInt)) * 86400;
+
+	uint64_t unixSeconds = ((uint64_t)(unixDays)) * 86400 + (uint64_t)(secOfDay) + (uint64_t)(ObcSystemTime.msAfterReset/1000);
+	return unixSeconds;
+}
