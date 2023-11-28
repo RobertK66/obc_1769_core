@@ -1,8 +1,6 @@
-name: Release a build with Doku
+name: Depricated - Release a build with Doku
 
 on:
-  release:
-    types: [created]
   workflow_dispatch:
 
 jobs:
