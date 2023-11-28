@@ -76,13 +76,14 @@ jobs:
         run: |
           ls
           zip archive.zip *.axf
+          ls
       - name: upload reelese assets    
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: github.event.release.upload_url
-          asset_path: ./
+          asset_path: archive.zip
           asset_name: archive.zip
           asset_content_type: application/zip
           
