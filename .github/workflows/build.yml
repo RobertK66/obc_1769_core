@@ -63,6 +63,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: buildJob
     steps: 
+      - name: Generate release defines
+        run: |
+          MY_SWVERSION=$(printf '%.8s' "${{ github.sha }}" )
+          echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
       - name: Download all the binaries
         uses: actions/download-artifact@v3
         with:
