@@ -3,6 +3,8 @@ name: Build with MCU Expresso
 on:
   push:
     branches: [ develop ]
+  release:
+    types: [created]
   workflow_dispatch:
 
 jobs:
