@@ -102,8 +102,8 @@ void srs_main() {
 			srsTx[9] =  srs_crc(srsTx, 8);
 			srsJob.tx_size = 10;
 			srsJob.tx_data = srsTx;
-			srsJob.rx_size = 0; //10;
-			srsJob.rx_data = 0; //srsRx;
+			srsJob.rx_size = 10;
+			srsJob.rx_data = srsRx;
 			srsJobInProgress = true;
 			i2c_add_job(&srsJob);
 		}
