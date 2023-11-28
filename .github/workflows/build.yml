@@ -71,14 +71,17 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: 'Build-${{ env.MY_SWVERSION }}'
-          path: dist/
+          path: ./
+      - name: show path
+        run: |
+          ls
       - name: upload reelese assets    
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: github.event.release.upload_url
-          asset_path: ./dist
+          asset_path: ./Build-${{ env.MY_SWVERSION }}.zip
           asset_name: asset${{ env.MY_SWVERSION }}.zip
           asset_content_type: application/zip
           
