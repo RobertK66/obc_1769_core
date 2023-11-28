@@ -368,6 +368,7 @@ void timSyncUtc(uint16_t year, obc_systime32_t systemTime, juliandayfraction utc
 
 	float diff = fabs(syncData.newOffset - syncData.oldOffset);
 	if ( diff > 0.00005) {
+		ObcSystemTime.utcOffset.year = year;
 		ObcSystemTime.utcOffset.dayOfYear = syncData.newOffset;
 
 		// Now we (re)calculate current Time (from systime and offset) and set this to our RTC registers
@@ -481,4 +482,29 @@ obc_utc_fulltime_t timGetUTCTime(void) {
 
 obc_systime32_t inline	timGetSystime(void) {
 	return ObcSystemTime.msAfterReset;
+}
+
+uint32_t leapDaysSince1970() {
+	int days = 0;
+	for (int y=1972; y<ObcSystemTime.utcOffset.year ; y=y+4) {
+		days++;					// 1. Leap day all 4 years
+		if (y%100 == 0) {
+			if (y%400 == 0) {		// 3. all 400 years the skipping is NOT done!
+			} else {
+				y--;			// 2. all 100 years it is skipped
+			}
+		} else {
+
+		}
+	}
+	return days;
+}
+
+uint64_t	timGetUnixTime(void) {
+	uint32_t unixDays = (ObcSystemTime.utcOffset.year - 1970) * 365 + (uint32_t)(ObcSystemTime.utcOffset.dayOfYear -1) + leapDaysSince1970();	// Day of year starts with 1 on 1.1. !!!!!
+	uint16_t daysOfYearInt = (uint16_t)ObcSystemTime.utcOffset.dayOfYear;
+	juliandayfraction secOfDay = (ObcSystemTime.utcOffset.dayOfYear - (juliandayfraction)(daysOfYearInt)) * 86400;
+
+	uint64_t unixSeconds = ((uint64_t)(unixDays)) * 86400 + (uint64_t)(secOfDay) + (uint64_t)(ObcSystemTime.msAfterReset/1000);
+	return unixSeconds;
 }

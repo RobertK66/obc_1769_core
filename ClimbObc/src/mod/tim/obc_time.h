@@ -72,6 +72,7 @@ obc_systime32_t		timGetSystime(void);
 void 				TimSetUtc1(uint16_t year, uint8_t month, uint8_t dayOfMonth, uint8_t hour, uint8_t min, uint8_t sec, bool syncRTC, uint8_t syncSource);
 void 				timSyncUtc(uint16_t year, obc_systime32_t systemTime, juliandayfraction utcDateTime, uint8_t syncSource);
 obc_utc_fulltime_t 	timGetUTCTime(void);
+uint64_t 			timGetUnixTime(void);
 
 juliandayfraction 	timConvertUtcTimeToJdf(uint32_t gpsTime, uint16_t gpsMs);
 juliandayfraction 	timConvertUtcDateToJdf(uint32_t gpsDate);

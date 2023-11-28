@@ -110,7 +110,9 @@ static const app_command_t Commands[] = {
         { 'k' , PSU_datavector_request },
         { 'b' , old_pegasys_PSU_request_cmd },
 		{ '9' , mem_write_cmd },
-		{ 'Q' , srs_test_cmd },
+		{ 'Q' , srs_testread_cmd },
+		{ 'q' , srs_testwrite_cmd },
+		{ 'S' , srs_cmd },
 		{ 'a' , main_showruntimes_cmd}
 
 };

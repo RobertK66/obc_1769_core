@@ -32,7 +32,8 @@ void I2C_RB_put(I2C_RB *rb, void* daten)
 	if (rb->end == rb->start)
 	{
 		/*rb->overflow = 1; */
-//		obc_status_extended.i2c_rb_overflow = 1;
+		// TODO: signal system warning/error
+		rb->overflow++;
 		rb->start = (rb->start + 1) & (I2C_RB_Size - 1);
 	}
 	__enable_irq();
