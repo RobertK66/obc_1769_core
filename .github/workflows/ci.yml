@@ -17,17 +17,20 @@ jobs:
       obcVersion2: ${{ steps.create_ver.outputs.MY_SWVERSION }}
     steps:
       - id: create_ver
+        name: Set Variables
         run: |
           pwd
-          ls -al
-          echo hello 1
+          ls 
           THE_SWVERSION=$(printf 'Ver_%.8s' "${{ github.sha }}" )
           MY_SWVERSION=$(printf 'My_%.10s' "$GITHUB_REF_NAME" )
           echo "THE_SWVERSION=$THE_SWVERSION" >> $GITHUB_ENV
           echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
           echo "THE_SWVERSION=$THE_SWVERSION" >> "$GITHUB_OUTPUT"
           echo "MY_SWVERSION=$MY_SWVERSION" >> "$GITHUB_OUTPUT"
-          
+          echo "$THE_SWVERSION"
+          echo "$MY_SWVERSION"
+
+              
           
       
   buildIt:
@@ -37,9 +40,11 @@ jobs:
     steps:
       - env:
           OBC_VERSION: ${{needs.prepBuild.outputs.obcVersion}}
+          OBC_VERSION_2: ${{needs.prepBuild.outputs.obcVersion2}}
         run: |
-          ls -al
+          pwd
+          ls
           echo hello 2
           echo "$OBC_VERSION"
-          pwd
-          ls -al
+          echo "$OBC_VERSION_2"    
+    
