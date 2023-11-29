@@ -27,6 +27,29 @@ jobs:
           echo "MY_SWVERSION=$MY_SWVERSION" >> "$GITHUB_OUTPUT"
           echo "jobs output obcVersion set to '$THE_SWVERSION'"
           echo "jobs output obcVersion2 set to '$MY_SWVERSION''"
+
+  buildDoc:
+    runs-on: ubuntu-latest
+    needs: prepBuild
+    name: Build the Documentation
+    steps:
+      - env:
+          OBC_VERSION: ${{needs.prepBuild.outputs.obcVersion2}}
+        name: simulate pdf creation
+        run: |
+          echo "$OBC_VERSION"
+          echo dummy build creating pdf ...
+          echo "dummy content for pdf" >> ./ClimbObcManual.pdf
+          pwd
+          ls
+      - name: Upload Document
+        uses: actions/upload-artifact@v3
+        id: upload-axf
+        with:
+          name: 'BuildResult'
+          path: ./ClimbObcManual.pdf
+          #path: ${{ steps.publish-document.outputs.pdf }}
+          if-no-files-found: error
       
   buildIt:
     runs-on: ubuntu-latest
@@ -58,6 +81,34 @@ jobs:
         uses: actions/upload-artifact@v3
         id: upload-axf
         with:
-          name: 'Build-${{ env.MY_SWVERSION }}'
+          name: 'BuildResult'
           path: ClimbObc${{ env.MY_SWVERSION }}-${{ matrix.kind }}.axf 
           if-no-files-found: error
+
+
+  releaseJob:
+    if: github.event_name == 'release' && github.event.action == 'created'
+    runs-on: ubuntu-latest
+    needs:  [ buildIt, buildDoc ] 
+    steps: 
+     
+      - name: Download all the build files
+        uses: actions/download-artifact@v3
+        with:
+          name: 'BuildBuildResult'
+          path: ./
+      - name: show path
+        run: |
+          ls
+          zip artefacts.zip *.*
+          ls
+      - name: upload reelese assets    
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: artefacts.zip
+          asset_name: archive_zip
+          asset_content_type: application/zip
+        
