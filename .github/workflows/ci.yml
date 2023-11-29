@@ -33,22 +33,30 @@ jobs:
     needs: prepBuild
     name: Build the Documentation
     steps:
-      - env:
-          OBC_VERSION: ${{needs.prepBuild.outputs.obcVersion2}}
-        name: simulate pdf creation
+      - uses: actions/checkout@v3
+          
+      - name: Replace MD tokens
         run: |
-          echo "$OBC_VERSION"
-          echo dummy build creating pdf ...
-          echo "dummy content for pdf" >> ./ClimbObcManual.pdf
-          pwd
-          ls
+          ESCAPED_REPLACE=$(printf '%s\n' "${{ github.ref }}" | sed -e 's/[\/&]/\\&/g')
+          find doc/*.md -type f -exec sed -i "s/@TKN_COMMIT_ID@/$ESCAPED_REPLACE/g" {} \;
+          find doc/*.md -type f -exec sed -i "s/@TKN_VERSION@/${{ github.sha }}/g" {} \;
+      
+      - name: Show replacement resut
+        run: cat doc/back.md
+    
+      - name: Publish PDF Document
+        uses: RobertK66/actions-document-publish@79b8e666c0f531c297a98eee730d3fdecccde9f3
+        id: publish-document
+        with:
+          sources: 'doc/front.md doc/m*.md doc/back.md'
+          images_dir: doc/pic
+          image_import: pic
       - name: Upload Document
         uses: actions/upload-artifact@v3
         id: upload-axf
         with:
-          name: 'BuildResult'
-          path: ./ClimbObcManual.pdf
-          #path: ${{ steps.publish-document.outputs.pdf }}
+          name: 'Build-${{ env.MY_SWVERSION }}'
+          path: ${{ steps.publish-document.outputs.pdf }}
           if-no-files-found: error
       - name: Upload Tools
         uses: actions/upload-artifact@v3
