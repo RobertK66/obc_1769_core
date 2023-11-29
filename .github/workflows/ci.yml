@@ -19,8 +19,8 @@ jobs:
       - id: create_ver
         name: Set Variables
         run: |
-          THE_SWVERSION=$(printf 'Ver_%.8s' "${{ github.sha }}" )
-          MY_SWVERSION=$(printf 'My_%.10s' "$GITHUB_REF_NAME" )
+          THE_SWVERSION=$(printf '%.8s' "${{ github.sha }}" )
+          MY_SWVERSION=$(printf '%.10s' "$GITHUB_REF_NAME" )
           #echo "THE_SWVERSION=$THE_SWVERSION" >> $GITHUB_ENV
           #echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
           echo "THE_SWVERSION=$THE_SWVERSION" >> "$GITHUB_OUTPUT"
@@ -42,15 +42,22 @@ jobs:
             board: BA_OM13085_EM2T
     steps:
       - env:
-          OBC_VERSION: ${{needs.prepBuild.outputs.obcVersion}}
-          OBC_VERSION_2: ${{needs.prepBuild.outputs.obcVersion2}}
+          OBC_VERSION: ${{needs.prepBuild.outputs.obcVersion2}}
         name: simulate build  
         run: |
           echo "$OBC_VERSION"
-          echo "$OBC_VERSION_2"    
           echo dummy build creating result ...
           echo "dummy content for ${{ matrix.kind }}"
           echo "dummy content for ${{ matrix.kind }}" >> ./ClimbObc${{ env.OBC_VERSION }}-${{ matrix.kind }}.axf
           pwd
           ls
           
+      - name: Upload Binary
+        env:
+          MY_SWVERSION: ${{needs.prepBuild.outputs.obcVersion2}}
+        uses: actions/upload-artifact@v3
+        id: upload-axf
+        with:
+          name: 'Build-${{ env.MY_SWVERSION }}'
+          path: ClimbObc${{ env.MY_SWVERSION }}-${{ matrix.kind }}.axf 
+          if-no-files-found: error
