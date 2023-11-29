@@ -1,4 +1,4 @@
-name: CI flow for Climb OBC Software
+name: New CI flow for Climb OBC Software
 on:
   push:
     branches: [ develop ]
@@ -14,15 +14,19 @@ jobs:
     name: Prepare Build Variables
     outputs:
       obcVersion: ${{ steps.create_ver.outputs.THE_SWVERSION }}
+      obcVersion2: ${{ steps.create_ver.outputs.MY_SWVERSION }}
     steps:
       - id: create_ver
         run: |
           pwd
           ls -al
           echo hello 1
-          THE_SWVERSION=$(printf '%.8s' "${{ github.sha }}" )
+          THE_SWVERSION=$(printf 'Ver_%.8s' "${{ github.sha }}" )
+          MY_SWVERSION=$(printf 'My_%.10s' "$GITHUB_REF_NAME" )
           echo "THE_SWVERSION=$THE_SWVERSION" >> $GITHUB_ENV
+          echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
           echo "THE_SWVERSION=$THE_SWVERSION" >> "$GITHUB_OUTPUT"
+          echo "MY_SWVERSION=$MY_SWVERSION" >> "$GITHUB_OUTPUT"
           
           
       
