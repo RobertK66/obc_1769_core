@@ -19,19 +19,14 @@ jobs:
       - id: create_ver
         name: Set Variables
         run: |
-          pwd
-          ls 
           THE_SWVERSION=$(printf 'Ver_%.8s' "${{ github.sha }}" )
           MY_SWVERSION=$(printf 'My_%.10s' "$GITHUB_REF_NAME" )
-          echo "THE_SWVERSION=$THE_SWVERSION" >> $GITHUB_ENV
-          echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
+          #echo "THE_SWVERSION=$THE_SWVERSION" >> $GITHUB_ENV
+          #echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
           echo "THE_SWVERSION=$THE_SWVERSION" >> "$GITHUB_OUTPUT"
           echo "MY_SWVERSION=$MY_SWVERSION" >> "$GITHUB_OUTPUT"
-          echo "$THE_SWVERSION"
-          echo "$MY_SWVERSION"
-
-              
-          
+          echo "jobs output obcVersion set to '$THE_SWVERSION'"
+          echo "jobs output obcVersion2 set to '$MY_SWVERSION''"
       
   buildIt:
     runs-on: ubuntu-latest
@@ -41,10 +36,13 @@ jobs:
       - env:
           OBC_VERSION: ${{needs.prepBuild.outputs.obcVersion}}
           OBC_VERSION_2: ${{needs.prepBuild.outputs.obcVersion2}}
+        name: simulate build  
         run: |
-          pwd
-          ls
-          echo hello 2
           echo "$OBC_VERSION"
           echo "$OBC_VERSION_2"    
-    
+          echo dummy build creating 2 matricx results ...
+          echo "dummy content" >> ./ClimbObc${{ env.OBC_VERSION }}-Dev.axf
+          echo "dummy content" >> ./ClimbObc${{ env.OBC_VERSION }}-Obc.axf
+          pwd
+          ls
+          
