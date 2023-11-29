@@ -103,6 +103,8 @@ where
 | 0x01          | timer                   |
 | 0x02          | sensors                 |
 | 0x03          | memory                  |
+| 0x04          | gps                     |
+| 0x06          | srs                     |
 | 0x80          | mram                    |
 | 0x81          | sdcard                  |
 
@@ -128,4 +130,8 @@ where
 |                    | double  | old UTC Offset             |
 |                    | double  | new UTC Offset             |
 |                    | byte    | Sync Source (1 GPS, 2 Cmd, 3 RTC) |
-|--------------------|---------|----------------------------|
+|--------------------|---------|-----------------------------|
+| 0x06 / 0x02        | 2 bytes | Power On executed (I2cdata) |
+| 0x06 / 0x03        | 2 bytes | Power Off executed (I2cdata)|
+|--------------------|---------|-----------------------------|
+
