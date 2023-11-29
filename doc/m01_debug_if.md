@@ -38,27 +38,34 @@ where
 -   \<LF\> is the line feed character: **0x0a**.
 
  
+Note: not all commands are available on all tagret hardware.
 
-| command | params                    | description                                                                                                      |
-|---------|---------------------------|------------------------------------------------------------------------------------------------------------------|
-| ‘s’     | \-                        | reads all on board sensor values. triggers the “\<sens\>-0x01” event.                                            |
-| ‘c’     | \-                        | power off the SD-Card                                                                                            |
-| ‘C’     | \-                        | power on the SD-Card                                                                                             |
-| ‘R’     | \<blockNr\>               | reads one block from SD-Card and triggers the “\<sys\>-data” event.                                              |
-| ‘r’     | \<c\>\<adr\>\<len\>       | reads a number \<len\> bytes from \<adr\> of mram chip number \<c\> (0...5). It triggers a “\<sys\>-data” event. |
-| ‘w’     | \<c\>\<adr\>\<b\>\<len\>  | writes the data byte \<b\> for \<len\> times starting at \<adr\> of mram chip number \<c\> (0...5).              |
-| 'p'     | \<abcd\|ABCD\>            | powers on or off one or more sidepanels. e.g "p ABcD" powers 3 of the 4 sidepanels. Blue LED shows on and goes off if current limiter detects short circuit | 
-| ‘O’     | \<name\>                  | sets the hardware instance name                                                                                  |
-| 'N'     | \<name\>                  | sets the sd-card name                                                                                            |
-| 'i'     | \-                        | gives general information about obc board, versions, ....                                                        |
-| 'T'     | \-                        | gives the current UTC time in RTC and TLE (juliandayfraction) format                                             |
-| 't'     | \<date\> \<time\>         | sets the UTC time to d´the given date / time. Format: yyyyMMdd hhmmss                                            |
-| ---     | ---                       | ---                                                                                                              |
-| 'h'     | \<pinIdx\> \<mode\>       | sets an GPIO pin to mode (0: initVal, 1: high, 2: low, 3: slow blink, 4: fast osz.)                              |
-| 'm'     | \<pinIdxIn\> [\<pinIdxOut\>] | mirrors the GPI input pin to the GPIO output pin 															 |
-| '5'     |  | Thruster all register read request.															                                             |
-| '6'     | \<register index\>  | Read request to single thruster register.														                         |
-| '7'     | \<register index\> [\<value\>] | Set request for a single thruster register. 															 |
+| command | params                    | description                                                                                                      | obc | dev |
+|---------|---------------------------|------------------------------------------------------------------------------------------------------------------|-----|-----|
+| ‘s’     | \-                        | reads all on board sensor values. triggers the “\<sens\>-0x01” event.                                            | x | |
+| ‘c’     | \-                        | power off the SD-Card                                                                                            | x | |
+| ‘C’     | \-                        | power on the SD-Card                                                                                             | x | |
+| ‘R’     | \<blockNr\>               | reads one block from SD-Card and triggers the “\<sys\>-data” event.                                              | x | |
+| ‘r’     | \<c\>\<adr\>\<len\>       | reads a number \<len\> bytes from \<adr\> of mram chip number \<c\> (0...5). It triggers a “\<sys\>-data” event. | x | |
+| ‘w’     | \<c\>\<adr\>\<b\>\<len\>  | writes the data byte \<b\> for \<len\> times starting at \<adr\> of mram chip number \<c\> (0...5).              | x | |
+| 'p'     | \<abcd\|ABCD\>            | powers on or off one or more sidepanels. e.g "p ABcD" powers 3 of the 4 sidepanels. Blue LED shows on and goes off if current limiter detects short circuit |  x | |
+| ‘O’     | \<name\>                  | sets the hardware instance name                                                                                  | x | |
+| 'N'     | \<name\>                  | sets the sd-card name                                                                                            | x | |
+| 'i'     | \-                        | gives general information about obc board, versions, ....                                                        | x | |
+| 'T'     | \-                        | gives the current UTC time in RTC and TLE (juliandayfraction) format                                             | x | x |
+| 't'     | \<date\> \<time\>         | sets the UTC time to d´the given date / time. Format: yyyyMMdd hhmmss                                            | x | x |
+| ---     | ---                       | ---                                                                                                              | x | |
+| 'h'     | \<pinIdx\> \<mode\>       | sets an GPIO pin to mode (0: initVal, 1: high, 2: low, 3: slow blink, 4: fast osz.)                              | x | |
+| 'm'     | \<pinIdxIn\> [\<pinIdxOut\>] | mirrors the GPI input pin to the GPIO output pin 															 | x | |
+| '5'     |  | Thruster all register read request.															                                             | x | |
+| '6'     | \<register index\>  | Read request to single thruster register.														                         | x | |
+| '7'     | \<register index\> [\<value\>] | Set request for a single thruster register. 															 | x | |
+| 'S'     | \<srscmd\> [\<value\>] | sends a command to the SRS submodule. 					 |  | x |
+|         | p  | SRS command 'Power Off' (only commands over I2C if submodule was ON) 		 |  | x |
+|         | P  | SRS command 'Power On' (only commands over I2C if submodule was OFF) 		 |  | x |
+|         | t  | Syncs the SRS to current OBC timestamp. (set eith 't' or over GPS-UART)     |  | x |
+
+
 
 Valid pinIdx for command 'h' and 'm' can be found in the hardware abstraction include file in source code..... 
 
