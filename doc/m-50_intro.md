@@ -1,10 +1,10 @@
 Additional Notes and Info for Multi target releases.
 
-OBC - EMx Version (???.axp)
+OBC - EMx Version (ClimbObc@TKN_RELEASE@-obc.axf)
 ---------------------------
 
 
-DevBoard - BA_OM13085 Version (???.axp)
+DevBoard - BA_OM13085 Version (ClimbObc@TKN_RELEASE@-obc.axf)
 ---------------------------------------
 	Hardware needs fololowing external connections:
 
