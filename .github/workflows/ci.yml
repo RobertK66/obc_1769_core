@@ -103,12 +103,12 @@ jobs:
           zip artefacts.zip *.*
           ls
       - name: upload reelese assets    
-        uses: actions/upload-release-asset@v1
+        uses: actions/upload-release-asset@v3
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: artefacts.zip
-          asset_name: archive_zip
+          asset_name: ReleaseArtefacts.zip
           asset_content_type: application/zip
         
