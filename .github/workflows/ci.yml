@@ -95,21 +95,49 @@ jobs:
         run: |
           echo "$OBC_VERSION"
           echo dummy build creating result ...
-          echo "dummy content for ${{ matrix.kind }}"
-          echo "dummy content for ${{ matrix.kind }}" >> ./ClimbObc${{ env.OBC_VERSION }}-${{ matrix.kind }}.axf
+          #echo "dummy content for ${{ matrix.kind }}"
+          #echo "dummy content for ${{ matrix.kind }}" >> ./ClimbObc${{ env.OBC_VERSION }}-${{ matrix.kind }}.axf
           pwd
           ls
-          
-      - name: Upload Binary
+
+      - uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - name: Generate Build defines
         env:
           MY_SWVERSION: ${{needs.prepBuild.outputs.obcVersion2}}
+        run: |
+          echo "#define BUILD_SWVERSION \"SW-$MY_SWVERSION\"" >> ClimbObc/src/build.h
+          echo "#define BA_BOARD ${{ matrix.board }}" >> ClimbObc/src/build.h
+          echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
+          cat ClimbObc/src/build.h
+          pwd
+          
+      - name: Build the mcu workspace
+        uses: RobertK66/actions-build-mcuxpresso@main
+        id: publish-document
+        with:
+          projects: |
+            ado_chip_175x_6x
+            ClimbObc
+          configs: |
+            ado_chip_175x_6x/TestConfig_2
+            ClimbObc/Debug
+          resultpath:  ClimbObc/Debug/ClimbObc.axf
+
+      - name: rename the axf file
+        run: |
+          cp ${{ steps.publish-document.outputs.axf }} ClimbObc${{ env.MY_SWVERSION }}-${{ matrix.kind }}.axf          
+          ls 
+          
+      - name: Upload Binary
         uses: actions/upload-artifact@v3
         id: upload-axf
         with:
           name: 'BuildResult'
           path: ClimbObc${{ env.MY_SWVERSION }}-${{ matrix.kind }}.axf 
           if-no-files-found: error
-
 
   releaseJob:
     if: github.event_name == 'release' && github.event.action == 'created'
