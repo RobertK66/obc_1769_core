@@ -95,7 +95,7 @@ jobs:
       - name: Download all the build files
         uses: actions/download-artifact@v3
         with:
-          name: 'BuildBuildResult'
+          name: 'BuildResult'
           path: ./
       - name: show path
         run: |
