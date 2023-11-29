@@ -8,7 +8,7 @@ This version runs on dedicated Climb OBC hardware.
 </p>
 
 
-DevBoard - BA_OM13085 Version (ClimbObc@TKN_RELEASE@-obc.axf)
+DevBoard - BA_OM13085 Version (ClimbObc@TKN_RELEASE@-dev.axf)
 ---------------------------------------
 This version runs on the developer board where some PIO pinnings are modified.
 <p align="left" width="100%">
