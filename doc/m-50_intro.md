@@ -1,4 +1,4 @@
-Additional Notes and Info for Multi target releases.
+Github CI build provides binaries for separate hardware platforms:
 
 OBC - EMx Version (ClimbObc@TKN_RELEASE@-obc.axf)
 ---------------------------------------
