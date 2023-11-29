@@ -50,6 +50,12 @@ jobs:
           path: ./ClimbObcManual.pdf
           #path: ${{ steps.publish-document.outputs.pdf }}
           if-no-files-found: error
+      - name: Upload Tools
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'BuildResult'
+          path: ./tool/FlashOBC.bat
+          if-no-files-found: error
       
   buildIt:
     runs-on: ubuntu-latest
@@ -89,9 +95,8 @@ jobs:
   releaseJob:
     if: github.event_name == 'release' && github.event.action == 'created'
     runs-on: ubuntu-latest
-    needs:  [ buildIt, buildDoc ] 
+    needs:  [ prepBuild, buildIt, buildDoc ] 
     steps: 
-     
       - name: Download all the build files
         uses: actions/download-artifact@v3
         with:
@@ -106,9 +111,10 @@ jobs:
         uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          OBC_VERSION: ${{needs.prepBuild.outputs.obcVersion2}}
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: artefacts.zip
-          asset_name: ReleaseArtefacts.zip
+          asset_name: Release${{ env.OBC_VERSION }}.zip
           asset_content_type: application/zip
         
