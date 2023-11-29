@@ -46,17 +46,25 @@ jobs:
     
       - name: Publish PDF Document
         uses: RobertK66/actions-document-publish@79b8e666c0f531c297a98eee730d3fdecccde9f3
-        id: publish-document
+        id: publish-pdf
         with:
           sources: 'doc/front.md doc/m*.md doc/back.md'
           images_dir: doc/pic
           image_import: pic
+          
+      - name: rename the pdf file
+        env:
+          OBC_VERSION: ${{needs.prepBuild.outputs.obcVersion2}}
+        run: |
+          cp ${{ steps.publish-pdf.outputs.pdf }} ClimbObcManual_${{ env.OBC_VERSION }}.pdf          
+          ls     
+          
       - name: Upload Document
         uses: actions/upload-artifact@v3
         id: upload-axf
         with:
-          name: 'Build-${{ env.MY_SWVERSION }}'
-          path: ${{ steps.publish-document.outputs.pdf }}
+          name: 'BuildResult'
+          path: ./*.pdf
           if-no-files-found: error
       - name: Upload Tools
         uses: actions/upload-artifact@v3
