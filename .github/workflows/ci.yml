@@ -36,10 +36,13 @@ jobs:
       - uses: actions/checkout@v3
           
       - name: Replace MD tokens
+        env:
+          OBC_VERSION: ${{needs.prepBuild.outputs.obcVersion2}}
         run: |
           ESCAPED_REPLACE=$(printf '%s\n' "${{ github.ref }}" | sed -e 's/[\/&]/\\&/g')
           find doc/*.md -type f -exec sed -i "s/@TKN_COMMIT_ID@/$ESCAPED_REPLACE/g" {} \;
           find doc/*.md -type f -exec sed -i "s/@TKN_VERSION@/${{ github.sha }}/g" {} \;
+          find doc/*.md -type f -exec sed -i "s/@TKN_RELEASE@/${{ env.OBC_VERSION }}/g" {} \;
       
       - name: Show replacement resut
         run: cat doc/back.md
