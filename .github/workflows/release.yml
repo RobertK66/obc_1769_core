@@ -1,8 +1,6 @@
-name: Release a build with Doku
+name: Depricated - Release a build with Doku
 
 on:
-  release:
-    types: [created]
   workflow_dispatch:
 
 jobs:
@@ -44,6 +42,7 @@ jobs:
           ESCAPED_REPLACE=$(printf '%s\n' "${{ github.ref }}" | sed -e 's/[\/&]/\\&/g')
           find doc/*.md -type f -exec sed -i "s/@TKN_COMMIT_ID@/$ESCAPED_REPLACE/g" {} \;
           find doc/*.md -type f -exec sed -i "s/@TKN_VERSION@/${{ github.sha }}/g" {} \;
+          find doc/*.md -type f -exec sed -i "s/@TKN_RELEASE@/${{ github.sha }}/g" {} \;
           cat doc/back.md
     
       - name: Publish PDF Document

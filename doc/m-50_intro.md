@@ -1,11 +1,22 @@
-Additional Notes and Info for Multi target releases.
+Github CI build provides binaries for separate hardware platforms:
 
-OBC - EMx Version (???.axp)
----------------------------
-
-
-DevBoard - BA_OM13085 Version (???.axp)
+OBC - EMx Version (ClimbObc@TKN_RELEASE@-obc.axf)
 ---------------------------------------
+This version runs on dedicated Climb OBC hardware.
+<p align="left" width="100%">
+    <img  width="20%" src="pic/obc.jpg"> 
+</p>
+
+
+DevBoard - BA_OM13085 Version (ClimbObc@TKN_RELEASE@-dev.axf)
+---------------------------------------
+This version runs on the developer board where some PIO pinnings are modified.
+<p align="left" width="100%">
+    <img  width="20%" src="pic/OM13085.jpg"> 
+</p>
+
+
+
 	Hardware needs fololowing external connections:
 
 	J2-40	UART2 - TX

@@ -1,44 +1,85 @@
-name: Build with MCU Expresso
-
+name: New CI flow for Climb OBC Software
 on:
   push:
     branches: [ develop ]
+    paths-ignore:
+      - '.github/**'
   release:
     types: [created]
   workflow_dispatch:
 
 jobs:
+  prepBuild:
+    runs-on: ubuntu-latest
+    name: Prepare Build Variables
+    outputs:
+      obcVersion: ${{ steps.create_ver.outputs.THE_SWVERSION }}
+      obcVersion2: ${{ steps.create_ver.outputs.MY_SWVERSION }}
+    steps:
+      - id: create_ver
+        name: Set Variables
+        run: |
+          THE_SWVERSION=$(printf '%.8s' "${{ github.sha }}" )
+          MY_SWVERSION=$(printf '%.10s' "$GITHUB_REF_NAME" )
+          #echo "THE_SWVERSION=$THE_SWVERSION" >> $GITHUB_ENV
+          #echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
+          echo "THE_SWVERSION=$THE_SWVERSION" >> "$GITHUB_OUTPUT"
+          echo "MY_SWVERSION=$MY_SWVERSION" >> "$GITHUB_OUTPUT"
+          echo "jobs output obcVersion set to '$THE_SWVERSION'"
+          echo "jobs output obcVersion2 set to '$MY_SWVERSION''"
+
   buildDoc:
     runs-on: ubuntu-latest
+    needs: prepBuild
+    name: Build the Documentation
     steps:
       - uses: actions/checkout@v3
           
       - name: Replace MD tokens
+        env:
+          OBC_VERSION: ${{needs.prepBuild.outputs.obcVersion2}}
         run: |
           ESCAPED_REPLACE=$(printf '%s\n' "${{ github.ref }}" | sed -e 's/[\/&]/\\&/g')
           find doc/*.md -type f -exec sed -i "s/@TKN_COMMIT_ID@/$ESCAPED_REPLACE/g" {} \;
           find doc/*.md -type f -exec sed -i "s/@TKN_VERSION@/${{ github.sha }}/g" {} \;
+          find doc/*.md -type f -exec sed -i "s/@TKN_RELEASE@/${{ env.OBC_VERSION }}/g" {} \;
       
       - name: Show replacement resut
         run: cat doc/back.md
     
       - name: Publish PDF Document
         uses: RobertK66/actions-document-publish@79b8e666c0f531c297a98eee730d3fdecccde9f3
-        id: publish-document
+        id: publish-pdf
         with:
           sources: 'doc/front.md doc/m*.md doc/back.md'
           images_dir: doc/pic
           image_import: pic
+          
+      - name: rename the pdf file
+        env:
+          OBC_VERSION: ${{needs.prepBuild.outputs.obcVersion2}}
+        run: |
+          cp ${{ steps.publish-pdf.outputs.pdf }} ClimbObcManual_${{ env.OBC_VERSION }}.pdf          
+          ls     
+          
       - name: Upload Document
         uses: actions/upload-artifact@v3
         id: upload-axf
         with:
-          name: 'Build-${{ env.MY_SWVERSION }}'
-          path: ${{ steps.publish-document.outputs.pdf }}
+          name: 'BuildResult'
+          path: ./*.pdf
           if-no-files-found: error
-        
-  buildJob:
+      - name: Upload Tools
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'BuildResult'
+          path: ./tool/FlashOBC.bat
+          if-no-files-found: error
+      
+  buildIt:
     runs-on: ubuntu-latest
+    needs: prepBuild
+    name: Build the Software artefacts
     strategy:
       matrix:
         kind: ['obc', 'dev']
@@ -47,15 +88,26 @@ jobs:
             board: BA_CLIMBOBC
           - kind: dev
             board: BA_OM13085_EM2T
-            
     steps:
+      - env:
+          OBC_VERSION: ${{needs.prepBuild.outputs.obcVersion2}}
+        name: simulate build  
+        run: |
+          echo "$OBC_VERSION"
+          echo dummy build creating result ...
+          #echo "dummy content for ${{ matrix.kind }}"
+          #echo "dummy content for ${{ matrix.kind }}" >> ./ClimbObc${{ env.OBC_VERSION }}-${{ matrix.kind }}.axf
+          pwd
+          ls
+
       - uses: actions/checkout@v3
         with:
           submodules: 'true'
 
       - name: Generate Build defines
+        env:
+          MY_SWVERSION: ${{needs.prepBuild.outputs.obcVersion2}}
         run: |
-          MY_SWVERSION=$(printf '%.8s' "${{ github.sha }}" )
           echo "#define BUILD_SWVERSION \"SW-$MY_SWVERSION\"" >> ClimbObc/src/build.h
           echo "#define BA_BOARD ${{ matrix.board }}" >> ClimbObc/src/build.h
           echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
@@ -83,36 +135,33 @@ jobs:
         uses: actions/upload-artifact@v3
         id: upload-axf
         with:
-          name: 'Build-${{ env.MY_SWVERSION }}'
+          name: 'BuildResult'
           path: ClimbObc${{ env.MY_SWVERSION }}-${{ matrix.kind }}.axf 
           if-no-files-found: error
-          
+
   releaseJob:
     if: github.event_name == 'release' && github.event.action == 'created'
     runs-on: ubuntu-latest
-    needs:  [ buildJob, buildDoc ] 
+    needs:  [ prepBuild, buildIt, buildDoc ] 
     steps: 
-      - name: Generate release defines
-        run: |
-          MY_SWVERSION=$(printf '%.8s' "${{ github.sha }}" )
-          echo "MY_SWVERSION=$MY_SWVERSION" >> $GITHUB_ENV
-      - name: Download all the binaries
+      - name: Download all the build files
         uses: actions/download-artifact@v3
         with:
-          name: 'Build-${{ env.MY_SWVERSION }}'
+          name: 'BuildResult'
           path: ./
       - name: show path
         run: |
           ls
-          zip archive.zip *.axf
+          zip artefacts.zip *.*
           ls
       - name: upload reelese assets    
-        uses: actions/upload-release-asset@v1
+        uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          OBC_VERSION: ${{needs.prepBuild.outputs.obcVersion2}}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: archive.zip
-          asset_name: archive.zip
+          asset_path: artefacts.zip
+          asset_name: Release${{ env.OBC_VERSION }}.zip
           asset_content_type: application/zip
-          
+        

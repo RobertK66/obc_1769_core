@@ -1,9 +1,15 @@
-![](pic/climb.jpg)
+<p align="center">
+    <img  src="pic/climb.jpg"> 
+</p>
 
-#                     OBC - User Manual
+
+# <p align="center">OBC - User Manual</p>
+## <p align="center">@TKN_RELEASE@</p>
 
 
-![](pic/obc.jpg)
 
+<p align="center" width="100%">
+    <img  width="33%" src="pic/obc.jpg"> 
+</p>
 
  
