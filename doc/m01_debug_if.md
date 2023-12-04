@@ -63,7 +63,15 @@ Note: not all commands are available on all tagret hardware.
 | 'S'     | \<srscmd\> [\<value\>] | sends a command to the SRS submodule. 					 |  | x |
 |         | p  | SRS command 'Power Off' (only commands over I2C if submodule was ON) 		 |  | x |
 |         | P  | SRS command 'Power On' (only commands over I2C if submodule was OFF) 		 |  | x |
-|         | t  | Syncs the SRS to current OBC timestamp. (set eith 't' or over GPS-UART)     |  | x |
+|         | T  | Syncs the SRS to current OBC timestamp. (set eith 't' or over GPS-UART)     |  | x |
+|         | t  | retreives the SRS unix timestamp                                            |  | x |
+|         | s [\<type\>]  | retreives the SRS Status (type=1: default/common; 2: extended; 3: both         |  | x |
+|         | I | retreives all 3 Interval data from SRS                                       |  | x |
+|         | i [\<type\> [\<val\>]]  | sets the Interval of \<type\> to the value (type=1:default/fgdos, 2:radfet, 3:sram) (default value:  1000)                          |  | x |
+|         | x | sends shutdown to SRS                                                        |  | x |
+
+
+
 
 
 
