@@ -7,9 +7,11 @@
 
 #include "radsensor.h"
 #include <stdlib.h>
+#include <string.h>
 
 #include <ado_modules.h>
 #include "../ai2c/obc_i2c.h"
+#include "../tim/obc_time.h"
 
 #define SRS_POWERBUS_ADDR		0x47
 #define SRS_POWERBUS_ENABLECMD	0x1F
@@ -78,13 +80,18 @@ static uint32_t	srsCmdExecutes		= 0;
 static uint32_t	srsPendingCmdExec 	= 0;
 //static bool srsCmdSynctime = false;
 static uint8_t srsTx[20];
-static uint8_t srsRx[20];
+static uint8_t srsRx[128];
 
-
+static uint32_t val32ToSend = 0;
 // local module prototypes
 uint8_t srs_crc(uint8_t *data, int len);
 
+
 void srsExecuteSetSyncTime(void);
+void srsExecuteRequestSyncTime(void);
+void srsExecuteRequestStatus(uint8_t statusType);
+void srsExecuteRequestIntervals(void);
+void srsExecuteSendInterval(uint8_t type, uint32_t val);
 
 
 // Module API
@@ -119,9 +126,43 @@ void srs_main() {
 				}
 				switch (srsPendingCmdExec) {
 					case SRS_CMDEXEC_SETSYNCTIME:
+					case SRS_CMDEXEC_REQSYNCTIME:
 						SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_TIME, srsJob.rx_data, srsJob.rx_size);
 						break;
+					case SRS_CMDEXEC_REQSTATUS_C:
+						if(srsJob.rx_data[1]!=SRS_STATUSTYPE_COMMON) {
+							SysEvent(MODULE_ID_RADSENSOR, EVENT_ERROR, EID_SRS_ERROR, &srsJob.rx_data[1], 1);
+						} else {
+							SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_STATUS, srsJob.rx_data, srsJob.rx_size);
+						}
+						break;
+					case SRS_CMDEXEC_REQSTATUS_E:
+						if(srsJob.rx_data[1]!=SRS_STATUSTYPE_EXTENDED) {
+							SysEvent(MODULE_ID_RADSENSOR, EVENT_ERROR, EID_SRS_ERROR, &srsJob.rx_data[1], 1);
+						} else {
+							SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_STATUS, srsJob.rx_data, srsJob.rx_size);
+						}
+						break;
+					case SRS_CMDEXEC_REQSTATUS_B:
+						if(srsJob.rx_data[1]!=SRS_STATUSTYPE_BOTH) {
+							SysEvent(MODULE_ID_RADSENSOR, EVENT_ERROR, EID_SRS_ERROR, &srsJob.rx_data[1], 1);
+						} else {
+							SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_STATUS, srsJob.rx_data, srsJob.rx_size);
+						}
+						break;
+					case SRS_CMDEXEC_REQINTERVALS:
+						SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_INTERVALS, &srsJob.rx_data[1], 12);
+						break;
+					case SRS_CMDEXEC_SETINTV_F:
+					case SRS_CMDEXEC_SETINTV_R:
+					case SRS_CMDEXEC_SETINTV_S:
+						SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_INTERVAL, &srsJob.rx_data[1], 5);
+						break;
+
+
+
 					default:
+						SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_DATARX, srsJob.rx_data, srsJob.rx_size);
 						break;
 				}
 
@@ -157,12 +198,39 @@ void srs_main() {
 				srsCmdExecutes &= (~SRS_CMDEXEC_SETSYNCTIME);
 				srsPendingCmdExec = SRS_CMDEXEC_SETSYNCTIME;
 				srsExecuteSetSyncTime();
+			} else if (srsCmdExecutes & SRS_CMDEXEC_REQSYNCTIME) {
+				srsCmdExecutes &= (~SRS_CMDEXEC_REQSYNCTIME);
+				srsPendingCmdExec = SRS_CMDEXEC_REQSYNCTIME;
+				srsExecuteRequestSyncTime();
+			} else if (srsCmdExecutes & SRS_CMDEXEC_REQSTATUS_C) {
+				srsCmdExecutes &= (~SRS_CMDEXEC_REQSTATUS_C);
+				srsPendingCmdExec = SRS_CMDEXEC_REQSTATUS_C;
+				srsExecuteRequestStatus(SRS_STATUSTYPE_COMMON);
+			} else if (srsCmdExecutes & SRS_CMDEXEC_REQSTATUS_E) {
+				srsCmdExecutes &= (~SRS_CMDEXEC_REQSTATUS_E);
+				srsPendingCmdExec = SRS_CMDEXEC_REQSTATUS_E;
+				srsExecuteRequestStatus(SRS_STATUSTYPE_EXTENDED);
+			} else if (srsCmdExecutes & SRS_CMDEXEC_REQSTATUS_B) {
+				srsCmdExecutes &= (~SRS_CMDEXEC_REQSTATUS_B);
+				srsPendingCmdExec = SRS_CMDEXEC_REQSTATUS_B;
+				srsExecuteRequestStatus(SRS_STATUSTYPE_BOTH);
+			} else if (srsCmdExecutes & SRS_CMDEXEC_REQINTERVALS) {
+				srsCmdExecutes &= (~SRS_CMDEXEC_REQINTERVALS);
+				srsPendingCmdExec = SRS_CMDEXEC_REQINTERVALS;
+				srsExecuteRequestIntervals();
+			} else if (srsCmdExecutes & SRS_CMDEXEC_SETINTV_F) {
+				srsCmdExecutes &= (~SRS_CMDEXEC_SETINTV_F);
+				srsPendingCmdExec = SRS_CMDEXEC_SETINTV_F;
+				srsExecuteSendInterval(SRS_STATUSTYPE_FGDOS, val32ToSend);
+			} else if (srsCmdExecutes & SRS_CMDEXEC_SETINTV_R) {
+				srsCmdExecutes &= (~SRS_CMDEXEC_SETINTV_R);
+				srsPendingCmdExec = SRS_CMDEXEC_SETINTV_R;
+				srsExecuteSendInterval(SRS_STATUSTYPE_RADFET, val32ToSend);
+			} else if (srsCmdExecutes & SRS_CMDEXEC_SETINTV_S) {
+				srsCmdExecutes &= (~SRS_CMDEXEC_SETINTV_S);
+				srsPendingCmdExec = SRS_CMDEXEC_SETINTV_S;
+				srsExecuteSendInterval(SRS_STATUSTYPE_SRAM, val32ToSend);
 			}
-//			else if (false) {
-//				// ....
-//			}
-
-
 
 		}
 	}
@@ -181,17 +249,58 @@ void srs_synctime(void) {
 	srsCmdExecutes |= SRS_CMDEXEC_SETSYNCTIME;
 }
 
+void srs_gettime(void) {
+	srsCmdExecutes |= SRS_CMDEXEC_REQSYNCTIME;
+}
+
+void srs_getstatus(uint8_t statusType) {
+	uint32_t cmdBit = SRS_CMDEXEC_REQSTATUS_C;
+	if (statusType == SRS_STATUSTYPE_EXTENDED) {
+		cmdBit = SRS_CMDEXEC_REQSTATUS_E;
+	} else if (statusType == SRS_STATUSTYPE_BOTH) {
+		cmdBit = SRS_CMDEXEC_REQSTATUS_B;
+	}
+	srsCmdExecutes |= cmdBit;
+}
+ void srs_getinterval() {
+	srsCmdExecutes |= SRS_CMDEXEC_REQINTERVALS;
+ }
+
+ void srs_setinterval(uint8_t type, uint32_t val) {
+	uint32_t cmdBit = SRS_CMDEXEC_SETINTV_F;
+	if (type == SRS_STATUSTYPE_RADFET) {
+		cmdBit = SRS_CMDEXEC_SETINTV_R;
+	} else if (type == SRS_STATUSTYPE_SRAM) {
+		cmdBit = SRS_CMDEXEC_SETINTV_S;
+	}
+	val32ToSend = val;
+	srsCmdExecutes |= cmdBit;
+ }
+
+
 
 // Module local functions
 // ----------------------
 uint8_t srs_crc(uint8_t *data, int len) {
 	uint8_t ret = 0x00;
-	while (len>=0) {
-		ret ^= data[len--];
+	while (len>0) {
+		ret ^= data[--len];
 	}
 	return ret;
 }
 
+void srsExecuteRequestSyncTime(void) {
+	srsJob.device = srs->pI2C;			// Redundant but lets do in sake of memory flips.....
+	srsJob.adress = SRS_CTRL_ADDR;
+	srsTx[0] = SRS_CTRLCMD_REQSYNCTIME;
+	srsTx[1] =  srs_crc(srsTx, 1);
+	srsJob.tx_size = 2;
+	srsJob.tx_data = srsTx;
+	srsJob.rx_size = 10;
+	srsJob.rx_data = srsRx;
+	srsJobInProgress = true;
+	i2c_add_job(&srsJob);
+}
 
 void srsExecuteSetSyncTime(void) {
 	srsJob.device = srs->pI2C;			// Redundant but lets do in sake of memory flips.....
@@ -206,7 +315,7 @@ void srsExecuteSetSyncTime(void) {
 	srsTx[6] =  *((uint8_t*)(&unixtime) + 5);
 	srsTx[7] =  *((uint8_t*)(&unixtime) + 6);
 	srsTx[8] =  *((uint8_t*)(&unixtime) + 7);
-	srsTx[9] =  srs_crc(srsTx, 8);
+	srsTx[9] =  srs_crc(srsTx, 9);
 	srsJob.tx_size = 10;
 	srsJob.tx_data = srsTx;
 	srsJob.rx_size = 10;
@@ -214,6 +323,55 @@ void srsExecuteSetSyncTime(void) {
 	srsJobInProgress = true;
 	i2c_add_job(&srsJob);
 }
+
+void srsExecuteRequestStatus(uint8_t statusType) {
+	srsJob.device = srs->pI2C;
+	srsJob.adress = SRS_CTRL_ADDR;
+	srsTx[0] = SRS_CTRLCMD_REQSTATUS;
+	srsTx[1] = statusType;
+	srsTx[2] =  srs_crc(srsTx, 2);
+	srsJob.tx_size = 3;
+	srsJob.tx_data = srsTx;
+	srsJob.rx_size = 15;			// Common status
+	if (statusType == SRS_STATUSTYPE_EXTENDED) {
+		srsJob.rx_size = 33;
+	} else if (statusType == SRS_STATUSTYPE_BOTH) {
+		srsJob.rx_size = 45;
+	}
+	srsJob.rx_data = srsRx;
+	srsJobInProgress = true;
+	i2c_add_job(&srsJob);
+}
+
+void srsExecuteRequestIntervals(void) {
+	srsJob.device = srs->pI2C;
+	srsJob.adress = SRS_CTRL_ADDR;
+	srsTx[0] = SRS_CTRLCMD_REQINTERVALS;
+	srsTx[1] =  srs_crc(srsTx, 1);
+	srsJob.tx_size = 2;
+	srsJob.tx_data = srsTx;
+	srsJob.rx_size = 14;
+	srsJob.rx_data = srsRx;
+	srsJobInProgress = true;
+	i2c_add_job(&srsJob);
+}
+
+
+void srsExecuteSendInterval(uint8_t type, uint32_t val) {
+	srsJob.device = srs->pI2C;
+	srsJob.adress = SRS_CTRL_ADDR;
+	srsTx[0] = SRS_CTRLCMD_SETINTERVALS;
+	srsTx[1] = type;
+	memcpy(&srsTx[2],&val32ToSend,4);
+	srsTx[6] =  srs_crc(srsTx, 6);
+	srsJob.tx_size = 7;
+	srsJob.tx_data = srsTx;
+	srsJob.rx_size = 7;
+	srsJob.rx_data = srsRx;
+	srsJobInProgress = true;
+	i2c_add_job(&srsJob);
+}
+
 
 
 // Module L7 API - TODO: move to higher level commanding layer (Scripting!)
@@ -231,6 +389,29 @@ void srs_cmd(int argc, char *argv[]) {
 		case 't':
 			srs_synctime();
 			break;
+		case 'T':
+			srs_gettime();
+			break;
+		case 's':
+			srs_getstatus(atol(argv[2]));
+			break;
+		case 'I':
+			srs_getinterval();
+			break;
+		case 'i': {
+				uint8_t type = 1;
+				uint32_t val = 1000;
+				if (argc > 2) {
+					type = atol(argv[2]);
+				}
+				if (argc > 3) {
+					val = atol(argv[3]);
+				}
+				srs_setinterval(type, val);
+			}
+			break;
+
+
 
 		default:
 			break;
@@ -240,68 +421,3 @@ void srs_cmd(int argc, char *argv[]) {
 
 
 
-void srs_testwrite_cmd(int argc, char *argv[]) {
-	uint8_t writeAdr = 0;
-	uint8_t writeLen = 10;
-
-	if (srsJobInProgress) {
-			return;
-	}
-	srsJobInProgress = true;
-
-	if (argc > 1) {
-		writeAdr = atol(argv[1]);
-	}
-	if (argc > 2) {
-		writeLen = strlen(argv[2]);
-		if (writeLen>10) {
-			writeLen=10;
-		}
-		strncpy(&srsTx[1],argv[2],writeLen);
-	}
-
-	srsTx[0] = writeAdr;				// data write adr
-
-	srsJob.device = srs->pI2C;
-	srsJob.tx_size = writeLen + 1;
-	srsJob.tx_data = srsTx;
-	srsJob.rx_size = 0;
-	srsJob.rx_data = 0;
-	srsJob.adress = SRS_CTRL_ADDR;
-
-	i2c_add_job(&srsJob);
-	return;
-}
-
-
-
-void srs_testread_cmd(int argc, char *argv[]) {
-	uint8_t readAdr = 0;
-	uint8_t readLen = 10;
-
-	if (srsJobInProgress) {
-			return;
-	}
-	srsJobInProgress = true;
-
-	if (argc > 1) {
-		readAdr = atol(argv[1]);
-	}
-	if (argc > 2) {
-		readLen = atol(argv[2]);
-		if (readLen>20) {
-			readLen=20;
-		}
-	}
-
-	srsJob.device = srs->pI2C;
-	srsJob.tx_size = 1;
-	srsJob.tx_data = srsTx;
-	srsJob.rx_size = readLen;
-	srsJob.rx_data = srsRx;
-	srsJob.adress = SRS_CTRL_ADDR;
-	srsTx[0] = readAdr;				// data read adr
-
-	i2c_add_job(&srsJob);
-	return;
-}

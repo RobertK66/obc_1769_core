@@ -26,8 +26,6 @@ void srs_enable(void);
 void srs_disable(void);
 
 void srs_cmd(int argc, char *argv[]);
-void srs_testread_cmd(int argc, char *argv[]);
-void srs_testwrite_cmd(int argc, char *argv[]);
 
 // Module Events
 #define MODULE_ID_RADSENSOR		0x06
@@ -36,6 +34,9 @@ void srs_testwrite_cmd(int argc, char *argv[]);
 #define EID_SRS_POWERON			0x02
 #define EID_SRS_POWEROFF		0x03
 #define EID_SRS_TIME			0x04
+#define EID_SRS_STATUS			0x05
+#define EID_SRS_INTERVALS		0x06
+#define EID_SRS_INTERVAL		0x07
 #define EID_SRS_ERROR			0x80
 
 
