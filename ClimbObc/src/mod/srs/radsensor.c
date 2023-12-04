@@ -159,6 +159,9 @@ void srs_main() {
 						SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_INTERVAL, &srsJob.rx_data[1], 5);
 						break;
 
+					case SRS_CMDEXEC_SHUTDOWN:
+						SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_SHUTDOWN, 0, 0 );
+						break;
 
 
 					default:
@@ -230,6 +233,10 @@ void srs_main() {
 				srsCmdExecutes &= (~SRS_CMDEXEC_SETINTV_S);
 				srsPendingCmdExec = SRS_CMDEXEC_SETINTV_S;
 				srsExecuteSendInterval(SRS_STATUSTYPE_SRAM, val32ToSend);
+			} else if (srsCmdExecutes & SRS_CMDEXEC_SHUTDOWN) {
+				srsCmdExecutes &= (~SRS_CMDEXEC_SHUTDOWN);
+				srsPendingCmdExec = SRS_CMDEXEC_SHUTDOWN;
+				srsExecuteRequestShutdown();
 			}
 
 		}
@@ -275,6 +282,10 @@ void srs_getstatus(uint8_t statusType) {
 	}
 	val32ToSend = val;
 	srsCmdExecutes |= cmdBit;
+ }
+
+ void srs_shutdown(void) {
+	 srsCmdExecutes |= SRS_CMDEXEC_SHUTDOWN;
  }
 
 
@@ -373,6 +384,21 @@ void srsExecuteSendInterval(uint8_t type, uint32_t val) {
 }
 
 
+void srsExecuteRequestShutdown(void) {
+	srsJob.device = srs->pI2C;
+	srsJob.adress = SRS_CTRL_ADDR;
+	srsTx[0] = SRS_CTRLCMD_SHUTDOWN;
+	srsTx[1] =  srs_crc(srsTx, 1);
+	srsJob.tx_size = 2;
+	srsJob.tx_data = srsTx;
+	srsJob.rx_size = 2;
+	srsJob.rx_data = srsRx;
+	srsJobInProgress = true;
+	i2c_add_job(&srsJob);
+}
+
+
+
 
 // Module L7 API - TODO: move to higher level commanding layer (Scripting!)
 // -------------
@@ -410,8 +436,9 @@ void srs_cmd(int argc, char *argv[]) {
 				srs_setinterval(type, val);
 			}
 			break;
-
-
+		case 'x':
+			srs_shutdown();
+			break;
 
 		default:
 			break;

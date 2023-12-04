@@ -37,6 +37,7 @@ void srs_cmd(int argc, char *argv[]);
 #define EID_SRS_STATUS			0x05
 #define EID_SRS_INTERVALS		0x06
 #define EID_SRS_INTERVAL		0x07
+#define EID_SRS_SHUTDOWN		0x08
 #define EID_SRS_ERROR			0x80
 
 
