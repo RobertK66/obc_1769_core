@@ -39,6 +39,9 @@ void srs_cmd(int argc, char *argv[]);
 #define EID_SRS_INTERVAL		0x07
 #define EID_SRS_SHUTDOWN		0x08
 #define EID_SRS_ERROR			0x80
+#define EID_SRS_TRANSFERBUSY	0x81
+
+
 
 
 #endif /* MOD_SRS_RADSENSOR_H_ */

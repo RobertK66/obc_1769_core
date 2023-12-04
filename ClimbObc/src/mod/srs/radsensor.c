@@ -62,6 +62,12 @@
 #define SRS_DATARESP_NOMMOREDATA		0x16
 #define SRS_CMDEXEC_REQDATA			0x00000800		// Only one bit is enough here because ctrl of data transfer is done in other structures....
 
+// Data transfer adjustable:
+#define SRS_DATABLOCK_SIZE			1000		// 1000 is MAX val!
+#define SRS_BLOCKDELAY_MS			  10
+#define SRS_BLOCKBURST_CNT			  42
+#define SRS_BLOCKBURST_DEALY_MS		 100
+
 
 static uint8_t PowerOnCmd[2] = {0x00, SRS_POWERBUS_ENABLECMD};
 static uint8_t PowerOffCmd[2] = {0x00, SRS_POWERBUS_DISABLECMD};
@@ -76,13 +82,23 @@ static bool srsIsPowerJob = false;
 static I2C_Data srsJob;
 
 
+
 static uint32_t	srsCmdExecutes		= 0;
 static uint32_t	srsPendingCmdExec 	= 0;
-//static bool srsCmdSynctime = false;
-static uint8_t srsTx[20];
-static uint8_t srsRx[128];
 
+static uint8_t srsTx[20];
+static uint8_t srsRx[SRS_DATABLOCK_SIZE+20];
 static uint32_t val32ToSend = 0;
+
+
+typedef enum {SRSD_IDLE, SRS_DATA_GETADDRESSES,  SRS_DATA_WAITFORADDRESSES  } srs_transfer_stat;
+
+static srs_transfer_stat 	srsDataTransferStatus = SRSD_IDLE
+static uint32_t				srsDataPtrStart;
+static uint32_t				srsDataPtrEnd;
+
+
+
 // local module prototypes
 uint8_t srs_crc(uint8_t *data, int len);
 
@@ -92,7 +108,7 @@ void srsExecuteRequestSyncTime(void);
 void srsExecuteRequestStatus(uint8_t statusType);
 void srsExecuteRequestIntervals(void);
 void srsExecuteSendInterval(uint8_t type, uint32_t val);
-
+void srsExecuteRequestDataAddresses(void);
 
 // Module API
 // ----------
@@ -237,6 +253,10 @@ void srs_main() {
 				srsCmdExecutes &= (~SRS_CMDEXEC_SHUTDOWN);
 				srsPendingCmdExec = SRS_CMDEXEC_SHUTDOWN;
 				srsExecuteRequestShutdown();
+			} else if (srsCmdExecutes & SRS_CMDEXEC_REQDATAADDR) {
+				srsCmdExecutes &= (~SRS_CMDEXEC_REQDATAADDR);
+				srsPendingCmdExec = SRS_CMDEXEC_REQDATAADDR;
+				srsExecuteRequestDataAddresses();
 			}
 
 		}
@@ -286,6 +306,20 @@ void srs_getstatus(uint8_t statusType) {
 
  void srs_shutdown(void) {
 	 srsCmdExecutes |= SRS_CMDEXEC_SHUTDOWN;
+ }
+
+
+ // TODO: either direct errors or callback !? -> events
+ // At this moment we alwys initarte a 'download all new data' sequence.
+ // TODO: allow for specific Adresses to be fetached (again).
+ void srs_maketransfer(void) {
+	 if (srsDataTransferStatus == SRSD_IDLE) {
+		 srsDataTransferStatus = SRS_DATA_GETADDRESSES;
+		 srsCmdExecutes |= SRS_CMDEXEC_REQDATAADDR;
+	 } else {
+		SysEvent(MODULE_ID_RADSENSOR, EVENT_WARNING, EID_SRS_TRANSFERBUSY, 0, 0);
+	 }
+
  }
 
 
@@ -438,6 +472,10 @@ void srs_cmd(int argc, char *argv[]) {
 			break;
 		case 'x':
 			srs_shutdown();
+			break;
+
+		case 'd':
+			srs_maketransfer();
 			break;
 
 		default:
