@@ -18,7 +18,7 @@
 
 #include "build.h"
 #ifndef BA_BOARD
-#define BA_BOARD	BA_OM13085					// BA_CLIMBOBC //BA_OM13085 // BA_OM13085_EM2T
+#define BA_BOARD	BA_CLIMBOBC					// BA_CLIMBOBC //BA_OM13085 // BA_OM13085_EM2T
 #endif
 
 #if BA_BOARD == BA_OM13085

@@ -84,13 +84,13 @@ void init_mainlooptimer(LPC_TIMER_T* pTimer,  CHIP_SYSCTL_CLOCK_T timBitIdx);
 	};
 
 
+	// SRS connected to to I2C0 -> J2-25/26
+	static const srs_initdata_t SrsInit = {
+			LPC_I2C0		// I2C bus to use
+	};
+
 
 #endif
-
-// SRS connected to to I2C0 -> J2-25/26
-static const srs_initdata_t SrsInit = {
-		LPC_I2C0		// I2C bus to use
-};
 
 static const sdcard_init_array_t Cards = {
 	(sizeof(SdCards)/sizeof(sdcard_init_t)), SdCards
