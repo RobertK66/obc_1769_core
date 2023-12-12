@@ -638,6 +638,8 @@ void srs_transfer() {
 		srsPendingCmdExec = SRS_CMDEXEC_REQDATA;
 		//i2c_add_job(&srsJob);
 		break;
+	default:
+		break;
 	}
 }
 

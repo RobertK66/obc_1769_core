@@ -51,6 +51,10 @@ void init_mainlooptimer(LPC_TIMER_T* pTimer,  CHIP_SYSCTL_CLOCK_T timBitIdx);
 		0x20			// SRS slave address.
 	};
 
+	static const mem_init_t MemoryInit = {
+				PTR_FROM_IDX(PINIDX_SD_VCC_EN)	// defines the GPIO pin which enables the Power Supply of the SD-Card
+	};
+
 #elif BA_BOARD == BA_OM13085_EM2T
 	// OM13085 * EM2T Test Hardware
 	//-----------------------------
@@ -66,6 +70,11 @@ void init_mainlooptimer(LPC_TIMER_T* pTimer,  CHIP_SYSCTL_CLOCK_T timBitIdx);
 //		0x20			// SRS slave address.
 	};
 
+	static const mem_init_t MemoryInit = {
+			PTR_FROM_IDX(PINIDX_SD_VCC_EN)	// defines the GPIO pin which enables the Power Supply of the SD-Card
+	};
+
+
 #else
 	// pure OM13085
 	// ------------
@@ -74,13 +83,14 @@ void init_mainlooptimer(LPC_TIMER_T* pTimer,  CHIP_SYSCTL_CLOCK_T timBitIdx);
 
 	};
 
-	// SRS connected to to I2C0 -> J2-25/26
-	static const srs_initdata_t SrsInit = {
-		LPC_I2C0,		// I2C bus to use
-		0x20			// SRS slave address.
-	};
+
 
 #endif
+
+// SRS connected to to I2C0 -> J2-25/26
+static const srs_initdata_t SrsInit = {
+		LPC_I2C0		// I2C bus to use
+};
 
 static const sdcard_init_array_t Cards = {
 	(sizeof(SdCards)/sizeof(sdcard_init_t)), SdCards
@@ -98,9 +108,6 @@ static const mram_chipinit_array_t Chips = {
 	(sizeof(Mrams)/sizeof(mram_chipinit_t)), Mrams
 };
 
-static const mem_init_t MemoryInit = {
-		PTR_FROM_IDX(PINIDX_SD_VCC_EN)	// defines the GPIO pin which enables the Power Supply of the SD-Card
-};
 
 static const gps_initdata_t GpsInit = {
 		LPC_UART0,
