@@ -91,7 +91,14 @@ static uint8_t srsRx[SRS_DATABLOCK_SIZE+20];
 static uint32_t val32ToSend = 0;
 
 
-typedef enum {SRS_DATA_IDLE, SRS_DATA_GETADDRESSES, SRS_DATA_INIT, SRS_DATA_BLOCKREAD, SRS_DATA_STOP, SRS_DATA_ERROR } srs_transfer_stat;
+typedef enum {
+	SRS_DATA_IDLE,
+	SRS_DATA_GETADDRESSES,
+	SRS_DATA_INIT,
+	SRS_DATA_BLOCKREAD,
+	SRS_DATA_RESEND,
+	SRS_DATA_STOP,
+	SRS_DATA_ERROR } srs_transfer_stat;
 
 static srs_transfer_stat 	srsDataTransferStatus = SRS_DATA_IDLE;
 static uint32_t				srsDataPtrStart;
@@ -112,6 +119,9 @@ void srsExecuteRequestStatus(uint8_t statusType);
 void srsExecuteRequestIntervals(void);
 void srsExecuteSendInterval(uint8_t type, uint32_t val);
 void srsExecuteRequestDataAddresses(void);
+
+bool srsCheckCrc(uint16_t size);
+
 
 // Module API
 // ----------
@@ -135,6 +145,7 @@ void srs_main() {
 					SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_POWEROFF, srsJob.tx_data, 2);
 				}
 			} else {
+				bool crcOk;
 				// Controller Job finished.
 				if (srsJob.rx_size >= 3) {
 					// Check for errors
@@ -145,6 +156,15 @@ void srs_main() {
 						srsPendingCmdExec = 0;		// No valid answer to process
 						SysEvent(MODULE_ID_RADSENSOR, EVENT_ERROR, EID_SRS_ERROR, &srsJob.rx_data[1], 1);
 					}
+				}
+				if ((srsPendingCmdExec == SRS_CMDEXEC_REQDATA) &&
+						((srsDataTransferStatus == SRS_DATA_BLOCKREAD) || (srsDataTransferStatus == SRS_DATA_RESEND)) ) {
+					uint16_t size = 0;
+					memcpy(&size,&srsJob.rx_data[14], 2);
+					size += 17;
+					crcOk = srsCheckCrc(size);
+				} else {
+					crcOk = srsCheckCrc(srsJob.rx_size);
 				}
 				switch (srsPendingCmdExec) {
 					case SRS_CMDEXEC_SETSYNCTIME:
@@ -209,13 +229,16 @@ void srs_main() {
 								srsDataTransferStatus = SRS_DATA_BLOCKREAD;
 								srs_transfer();
 							}
-						} else if (srsDataTransferStatus == SRS_DATA_BLOCKREAD) {
+						} else if ( (srsDataTransferStatus == SRS_DATA_BLOCKREAD) ||
+									(srsDataTransferStatus == SRS_DATA_RESEND) ){
 							if (srsJob.rx_data[1] == SRS_DATACMD_TRANSFER) {
-								// a valid data block
-								// Start addr / end addr -> into extra event
-								// -> CRC Check!!!! -> resend
-								//SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO,  EID_SRS_BLOCKDATA, &srsJob.rx_data[2], srsJob.rx_size-2 );
-								SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO,  EID_SRS_BLOCKDATA,  &srsJob.rx_data[2], 50 );
+								if (crcOk) {
+									// a valid data block
+									srsDataTransferStatus = SRS_DATA_BLOCKREAD;
+									SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO,  EID_SRS_BLOCKDATA,  &srsJob.rx_data[2], 14 );
+								} else {
+									srsDataTransferStatus = SRS_DATA_RESEND;
+								}
 								srs_transfer();
 							} else {
 								// Error or no more data
@@ -228,7 +251,7 @@ void srs_main() {
 								srsDataTransferStatus = SRS_DATA_IDLE;
 								SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_TRANSFERSTOP, 0, 0);
 							} else {
-								srsDataTransferStatus = SRS_DATA_ERROR;		// TODO: Hoiw to clear/leave from here.....???
+								srsDataTransferStatus = SRS_DATA_ERROR;		// TODO: How to clear/leave from here.....???
 								SysEvent(MODULE_ID_RADSENSOR, EVENT_ERROR, EID_SRS_ERROR, &srsJob.rx_data[1], 1);
 							}
 						}
@@ -388,6 +411,17 @@ uint8_t srs_crc(uint8_t *data, int len) {
 	return ret;
 }
 
+
+bool srsCheckCrc(uint16_t size) {
+	uint8_t crcCalc = srs_crc(srsJob.rx_data, size-1);
+	uint8_t crcRx = srsJob.rx_data[size-1];
+
+	bool isOk = (crcCalc == crcRx);
+	return isOk;
+}
+
+
+
 void srsExecuteRequestSyncTime(void) {
 	srsJob.device = srs->pI2C;			// Redundant but lets do in sake of memory flips.....
 	srsJob.adress = SRS_CTRL_ADDR;
@@ -510,8 +544,8 @@ void srs_transfer() {
 		srsTx[2] = (uint8_t)(SRS_DATABLOCK_SIZE & 0x00FF);
 		srsTx[3] = (uint8_t)(SRS_DATABLOCK_SIZE>>8 & 0x00FF);
 		memcpy(&srsTx[4],&srsDataPtrStart, 4);
-		uint32_t numBlocks = (srsDataPtrEnd - srsDataPtrStart)/SRS_DATABLOCK_SIZE;
-		if ((srsDataPtrEnd - srsDataPtrStart)%SRS_DATABLOCK_SIZE != 0) {
+		uint32_t numBlocks = (srsDataPtrEnd - srsDataPtrStart + 1)/SRS_DATABLOCK_SIZE;
+		if ((srsDataPtrEnd - srsDataPtrStart + 1)%SRS_DATABLOCK_SIZE != 0) {
 			numBlocks++;
 		}
 		memcpy(&srsTx[8],&numBlocks, 4);
@@ -535,6 +569,20 @@ void srs_transfer() {
 			srsTx[1] = SRS_DATACMD_STOP;
 			srsDataTransferStatus = SRS_DATA_STOP;
 		}
+		srsTx[2] =  srs_crc(srsTx, 2);
+		srsJob.tx_size = 3;
+		srsJob.tx_data = srsTx;
+		srsJob.rx_size = 17 + srsBlockSize;
+		srsJob.rx_data = srsRx;
+		srsJobInProgress = true;
+		srsPendingCmdExec = SRS_CMDEXEC_REQDATA;
+		i2c_add_job(&srsJob);
+		break;
+	case SRS_DATA_RESEND:
+		srsJob.device = srs->pI2C;
+		srsJob.adress = SRS_CTRL_ADDR;
+		srsTx[0] = SRS_CTRLCMD_REQDATA;
+		srsTx[1] = SRS_DATACMD_RESEND;
 		srsTx[2] =  srs_crc(srsTx, 2);
 		srsJob.tx_size = 3;
 		srsJob.tx_data = srsTx;
