@@ -62,6 +62,12 @@
 #define SRS_DATARESP_NOMMOREDATA		0x16
 #define SRS_CMDEXEC_REQDATA			0x00000800		// Only one bit is enough here because ctrl of data transfer is done in other structures....
 
+// Data transfer adjustable:
+#define SRS_DATABLOCK_SIZE			 200		// TODO: expand I2C job to uint16 rxsize!!!! 1000		// 1000 is MAX val!
+#define SRS_BLOCKDELAY_MS			  50
+#define SRS_BLOCKBURST_CNT			   5
+#define SRS_BLOCKBURST_DEALY_MS		 500
+
 
 static uint8_t PowerOnCmd[2] = {0x00, SRS_POWERBUS_ENABLECMD};
 static uint8_t PowerOffCmd[2] = {0x00, SRS_POWERBUS_DISABLECMD};
@@ -73,16 +79,37 @@ static bool srsRequestedPowerOn = false;
 
 static bool srsJobInProgress = false;
 static bool srsIsPowerJob = false;
+static bool srsDelayNextJob = false;
 static I2C_Data srsJob;
+
 
 
 static uint32_t	srsCmdExecutes		= 0;
 static uint32_t	srsPendingCmdExec 	= 0;
-//static bool srsCmdSynctime = false;
-static uint8_t srsTx[20];
-static uint8_t srsRx[128];
 
+static uint8_t srsTx[20];
+static uint8_t srsRx[SRS_DATABLOCK_SIZE+20];
 static uint32_t val32ToSend = 0;
+
+
+typedef enum {
+	SRS_DATA_IDLE,
+	SRS_DATA_GETADDRESSES,
+	SRS_DATA_INIT,
+	SRS_DATA_BLOCKREAD,
+	SRS_DATA_RESEND,
+	SRS_DATA_STOP,
+	SRS_DATA_ERROR } srs_transfer_stat;
+
+static srs_transfer_stat 	srsDataTransferStatus = SRS_DATA_IDLE;
+static uint32_t				srsDataPtrStart;
+static uint32_t				srsDataPtrEnd;
+static uint16_t				srsBlockSize;
+static uint32_t				srsBlocksToRead;
+
+obc_systime32_t				srsNextJobTime;
+static uint16_t				srsBlockInBurstCnt;
+
 // local module prototypes
 uint8_t srs_crc(uint8_t *data, int len);
 
@@ -92,6 +119,11 @@ void srsExecuteRequestSyncTime(void);
 void srsExecuteRequestStatus(uint8_t statusType);
 void srsExecuteRequestIntervals(void);
 void srsExecuteSendInterval(uint8_t type, uint32_t val);
+void srsExecuteRequestDataAddresses(void);
+void srsExecuteRequestShutdown(void);
+
+bool srsCheckCrc(uint16_t size);
+void srs_transfer(void);
 
 
 // Module API
@@ -101,6 +133,15 @@ void srs_init(void *initdata) {
 }
 
 void srs_main() {
+	if (srsDelayNextJob) {
+		if (srsNextJobTime >= timGetSystime()) {
+			// Data transfer is delayed over tim ein Blocks of bursts
+			return;
+		} else {
+			srsDelayNextJob = false;
+			i2c_add_job(&srsJob);
+		}
+	}
 	if (srsJobInProgress) {
 		// Wait for job finishing
 		if (srsJob.job_done == 1) {
@@ -116,13 +157,26 @@ void srs_main() {
 					SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_POWEROFF, srsJob.tx_data, 2);
 				}
 			} else {
+				bool crcOk;
 				// Controller Job finished.
 				if (srsJob.rx_size >= 3) {
 					// Check for errors
 					if (srsJob.rx_data[0] == 0xFF) {
+						if ((srsPendingCmdExec == SRS_CMDEXEC_REQDATAADDR) || (srsPendingCmdExec == SRS_CMDEXEC_REQDATA)) {
+							srsDataTransferStatus = SRS_DATA_ERROR;
+						}
 						srsPendingCmdExec = 0;		// No valid answer to process
 						SysEvent(MODULE_ID_RADSENSOR, EVENT_ERROR, EID_SRS_ERROR, &srsJob.rx_data[1], 1);
 					}
+				}
+				if ((srsPendingCmdExec == SRS_CMDEXEC_REQDATA) &&
+						((srsDataTransferStatus == SRS_DATA_BLOCKREAD) || (srsDataTransferStatus == SRS_DATA_RESEND)) ) {
+					uint16_t size = 0;
+					memcpy(&size,&srsJob.rx_data[14], 2);
+					size += 17;
+					crcOk = srsCheckCrc(size);
+				} else {
+					crcOk = srsCheckCrc(srsJob.rx_size);
 				}
 				switch (srsPendingCmdExec) {
 					case SRS_CMDEXEC_SETSYNCTIME:
@@ -163,6 +217,57 @@ void srs_main() {
 						SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_SHUTDOWN, 0, 0 );
 						break;
 
+					case SRS_CMDEXEC_REQDATAADDR:
+						SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_ADDRINFO, &srsJob.rx_data[2], 8);
+						// srsJob.RxData[1] // Status -> laut doku immer 0 !?
+						memcpy(&srsDataPtrStart, &srsJob.rx_data[2] , 4);
+						memcpy(&srsDataPtrEnd, &srsJob.rx_data[6] , 4);
+						srsDataTransferStatus = SRS_DATA_INIT;
+						srs_transfer();			// Initiate next job for transfer.
+						break;
+
+					case SRS_CMDEXEC_REQDATA:
+						//SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_DATARX, srsJob.rx_data, srsJob);
+						if (srsDataTransferStatus == SRS_DATA_INIT) {
+							if (srsJob.rx_data[1] != SRS_DATACMD_INIT) {
+								// Error ocured.
+								SysEvent(MODULE_ID_RADSENSOR, EVENT_ERROR, EID_SRS_ERROR, &srsJob.rx_data[1], 1);
+								srsDataTransferStatus = SRS_DATA_ERROR;		// TODO: Hoiw to clear/leave from here.....???
+							} else {
+								memcpy(&srsBlockSize, &srsJob.rx_data[2], 2); 	// Block size to use is decided by SRS here.
+																			    // Skip start address -> why bothering here . When could this be different than requested one!?
+								memcpy(&srsBlocksToRead, &srsJob.rx_data[8], 4); // Number of blocks to be expeted by this transfer.
+								SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_TRANSFERINIT, &srsJob.rx_data[2], 10);
+								srsDataTransferStatus = SRS_DATA_BLOCKREAD;
+								srs_transfer();
+							}
+						} else if ( (srsDataTransferStatus == SRS_DATA_BLOCKREAD) ||
+									(srsDataTransferStatus == SRS_DATA_RESEND) ){
+							if (srsJob.rx_data[1] == SRS_DATACMD_TRANSFER) {
+								if (crcOk) {
+									// a valid data block
+									srsDataTransferStatus = SRS_DATA_BLOCKREAD;
+									SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO,  EID_SRS_BLOCKDATA,  &srsJob.rx_data[2], 14 );
+								} else {
+									srsDataTransferStatus = SRS_DATA_RESEND;
+								}
+								srs_transfer();
+							} else {
+								// Error or no more data
+								SysEvent(MODULE_ID_RADSENSOR, EVENT_ERROR, EID_SRS_ERROR, &srsJob.rx_data[1], 1);
+								srsDataTransferStatus = SRS_DATA_STOP;
+								srs_transfer();
+							}
+						} else if (srsDataTransferStatus == SRS_DATA_STOP)  {
+							if (srsJob.rx_data[1] == SRS_DATACMD_STOP) {
+								srsDataTransferStatus = SRS_DATA_IDLE;
+								SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_TRANSFERSTOP, 0, 0);
+							} else {
+								srsDataTransferStatus = SRS_DATA_ERROR;		// TODO: How to clear/leave from here.....???
+								SysEvent(MODULE_ID_RADSENSOR, EVENT_ERROR, EID_SRS_ERROR, &srsJob.rx_data[1], 1);
+							}
+						}
+						break;
 
 					default:
 						SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_DATARX, srsJob.rx_data, srsJob.rx_size);
@@ -237,6 +342,10 @@ void srs_main() {
 				srsCmdExecutes &= (~SRS_CMDEXEC_SHUTDOWN);
 				srsPendingCmdExec = SRS_CMDEXEC_SHUTDOWN;
 				srsExecuteRequestShutdown();
+			} else if (srsCmdExecutes & SRS_CMDEXEC_REQDATAADDR) {
+				srsCmdExecutes &= (~SRS_CMDEXEC_REQDATAADDR);
+				srsPendingCmdExec = SRS_CMDEXEC_REQDATAADDR;
+				srsExecuteRequestDataAddresses();
 			}
 
 		}
@@ -289,6 +398,28 @@ void srs_getstatus(uint8_t statusType) {
  }
 
 
+ //This version starts with GETADDRSS comand an fetches all data (new) available.
+ void srs_maketransfer(void) {
+	 if ((srsDataTransferStatus == SRS_DATA_IDLE) || (srsDataTransferStatus == SRS_DATA_ERROR)) {
+		 srsDataTransferStatus = SRS_DATA_GETADDRESSES;
+		 srsCmdExecutes |= SRS_CMDEXEC_REQDATAADDR;
+	 } else {
+		SysEvent(MODULE_ID_RADSENSOR, EVENT_WARNING, EID_SRS_TRANSFERBUSY, 0, 0);
+	 }
+
+ }
+
+ //This version uses local Start and End Address (set by command)
+ void srs_maketransfer_presized(void) {
+ 	 if ((srsDataTransferStatus == SRS_DATA_IDLE) || (srsDataTransferStatus == SRS_DATA_ERROR)) {
+		srsDataTransferStatus = SRS_DATA_INIT;
+ 		srs_transfer();			// Initiate next job for transfer.
+ 	 } else {
+ 		SysEvent(MODULE_ID_RADSENSOR, EVENT_WARNING, EID_SRS_TRANSFERBUSY, 0, 0);
+ 	 }
+
+  }
+
 
 // Module local functions
 // ----------------------
@@ -299,6 +430,17 @@ uint8_t srs_crc(uint8_t *data, int len) {
 	}
 	return ret;
 }
+
+
+bool srsCheckCrc(uint16_t size) {
+	uint8_t crcCalc = srs_crc(srsJob.rx_data, size-1);
+	uint8_t crcRx = srsJob.rx_data[size-1];
+
+	bool isOk = (crcCalc == crcRx);
+	return isOk;
+}
+
+
 
 void srsExecuteRequestSyncTime(void) {
 	srsJob.device = srs->pI2C;			// Redundant but lets do in sake of memory flips.....
@@ -398,6 +540,107 @@ void srsExecuteRequestShutdown(void) {
 }
 
 
+void srsExecuteRequestDataAddresses(void) {
+	srsJob.device = srs->pI2C;
+	srsJob.adress = SRS_CTRL_ADDR;
+	srsTx[0] = SRS_CTRLCMD_REQDATAADDR;
+	srsTx[1] =  srs_crc(srsTx, 1);
+	srsJob.tx_size = 2;
+	srsJob.tx_data = srsTx;
+	srsJob.rx_size = 11;
+	srsJob.rx_data = srsRx;
+	srsJobInProgress = true;
+	i2c_add_job(&srsJob);
+}
+
+// This is called direct from main (after analyses of last JobFinished). So we can setup the next job here.
+void srs_transfer() {
+	// Data transfer gets executed in block-bursts with more delay all x datablock transfer jobs
+	srsNextJobTime = timGetSystime();
+	srsBlockInBurstCnt--;
+	if (srsBlockInBurstCnt == 0) {
+		srsBlockInBurstCnt = SRS_BLOCKBURST_CNT;
+		srsNextJobTime += SRS_BLOCKBURST_DEALY_MS;
+	} else {
+		srsNextJobTime += SRS_BLOCKDELAY_MS;
+	}
+	srsDelayNextJob = true;
+
+	switch (srsDataTransferStatus) {
+	case SRS_DATA_INIT:
+		srsJob.device = srs->pI2C;
+		srsJob.adress = SRS_CTRL_ADDR;
+		srsTx[0] = SRS_CTRLCMD_REQDATA;
+		srsTx[1] = SRS_DATACMD_INIT;
+		srsTx[2] = (uint8_t)(SRS_DATABLOCK_SIZE & 0x00FF);
+		srsTx[3] = (uint8_t)(SRS_DATABLOCK_SIZE>>8 & 0x00FF);
+		memcpy(&srsTx[4],&srsDataPtrStart, 4);
+		uint32_t numBlocks = (srsDataPtrEnd - srsDataPtrStart + 1)/SRS_DATABLOCK_SIZE;
+		if ((srsDataPtrEnd - srsDataPtrStart + 1)%SRS_DATABLOCK_SIZE != 0) {
+			numBlocks++;
+		}
+		memcpy(&srsTx[8],&numBlocks, 4);
+		srsTx[12] =  srs_crc(srsTx, 12);
+		srsJob.tx_size = 13;
+		srsJob.tx_data = srsTx;
+		srsJob.rx_size = 13;
+		srsJob.rx_data = srsRx;
+		srsJobInProgress = true;
+		srsPendingCmdExec = SRS_CMDEXEC_REQDATA;
+		srsBlockInBurstCnt = SRS_BLOCKBURST_CNT;
+		//i2c_add_job(&srsJob);
+		break;
+	case SRS_DATA_BLOCKREAD:
+		srsJob.device = srs->pI2C;
+		srsJob.adress = SRS_CTRL_ADDR;
+		srsTx[0] = SRS_CTRLCMD_REQDATA;
+		if (srsBlocksToRead>0) {
+			srsTx[1] = SRS_DATACMD_TRANSFER;
+			srsBlocksToRead--;
+		} else {
+			srsTx[1] = SRS_DATACMD_STOP;
+			srsDataTransferStatus = SRS_DATA_STOP;
+		}
+		srsTx[2] =  srs_crc(srsTx, 2);
+		srsJob.tx_size = 3;
+		srsJob.tx_data = srsTx;
+		srsJob.rx_size = 17 + srsBlockSize;
+		srsJob.rx_data = srsRx;
+		srsJobInProgress = true;
+		srsPendingCmdExec = SRS_CMDEXEC_REQDATA;
+		//i2c_add_job(&srsJob);
+		break;
+	case SRS_DATA_RESEND:
+		srsJob.device = srs->pI2C;
+		srsJob.adress = SRS_CTRL_ADDR;
+		srsTx[0] = SRS_CTRLCMD_REQDATA;
+		srsTx[1] = SRS_DATACMD_RESEND;
+		srsTx[2] =  srs_crc(srsTx, 2);
+		srsJob.tx_size = 3;
+		srsJob.tx_data = srsTx;
+		srsJob.rx_size = 17 + srsBlockSize;
+		srsJob.rx_data = srsRx;
+		srsJobInProgress = true;
+		srsPendingCmdExec = SRS_CMDEXEC_REQDATA;
+		//i2c_add_job(&srsJob);
+		break;
+	case SRS_DATA_STOP:
+		srsJob.device = srs->pI2C;
+		srsJob.adress = SRS_CTRL_ADDR;
+		srsTx[0] = SRS_CTRLCMD_REQDATA;
+		srsTx[1] = SRS_DATACMD_STOP;
+		srsTx[2] =  srs_crc(srsTx, 2);
+		srsJob.tx_size = 3;
+		srsJob.tx_data = srsTx;
+		srsJob.rx_size = 3;
+		srsJob.rx_data = srsRx;
+		srsJobInProgress = true;
+		srsPendingCmdExec = SRS_CMDEXEC_REQDATA;
+		//i2c_add_job(&srsJob);
+		break;
+	}
+}
+
 
 
 // Module L7 API - TODO: move to higher level commanding layer (Scripting!)
@@ -438,6 +681,25 @@ void srs_cmd(int argc, char *argv[]) {
 			break;
 		case 'x':
 			srs_shutdown();
+			break;
+
+		case 'd': {
+				if (argc > 2) {
+					srsDataPtrStart = atol(argv[2]);
+					srsDataPtrEnd = srsDataPtrStart + 500;
+				}
+				if (argc > 3) {
+					srsDataPtrEnd = atol(argv[3]);
+					if (srsDataPtrEnd <= srsDataPtrStart) {
+						srsDataPtrEnd = srsDataPtrStart + 500;
+					}
+				}
+				if (argc == 2) {
+					srs_maketransfer();
+				} else {
+					srs_maketransfer_presized();
+				}
+			}
 			break;
 
 		default:

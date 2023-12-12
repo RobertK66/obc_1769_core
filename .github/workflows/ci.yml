@@ -87,7 +87,7 @@ jobs:
           - kind: obc
             board: BA_CLIMBOBC
           - kind: dev
-            board: BA_OM13085_EM2T
+            board: BA_OM13085
     steps:
       - env:
           OBC_VERSION: ${{needs.prepBuild.outputs.obcVersion2}}
