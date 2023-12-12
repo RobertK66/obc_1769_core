@@ -48,7 +48,6 @@ void init_mainlooptimer(LPC_TIMER_T* pTimer,  CHIP_SYSCTL_CLOCK_T timBitIdx);
 	// SRS connected to Side Panel A (X+)
 	static const srs_initdata_t SrsInit = {
 		LPC_I2C2,		// I2C bus to use
-		0x20			// SRS slave address.
 	};
 
 	static const mem_init_t MemoryInit = {
@@ -121,11 +120,12 @@ static const gps_initdata_t GpsInit = {
 
 static init_report_t InitReport;
 
+#if BA_BOARD == BA_CLIMBOBC
 static const MODULE_DEF_T Modules[] = {
 		MOD_INIT( deb_init, deb_main, LPC_UART2),
 		MOD_INIT( timInit, timMain, &InitReport ),
 		MOD_INIT( hwc_init, hwc_main, &ObcPins ),
-		MOD_INIT( MramInitAll, MramMain, &Chips),
+//		MOD_INIT( MramInitAll, MramMain, &Chips),
 //		MOD_INIT( SdcInitAll, SdcMain, &Cards),
 //		MOD_INIT( sen_init, sen_main, NULL),
 //		MOD_INIT( memInit, memMain, &MemoryInit),
@@ -136,6 +136,17 @@ static const MODULE_DEF_T Modules[] = {
 //		MOD_INIT( psu_init, psu_main, NULL)
 		MOD_INIT( srs_init, srs_main, &SrsInit)
 };
+#else
+static const MODULE_DEF_T Modules[] = {
+		MOD_INIT( deb_init, deb_main, LPC_UART2),
+		MOD_INIT( timInit, timMain, &InitReport ),
+		MOD_INIT( hwc_init, hwc_main, &ObcPins ),
+		MOD_INIT( gpsInit, gpsMain, &GpsInit),
+		MOD_INIT( app_init, app_main, NULL),
+		MOD_INIT( srs_init, srs_main, &SrsInit)
+};
+#endif
+
 #define MODULE_CNT (sizeof(Modules)/sizeof(MODULE_DEF_T))
 
 // Main variables
