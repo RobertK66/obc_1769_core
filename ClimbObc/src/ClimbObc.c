@@ -107,10 +107,10 @@ static const gps_initdata_t GpsInit = {
 		0, // PTR_FROM_IDX(PINIDX_GPIO4_CP),
 		0, //PTR_FROM_IDX(PINIDX_STACIE_C_IO1_P)
 };
-
-static const thr_initdata_t ThrInit = {
-		LPC_UART1, ///Y+ sidepanel
-};
+//
+//static const thr_initdata_t ThrInit = {
+//		LPC_UART1, ///Y+ sidepanel
+//};
 
 static init_report_t InitReport;
 
