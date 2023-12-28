@@ -146,9 +146,6 @@ void srs_main() {
 		// Wait for job finishing
 		if (srsJob.job_done == 1) {
 			srsJobInProgress = false;
-
-
-
 			if (srsIsPowerJob) {
 				srsIsPowerJob = false;
 				// PowerJob finished.
@@ -172,6 +169,7 @@ void srs_main() {
 					SysEvent(MODULE_ID_RADSENSOR, EVENT_ERROR, EID_SRS_CMDBUSERROR, &(srsJob.error), 2);
 					return;
 				}
+
 
 				bool crcOk;
 				// Controller Job finished.
