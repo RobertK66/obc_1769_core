@@ -85,7 +85,7 @@ void init_mainlooptimer(LPC_TIMER_T* pTimer,  CHIP_SYSCTL_CLOCK_T timBitIdx);
 
 	// SRS connected to to I2C0 -> J2-25/26
 	static const srs_initdata_t SrsInit = {
-			LPC_I2C0		// I2C bus to use
+			LPC_I2C1		// I2C bus to use
 	};
 
 

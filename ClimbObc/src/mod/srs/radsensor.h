@@ -42,6 +42,8 @@ void srs_cmd(int argc, char *argv[]);
 #define EID_SRS_TRANSFERINIT	0x0a
 #define EID_SRS_BLOCKDATA		0x0b
 #define EID_SRS_TRANSFERSTOP	0x0c
+#define EID_SRS_POWERBUSERROR   0x0d
+#define EID_SRS_CMDBUSERROR	    0x0e
 
 #define EID_SRS_ERROR			0x80
 #define EID_SRS_TRANSFERBUSY	0x81

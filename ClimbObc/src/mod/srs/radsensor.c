@@ -146,17 +146,33 @@ void srs_main() {
 		// Wait for job finishing
 		if (srsJob.job_done == 1) {
 			srsJobInProgress = false;
+
+
+
 			if (srsIsPowerJob) {
 				srsIsPowerJob = false;
 				// PowerJob finished.
 				if (srsJob.tx_data[1] == SRS_POWERBUS_ENABLECMD) {
 					srsPowerOn = true;
-					SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_POWERON, srsJob.tx_data, 2);
+					if (srsJob.error) {
+						SysEvent(MODULE_ID_RADSENSOR, EVENT_ERROR, EID_SRS_POWERBUSERROR, &(srsJob.error), 2);
+					} else {
+						SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_POWERON, srsJob.tx_data, 2);
+					}
 				} else {
 					srsPowerOn = false;
-					SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_POWEROFF, srsJob.tx_data, 2);
+					if (srsJob.error) {
+						SysEvent(MODULE_ID_RADSENSOR, EVENT_ERROR, EID_SRS_POWERBUSERROR, &(srsJob.error), 2);
+					} else {
+						SysEvent(MODULE_ID_RADSENSOR, EVENT_INFO, EID_SRS_POWEROFF, srsJob.tx_data, 2);
+					}
 				}
 			} else {
+				if (srsJob.error) {
+					SysEvent(MODULE_ID_RADSENSOR, EVENT_ERROR, EID_SRS_CMDBUSERROR, &(srsJob.error), 2);
+					return;
+				}
+
 				bool crcOk;
 				// Controller Job finished.
 				if (srsJob.rx_size >= 3) {

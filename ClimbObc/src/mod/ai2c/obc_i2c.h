@@ -26,7 +26,6 @@ enum i2c_errors_e
 	I2C_ERROR_NO_ERROR = 0, I2C_ERROR_RX_OVERFLOW, I2C_ERROR_BUS_ERROR, I2C_ERROR_SM_ERROR, I2C_ERROR_JOB_NOT_FINISHED
 };
 
-
 typedef struct
 {
 	uint8_t tx_count;
