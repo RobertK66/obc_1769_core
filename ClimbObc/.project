@@ -32,6 +32,11 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>README.md</name>
+			<type>1</type>
+			<location>C:/dev/github/obc_1769_core_ado3c/README.md</location>
+		</link>
+		<link>
 			<name>workflows</name>
 			<type>2</type>
 			<locationURI>PROJECT_LOC/.github/workflows</locationURI>
